@@ -1,39 +1,50 @@
 # Game Design
 
 ## Vision
-An original open-world driving and racing game: free-roam a scenic fictional region, enter races
-against AI, earn credits, upgrade and repaint cars. Arcade-simulation handling. No real brands,
-logos, maps or licensed cars.
+A fan-made, open-world dragon-combat prototype. You are a dragon: fly across a realm, take off and land,
+and fight rival dragons with bites, wing buffets and a billowing fire breath. The tone and look follow the
+*House of the Dragon* setting. This is a personal prototype built from original procedural models, not an
+official or licensed product.
 
-## Art direction
-Realistic, bright, high-contrast outdoor look in the style of modern open-world racers:
-sky-driven image-based lighting, physically based materials, glossy or satin car paint, detailed
-asphalt, rolling terrain with a mountain rim, dense forests, atmospheric haze. Default time of
-day is golden hour. Everything is generated procedurally at load time (no external art assets),
-so the result is stylised-realistic, not photoreal.
+## Reference and what was taken from it
+Studied from the supplied pictures and video:
+- **Caraxes**: slender and snake-like with the longest neck, dark crimson scales, swept-back brow and
+  cheek horns, a "beard" of jaw spikes, red-lined wings with hooked finger claws, spined tail.
+- **Vermithor**: huge and bulky, bronze body with a charcoal back, heavy curved horns, tan-red wings.
+- **Vhagar**: the largest, grey-green and weathered, blunt heavy head with short horns, vast ribbed wings.
+- **The fight clip** (ground fight, about 130 to 270 s): the fire is a telegraphed breath. The head
+  rears, the throat glows, then a thick billowing fireball erupts for about 1.5 s with smoke at its edges
+  and a fiery flash on impact. Necks coil into an S and whip forward to bite. Wings are thrown out to shove.
+  Dust and debris fly on every impact.
 
-## World (current)
-"Valley Loop": a 1.2 km closed road over rolling hills inside a 1.4 km square terrain ringed by
-mountains, with mixed conifer and broadleaf forest. Planned regions: coast, city, mountain pass,
-off-road trails, festival hub.
+## Dragons
+| Dragon | Role | Health | Bite | Fire | Air speed |
+| --- | --- | --- | --- | --- | --- |
+| Caraxes, The Blood Wyrm | Fast, long-necked | 3000 | 170 | 210/s | 230 km/h |
+| Vermithor, The Bronze Fury | Heavy | 4200 | 210 | 250/s | 180 km/h |
+| Vhagar, Queen of All Dragons | Largest, slowest, hardest hitting | 5600 | 260 | 290/s | 160 km/h |
 
-## Player mount
-The player rides a red dragon (default): a wyvern-style design with a long serpentine neck,
-bat wings, hind legs and a long tail. It lumbers on foot, takes off by flapping, flies at up to
-about 210 km/h and glides when the rider stops flapping. Hold F to roar.
+Attacks: **bite** (short reach, neck lunge), **fire** (a 90 m cone with burning damage over time),
+**wing buffet** (knockback and a gust of dust). Each has a cooldown shown on the HUD.
 
-A white pegasus (`?mount=pegasus`, gallops at about 61 km/h, flies at about 158 km/h) and the
-car fleet below (`?mount=car`) are also kept.
+## The realm
+Compressed from the show's geography (3.2 km square; distances are far shorter than in the story):
+- **Blackwater Bay** to the east: open sea.
+- **King's Landing** on hills above the bay: the Red Keep, the Great Sept, the Dragonpit with its ribbed
+  dome, and a city of about 180 houses. The player begins beside the Dragonpit.
+- **Dragonstone** (north-east): a black basalt fortress on the flank of a volcanic island peak.
+  Vermithor's lair.
+- **Driftmark** (south-east): High Tide castle on an island. Caraxes's lair when you fly another dragon.
+- **Harrenhal** (west): colossal towers slumped like melted candles beside the Gods Eye lake, with a
+  lakeside village. Vhagar's lair.
+- The King's Road and a coast road connect the cities; forests, rocks, grass, mountains to the west,
+  north and south.
 
-## Vehicles
-| Id | Name | Style | Drive | Notes |
-| --- | --- | --- | --- | --- |
-| verdant_rs | Verdant RS | Sedan | AWD | Player default. Satin dark green, bronze wheels, black roof, rear wing |
-| striker_gt | Striker GT | Coupe | RWD | Balanced |
-| rally_pup | Rally Pup | Hatch | AWD | Soft long-travel suspension, lower top speed |
-| apex_prototype | Apex Prototype | Coupe | RWD | Light, stiff, fastest |
+## Enemy behaviour
+Dragons circle their lair until the player comes within about 650 m or hurts them. They then close in,
+slow down to turn tightly, bite in range, breathe fire at mid range, buffet when crowded, and peel away
+after a close pass. If the player is on the ground they land and fight on foot. A slain dragon falls, and
+a replacement appears at its lair after a few seconds.
 
-Only Verdant RS is selectable in-game today (there is no garage UI yet).
-
-## Planned loop (not built yet)
-Free roam, drive to an event marker, race against AI, results and credits, garage upgrades, unlock more events.
+## Not designed or built yet
+Progression, upgrades, saves, multiple missions, riders, a map, weather and a day/night cycle, sound.

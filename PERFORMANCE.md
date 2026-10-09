@@ -1,27 +1,31 @@
 # Performance
 
 ## Hardware
-AMD Ryzen 7 250, NVIDIA GeForce RTX 5060 Laptop GPU (plus Radeon 780M iGPU), Windows 11.
+AMD Ryzen 7 250 laptop with an NVIDIA GeForce RTX 5060 Laptop GPU and an AMD Radeon 780M iGPU, Windows 11. The measurements below ran in Chrome on the **Radeon 780M** (ANGLE / Direct3D 11); the RTX 5060 was
+not used, so these are conservative.
 
-## Measurements (2026-10-09, dev server, golden-hour preset, 801x914 canvas)
+## Measurements (2026-10-09, dev server, 1920x889, two enemy dragons, real-time loop)
 | Metric | Value |
 | --- | --- |
-| Physics step, about 60 to 80 active bodies | 0.11 ms |
-| Sim step + full render, back to back | about 1.4 ms |
-| Render only (30 frames + gl.finish) | about 1.2 ms |
-| Physics step with all 4,900 trees as bodies (rejected design) | 113 ms |
+| Frame time, average over 240 frames | 17.2 ms (about 58 fps) |
+| Frame time, 95th percentile | 23.7 ms |
+| Time to a playable world after navigation | about 3.3 s |
+| JS heap | about 290 MB |
+| Terrain | 3.2 km square, 801 x 801 vertices (heightfield also used by physics) |
+| Trees | 15,100 instanced (near trees swap to a detailed model within 240 m) |
+| Houses | 238 instanced |
+| Dragon models | 7.3 k to 7.9 k triangles each, one skinned mesh set per dragon |
+| Physics step | about 0.1 ms with 60 to 80 active bodies (measured earlier in the project, before dragons were added) |
+| Particles | up to 5,000 flame plus 5,000 smoke/dust (about 650 live during a blast) |
 
-Caveats: measured in an embedded browser pane at a small window size, not full-screen 1080p or
-1440p, and not confirmed to be running on the discrete GPU. Real frame rate at full resolution
-has not been measured. There is no in-game FPS counter yet.
+Not measured: frame rate on the RTX 5060, at 4K, or with 5 enemies; GPU time per pass; memory beyond JS heap.
 
-## Optimizations in place
-- Instanced trees (4 draw calls for the whole forest).
-- Streamed obstacle colliders (ObstacleField).
-- One 4096 shadow map that follows the car (170 m box) instead of covering the map.
-- Textures generated once at load.
+## What keeps it fast
+- Instanced forests and houses, near/far tree detail swap, grass that follows the player.
+- Tree colliders streamed in a 3 x 3 cell window instead of thousands of static bodies.
+- One shadow map that follows the player.
+- Flame, smoke and dust drawn as GPU billboards from one instanced buffer each.
 
-## To do
-- Full-screen FPS measurement and an on-screen frame-time readout.
-- Graphics presets (shadow size, pixel ratio, bloom, tree count).
-- Terrain chunking and LOD once the map grows.
+## Known costs
+- World generation (terrain, forests, houses) runs on the main thread at start.
+- 3 GLB dragon files total 4 MB, all landmarks and structures 6.6 MB, environment 3.4 MB.

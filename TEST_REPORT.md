@@ -1,71 +1,50 @@
-# Test Report - 2026-10-09 (v0.1.0)
+# Test Report - 2026-10-09 (v0.4.0)
 
-Method: scripted checks run in the in-app browser against the dev server through
-`window.__horizon.simulate` (fixed 60 Hz steps), plus screenshots. There is no automated test
-suite in the repo yet, and nothing here was play-tested by hand with a keyboard.
+## How things were tested
+Scripted checks in a Chrome browser driven through the DevTools protocol, using `window.__horizon.simulate`
+(fixed 60 Hz steps) for deterministic gameplay, plus screenshots and a real-time run with keyboard events.
+The in-app Blender connection (port 9876) was not reachable, so all Blender work ran headless from the
+command line. There is no automated test suite in the repository, and nothing was played by hand with a
+physical keyboard and mouse.
 
+## Results
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Type check (`npm run typecheck`) | Passed | no errors |
-| Production build (`npm run build`) | Passed | 665 kB bundle (177 kB gzip) |
-| Page loads without console errors | Passed | clean load |
-| Car settles on all four wheels | Passed | 4 wheels in contact, upright |
-| Acceleration | Passed | flat-ground test on Striker GT: 78 km/h at 5 s, 173 km/h at 15 s |
-| Braking | Passed | 173 km/h to rest within 6 s |
-| Reverse | Passed | -7 m/s after 3 s of brake from rest, HUD gear R |
-| Steering and road following | Passed | scripted autopilot completed the 1.2 km lap in 41.7 s, stayed upright |
-| Parked car holds on a slope | Passed | 0.2 to 0.4 km/h residual after the fix (was 10 km/h) |
-| Tree collision | Passed | 60 km/h head-on: 17 m/s impact reported, car stopped at the trunk, upright |
-| Ride smoothness on road at 100 km/h | Passed | vertical acceleration RMS 0.19 m/s^2 |
-| Camera modes render | Passed | Chase, Far Chase, Hood, Cockpit screenshots. Bumper not screenshotted |
-| Look-back (B), camera key (C), reset (R) through real key presses | Not run | only exercised through code |
-| Handbrake and drift behaviour | Not run | |
-| Vibration fix on a high-refresh display | Not run | the fix is render interpolation; it needs a real-time look by a person |
-| Final headlight and cockpit-camera tweak | Not run | type-checked and built only |
-| Gamepad | Not run | not implemented |
-| Races, AI, garage, saves, menus, audio | Blocked | not implemented |
+| `npm run typecheck` | Passed | no errors |
+| `npm run build` | Passed | 762 kB bundle (206 kB gzip) |
+| Page loads, console clean | Passed | no errors or warnings; world ready after about 3.3 s |
+| Three dragons export as skinned GLB with rig | Passed | Caraxes, Vermithor, Vhagar load and animate in game |
+| Dragons resemble the references | Partly | silhouettes, colours, horns and proportions match; detail is far simpler than the show |
+| Take-off, flight, landing | Passed | 232 to 237 km/h in level flight at 79 to 144 m; lands and walks |
+| Neck leads turns, head stays level in a bank | Passed | measured earlier on the first dragon rig; re-seen in stills on the new rig |
+| Fire breath cone and damage | Passed | 299 damage in 1.6 s on a target 48 m away, burning for 3.1 s |
+| Fire breath visual | Passed | screenshot: hot yellow core, orange body, smoke edge, impact burst |
+| Bite | Passed | two bites on a target 17 m away: 345 damage; a target at 22 m is missed |
+| Wing buffet | Passed | 66 damage and knockback at 30 m |
+| Kill, death event, falling corpse | Passed | health to zero: "slain" event fired, corpse fell 28 m and settled |
+| Enemy wakes only when approached | Passed | idle on a lair patrol at spawn; wakes within 650 m or when hit |
+| Enemy attacks a player who fights | Passed | gliding player took 427 damage and dealt 131 in 120 s (player aim was crude) |
+| Enemy vs a player holding full throttle in circles | Observed | Caraxes (64 m/s) outruns Vermithor (50 m/s) and Vhagar (44 m/s); no damage in 90 s |
+| Real-time keyboard control | Passed | W and Space events took off and cruised at 237 km/h; about 58 fps |
+| World: King's Landing, Dragonstone, Harrenhal, bay | Passed | screenshots of each; 238 houses, 15,100 trees |
+| HUD: health, cooldowns, name plates, kill feed, death screen | Partly | health, cooldown pips and a name plate seen in screenshots; death screen and kill feed not captured |
+| Bite and buffet animation poses | Not checked visually | numbers only; the fire windup and flight poses were seen |
+| Walk cycle and folded-wing pose | Not checked in motion | stills only; folded wings look crumpled |
+| Chase cameras 2 to 5 (Far, Wingside, Head-on, Rider) | Not run | only the default chase view was seen |
+| Switch dragon (1, 2, 3) in game | Not run | code path only |
+| Sound | Not implemented | |
 
-## Dragon (v0.3.0), same scripted method
-| Check | Result | Evidence |
-| --- | --- | --- |
-| Type check and production build | Passed | no errors |
-| Take-off, climb, cruise | Passed | 60 m altitude, 214 km/h in level flight |
-| Descend and land, then walk | Passed | grounded, HUD shows WALK, 38 km/h on foot |
-| Head leads the turn | Passed | 0.15 s into a turn: head segment 0.067 rad, base segment 0.002 rad; equal after about 1.7 s |
-| Neck bends into turns | Passed | 1.12 rad total neck yaw at full turn input |
-| Neck looks up in climbs, down in dives | Passed | summed neck pitch -0.43 rad climbing, +0.49 rad diving |
-| Head stays level in a bank | Passed | body rolled 0.75 rad, head up-vector y 0.97 (was 0.77 before stabilisation) |
-| Roar | Passed | jaw opens to 0.75 rad while F is held |
-| Wing, neck and tail appearance | Passed | screenshots in level flight, banked turn (side and head-on) and standing |
-| Walk cycle, folded-wing pose, tail motion, wing-beat neck pump | Not run | code runs, motion not watched in real time |
-| Pegasus mode after the controller refactor | Passed | gallops at 66 km/h, takes off to 19 m in 2 s |
-| Dragon cameras, real key presses | Not run | |
-
-Dragon known issues: folded wings on the ground read as a small bundle on the back rather than
-resting wrists on the ground; it is built from simple shapes, with no skinned mesh or textures;
-walk top speed overshoots its 32 km/h setting slightly.
-
-## Pegasus (v0.2.0), same scripted method
-| Check | Result | Evidence |
-| --- | --- | --- |
-| Type check | Passed | no errors |
-| Gallop | Passed | 74 km/h after 4 s of throttle; coasts to 2 km/h in 3 s; brakes to rest |
-| Turning | Passed | 1.9 rad of heading change in 1 s of left input on the ground |
-| Take-off and climb | Passed | 35 m altitude after 3 s of flapping |
-| Cruise | Passed | 171 km/h in level flight |
-| Glide | Passed | lost 5.6 m of altitude in 5 s with no input |
-| Descend and land | Passed | back on the ground and reported grounded |
-| Tree collision on the ground | Passed | stopped 0.93 m from the trunk centre (sphere 0.65 m + trunk 0.4 m) |
-| Wing animation | Passed | screenshots show folded wings on the ground and up/down strokes in flight |
-| Final tail and wing-fold pose tweak | Not run | loads and flies, but the new pose was not looked at |
-| Car mode (`?mount=car`) after the refactor | Passed | loads, 4 wheels grounded, 52 km/h after 4 s of throttle |
-| Pegasus cameras, real key presses, flight into trees or mountains | Not run | |
+## Bugs found and fixed this session
+- Vite watcher crashed when the supplied video was locked: reference folders now ignored.
+- Creatures sat at the world origin until the first frame, so enemies woke early: now positioned at creation.
+- Enemies could orbit a circling player indefinitely: added speed control (brake and throttle) and lead pursuit.
+- Attack animations bent the neck almost vertical because per-segment angles add up: reduced.
+- Fireball turned into a white blob and a tan cloud: switched to alpha-blended HDR flame with a round mask.
 
 ## Known issues
-- The pegasus is built from simple shapes (capsules, cylinders, flat feather panels); it is not a sculpted model.
-- On the ground the pegasus follows terrain height directly, so it can run up any slope.
-- The test autopilot drifted up to 6.8 m from the centreline in one corner (road half-width is 6 m). This is crude test steering and is not confirmed as a handling fault.
-- Cockpit view has no interior model; you see roof lining and bonnet only.
-- Trees are low-poly, and only their trunks collide.
-- Nothing stops the car beyond the mountain rim at the map edge.
-- npm audit reports 2 advisories in dev-only dependencies (the vite/esbuild dev server).
+- Dragons and fire pass through castles, towns and mountains; only trees and the ground collide.
+- Walking and the stowed-wing pose are rough; wings crumple when folded.
+- The three dragons share one skeleton layout and animation set, so they differ in size, colour and stats more than in movement.
+- Heads and bodies are far less detailed than the show's; scales are texture-only.
+- The in-app browser pane stops repainting when hidden, so visual checks used another browser.
+- Fight pacing is untuned: a full-speed Caraxes cannot be caught by the AI.

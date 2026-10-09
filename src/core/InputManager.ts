@@ -8,6 +8,10 @@ export interface DriveInput {
   descend: boolean;
   /** F: creature action (roar). */
   action: boolean;
+  /** J / left mouse: bite. */
+  bite?: boolean;
+  /** K: wing buffet. */
+  buffet?: boolean;
 }
 
 const THROTTLE_KEYS = ['KeyW', 'ArrowUp'];
@@ -27,6 +31,9 @@ export class InputManager {
       this.pressed.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.pressed.delete(e.code));
+    window.addEventListener('mousedown', (e) => this.pressed.add(`Mouse${e.button}`));
+    window.addEventListener('mouseup', (e) => this.pressed.delete(`Mouse${e.button}`));
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
     // Avoid stuck keys when the window loses focus mid-press.
     window.addEventListener('blur', () => this.pressed.clear());
   }
@@ -53,6 +60,8 @@ export class InputManager {
       handbrake: this.anyPressed(HANDBRAKE_KEYS),
       descend: this.anyPressed(DESCEND_KEYS),
       action: this.pressed.has('KeyF'),
+      bite: this.pressed.has('KeyJ') || this.pressed.has('Mouse0'),
+      buffet: this.pressed.has('KeyK') || this.pressed.has('Mouse2'),
     };
   }
 }

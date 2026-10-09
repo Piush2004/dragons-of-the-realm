@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 - 2026-10-09
+- Game is now a dragon-combat game. The car, pegasus and old procedural dragon were removed.
+- Three Blender-built, rigged dragons modelled on the supplied references: Caraxes, Vermithor, Vhagar
+  (single skinned body, scale textures, sculpted heads with horns and teeth, skeletal wings with membrane,
+  hind legs; 7 to 8 k triangles each).
+- Rig animation: segmented neck and tail that follow the head, wing flap and fold, walk, head stabilised
+  against banking, flinch on hit, death pose.
+- Combat: bite (neck coil and lunge), fire breath, wing buffet, health, knockback, burning, death, kill feed.
+- Fire breath modelled on the supplied clip: throat glow, then a billowing HDR fireball with smoke, embers,
+  impact flashes and a light that lifts the scene.
+- Enemy AI: lair patrol, aggro, lead pursuit with speed control, attack selection, landing for ground fights.
+- Open world reshaped after the setting of House of the Dragon (3.2 km): Blackwater Bay and open sea,
+  King's Landing with Red Keep, Great Sept and Dragonpit, Dragonstone volcano island, Driftmark and High Tide,
+  Harrenhal by the Gods Eye lake, King's Road and coast road, about 240 houses in four settlements.
+- Combat HUD: health, cooldown pips, enemy name plates with distance and health, damage vignette, death screen.
+- Camera scales to creature size; 1/2/3 switch dragon.
+- Fixes: Vite crashed when the large reference video was locked (watch ignore list); AI woke before the first
+  frame because creatures sat at the origin; AI could orbit a circling target forever (speed control and lead pursuit).
+
 ## 0.3.0 - 2026-10-09
 - Player is now a red dragon (original wyvern-style design): 11-segment neck, 18-segment tail,
   skeletal bat wings with finger bones and a membrane rebuilt every frame, hind legs, horns, jaw.

@@ -16,102 +16,6 @@ export interface CameraMode {
   speedPullback: number;
 }
 
-export const CAR_CAMERA_MODES: CameraMode[] = [
-  {
-    id: 'chase',
-    label: 'Chase',
-    offset: new THREE.Vector3(0, 2.6, -6.8),
-    lookAt: new THREE.Vector3(0, 1.0, 4),
-    fov: 60,
-    speedFov: 12,
-    followRate: 7,
-    speedPullback: 0.25,
-  },
-  {
-    id: 'chase_far',
-    label: 'Far Chase',
-    offset: new THREE.Vector3(0, 4.4, -11.5),
-    lookAt: new THREE.Vector3(0, 0.8, 5),
-    fov: 55,
-    speedFov: 10,
-    followRate: 5,
-    speedPullback: 0.3,
-  },
-  {
-    id: 'hood',
-    label: 'Hood',
-    offset: new THREE.Vector3(0, 0.62, 0.55),
-    lookAt: new THREE.Vector3(0, 0.45, 12),
-    fov: 68,
-    speedFov: 8,
-    followRate: null,
-    speedPullback: 0,
-  },
-  {
-    id: 'bumper',
-    label: 'Bumper',
-    offset: new THREE.Vector3(0, 0.0, 2.6),
-    lookAt: new THREE.Vector3(0, -0.05, 14),
-    fov: 72,
-    speedFov: 10,
-    followRate: null,
-    speedPullback: 0,
-  },
-  {
-    id: 'cockpit',
-    label: 'Cockpit',
-    offset: new THREE.Vector3(0.36, 0.44, 0.05),
-    lookAt: new THREE.Vector3(0.3, 0.2, 12),
-    fov: 70,
-    speedFov: 6,
-    followRate: null,
-    speedPullback: 0,
-  },
-];
-
-export const PEGASUS_CAMERA_MODES: CameraMode[] = [
-  {
-    id: 'chase',
-    label: 'Chase',
-    offset: new THREE.Vector3(0, 2.6, -8),
-    lookAt: new THREE.Vector3(0, 0.9, 4),
-    fov: 60,
-    speedFov: 12,
-    followRate: 6,
-    speedPullback: 0.25,
-  },
-  {
-    id: 'chase_far',
-    label: 'Far Chase',
-    offset: new THREE.Vector3(0, 5, -15),
-    lookAt: new THREE.Vector3(0, 0.6, 5),
-    fov: 55,
-    speedFov: 10,
-    followRate: 4.5,
-    speedPullback: 0.3,
-  },
-  {
-    id: 'side',
-    label: 'Wingside',
-    offset: new THREE.Vector3(6.5, 1.4, 2.5),
-    lookAt: new THREE.Vector3(0, 0.6, 0.4),
-    fov: 50,
-    speedFov: 6,
-    followRate: 8,
-    speedPullback: 0,
-  },
-  {
-    id: 'rider',
-    label: 'Rider',
-    offset: new THREE.Vector3(0, 1.75, -0.1),
-    lookAt: new THREE.Vector3(0, 1.3, 12),
-    fov: 72,
-    speedFov: 8,
-    followRate: null,
-    speedPullback: 0,
-  },
-];
-
 export const DRAGON_CAMERA_MODES: CameraMode[] = [
   {
     id: 'chase',
@@ -171,6 +75,8 @@ export class CameraRig {
 
   private readonly modes: CameraMode[];
   private modeIndex = 0;
+  /** Size of the creature being followed relative to the default, so cameras stay framed on giants. */
+  private scale = 1;
   private readonly currentPosition = new THREE.Vector3();
   private readonly currentLook = new THREE.Vector3();
   private needsSnap = true;
@@ -206,6 +112,11 @@ export class CameraRig {
     this.needsSnap = true;
   }
 
+  setScale(scale: number): void {
+    this.scale = scale;
+    this.needsSnap = true;
+  }
+
   addShake(impactSpeed: number): void {
     this.shake = Math.min(1, this.shake + impactSpeed / 25);
   }
@@ -214,8 +125,8 @@ export class CameraRig {
     const mode = this.mode;
     const speedRatio = THREE.MathUtils.clamp(speedMetersPerSecond / 60, 0, 1);
 
-    const offset = mode.offset.clone().multiplyScalar(1 + speedRatio * mode.speedPullback);
-    const lookAt = mode.lookAt.clone();
+    const offset = mode.offset.clone().multiplyScalar((1 + speedRatio * mode.speedPullback) * this.scale);
+    const lookAt = mode.lookAt.clone().multiplyScalar(this.scale);
     if (lookBack) {
       // Mirror front-to-back: chase cams swing to the nose, onboard cams look out the rear.
       if (mode.followRate !== null) offset.z = -offset.z;

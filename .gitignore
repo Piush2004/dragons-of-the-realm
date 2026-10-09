@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 .remember/
+build/
+Images of Dragon/
+__pycache__/

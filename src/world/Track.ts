@@ -18,6 +18,7 @@ const DASH_REPEAT_METERS = 12;
  */
 export class Track {
   readonly curve: THREE.CatmullRomCurve3;
+  readonly closed: boolean;
   readonly roadWidth: number;
   readonly length: number;
   readonly checkpoints: TrackCheckpoint[];
@@ -29,9 +30,31 @@ export class Track {
     textures: RoadTextures,
     roadWidth = 10,
     checkpointCount = 24,
+    closed = true,
   ) {
-    const points = controlPointsXZ.map(([x, z]) => new THREE.Vector3(x, heightAt(x, z), z));
-    this.curve = new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.5);
+    // Lay the path on the ground: sample the plan-view spline densely, read the terrain height under each
+    // sample and smooth it, so the road follows the land's broad shape instead of every bump.
+    const plan = new THREE.CatmullRomCurve3(controlPointsXZ.map(([x, z]) => new THREE.Vector3(x, 0, z)), closed, 'catmullrom', 0.5);
+    const sampleCount = Math.max(8, Math.ceil(plan.getLength() / 22));
+    const raw = plan.getSpacedPoints(sampleCount);
+    if (closed) raw.pop();
+    const heights = raw.map((p) => heightAt(p.x, p.z));
+    const window = 5;
+    const smoothed = heights.map((_, i) => {
+      let sum = 0;
+      let count = 0;
+      for (let k = -window; k <= window; k++) {
+        let j = i + k;
+        if (closed) j = (j + heights.length) % heights.length;
+        else if (j < 0 || j >= heights.length) continue;
+        sum += heights[j];
+        count++;
+      }
+      return sum / count;
+    });
+    const points = raw.map((p, i) => new THREE.Vector3(p.x, smoothed[i], p.z));
+    this.closed = closed;
+    this.curve = new THREE.CatmullRomCurve3(points, closed, 'catmullrom', 0.5);
     this.roadWidth = roadWidth;
     this.length = this.curve.getLength();
     this.mesh = this.buildRoadMesh(textures);
@@ -52,7 +75,7 @@ export class Track {
     const up = new THREE.Vector3(0, 1, 0);
 
     for (let i = 0; i <= segments; i++) {
-      const t = (i % segments) / segments;
+      const t = this.closed ? (i % segments) / segments : i / segments;
       const p = this.curve.getPointAt(t);
       const tangent = this.curve.getTangentAt(t);
       const right = new THREE.Vector3().crossVectors(tangent, up).normalize();

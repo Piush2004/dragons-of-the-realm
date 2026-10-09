@@ -2,24 +2,17 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { createNoise2D, fbm, smoothstep } from '../core/Noise';
+import { TERRAIN_SEGMENTS, WATER_LEVEL, WORLD_SIZE } from './WorldConfig';
+import { macroHeight, padInfluence, seaAmount } from './WorldMap';
 
-const hillNoise = createNoise2D(11);
 const detailNoise = createNoise2D(47);
-const mountainNoise = createNoise2D(93);
 const colorNoise = createNoise2D(5);
 
-/** Gentle large-scale rolling relief. Roads are laid directly on this so they climb and dip naturally. */
-export function rollingHeight(x: number, z: number): number {
-  return (fbm(hillNoise, x / 320, z / 320, 2) - 0.5) * 22;
-}
-
-/** Full natural terrain height away from any road: rolling hills + rougher detail + a mountain rim at the map edge. */
+/** Full natural terrain height away from any road: the realm's large-scale shape plus fine roughness on dry land. */
 function wildHeight(x: number, z: number, roadDistance: number): number {
-  const rough = (fbm(detailNoise, x / 70, z / 70, 4) - 0.5) * 16 * smoothstep(12, 90, roadDistance);
-  const r = Math.hypot(x, z);
-  const rim = smoothstep(330, 680, r);
-  const mountains = rim * rim * (40 + fbm(mountainNoise, x / 190, z / 190, 5) * 190);
-  return rollingHeight(x, z) + rough + mountains;
+  const calm = smoothstep(12, 90, roadDistance) * (1 - seaAmount(x, z)) * (1 - padInfluence(x, z));
+  const rough = (fbm(detailNoise, x / 70, z / 70, 4) - 0.5) * 16 * calm;
+  return macroHeight(x, z) + rough;
 }
 
 export interface RoadSample {
@@ -33,8 +26,8 @@ export interface RoadSample {
  * flattened to the road's own elevation so the road ribbon sits flush on it.
  */
 export class Terrain {
-  static readonly SIZE = 1400;
-  static readonly SEGMENTS = 350;
+  static readonly SIZE = WORLD_SIZE;
+  static readonly SEGMENTS = TERRAIN_SEGMENTS;
   static readonly ROAD_FLAT_RADIUS = 8;
 
   readonly mesh: THREE.Mesh;
@@ -55,27 +48,45 @@ export class Terrain {
   private computeHeights(roadSamples: RoadSample[]): void {
     const n = this.stride;
     const half = Terrain.SIZE / 2;
+    // Must exceed every road-distance falloff used by wildHeight, or a cliff forms where stamping stops.
+    const influence = 100;
+    const reach = Math.ceil(influence / this.cell);
+
+    // Stamp each road sample into the cells around it instead of testing every cell against every sample.
+    const FAR = 1e6;
+    const nearestSq = new Float32Array(n * n).fill(FAR * FAR);
+    const roadHeights = new Float32Array(n * n);
+    for (const sample of roadSamples) {
+      const ci = Math.round((sample.x + half) / this.cell);
+      const cj = Math.round((sample.z + half) / this.cell);
+      for (let j = Math.max(0, cj - reach); j <= Math.min(n - 1, cj + reach); j++) {
+        const dz = -half + j * this.cell - sample.z;
+        for (let i = Math.max(0, ci - reach); i <= Math.min(n - 1, ci + reach); i++) {
+          const dx = -half + i * this.cell - sample.x;
+          const sq = dx * dx + dz * dz;
+          const index = j * n + i;
+          if (sq < nearestSq[index]) {
+            nearestSq[index] = sq;
+            roadHeights[index] = sample.y;
+          }
+        }
+      }
+    }
+
     for (let j = 0; j < n; j++) {
       const z = -half + j * this.cell;
       for (let i = 0; i < n; i++) {
         const x = -half + i * this.cell;
-        let bestSq = Infinity;
-        let roadY = 0;
-        for (let k = 0; k < roadSamples.length; k++) {
-          const s = roadSamples[k];
-          const dx = s.x - x;
-          const dz = s.z - z;
-          const sq = dx * dx + dz * dz;
-          if (sq < bestSq) {
-            bestSq = sq;
-            roadY = s.y;
-          }
-        }
-        const distance = Math.sqrt(bestSq);
-        const blend = smoothstep(Terrain.ROAD_FLAT_RADIUS, 55, distance);
         const index = j * n + i;
+        const distance = Math.sqrt(nearestSq[index]);
+        const wild = wildHeight(x, z, distance);
         this.roadDistances[index] = distance;
-        this.heights[index] = roadY + (wildHeight(x, z, distance) - roadY) * blend;
+        if (distance >= FAR) {
+          this.heights[index] = wild;
+        } else {
+          const blend = smoothstep(Terrain.ROAD_FLAT_RADIUS, 55, distance);
+          this.heights[index] = roadHeights[index] + (wild - roadHeights[index]) * blend;
+        }
       }
     }
   }
@@ -123,6 +134,8 @@ export class Terrain {
     const dirt = new THREE.Color(0x8a7355);
     const rock = new THREE.Color(0x9a948c);
     const snow = new THREE.Color(0xf4f6fa);
+    const sand = new THREE.Color(0xb9a57a);
+    const lakeBed = new THREE.Color(0x4a4a3a);
     const color = new THREE.Color();
     for (let index = 0; index < n * n; index++) {
       const x = positions[index * 3];
@@ -132,9 +145,11 @@ export class Terrain {
       const patch = fbm(colorNoise, x / 60, z / 60, 3);
 
       color.copy(grass).lerp(dryGrass, smoothstep(0.35, 0.75, patch));
-      color.lerp(rock, smoothstep(0.12, 0.3, slope + (patch - 0.5) * 0.08));
-      color.lerp(rock, smoothstep(70, 120, y) * 0.8);
-      color.lerp(snow, smoothstep(150, 185, y + patch * 25) * smoothstep(0.5, 0.2, slope));
+      color.lerp(rock, smoothstep(0.24, 0.5, slope + (patch - 0.5) * 0.08));
+      color.lerp(rock, smoothstep(110, 190, y) * 0.8);
+      color.lerp(snow, smoothstep(230, 290, y + patch * 40) * smoothstep(0.5, 0.2, slope));
+      color.lerp(sand, smoothstep(WATER_LEVEL + 2.2, WATER_LEVEL + 0.4, y));
+      color.lerp(lakeBed, smoothstep(WATER_LEVEL - 0.5, WATER_LEVEL - 5, y));
       const shoulder = 1 - smoothstep(Terrain.ROAD_FLAT_RADIUS - 1.5, Terrain.ROAD_FLAT_RADIUS + 4, this.roadDistances[index]);
       color.lerp(dirt, shoulder * 0.85);
 

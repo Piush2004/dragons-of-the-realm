@@ -34,8 +34,8 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     ambientColor: 0xbcd4ff,
     groundAmbientColor: 0x6b5a3c,
     fogColor: 0xd9d4c8,
-    fogNear: 260,
-    fogFar: 2300,
+    fogNear: 400,
+    fogFar: 5200,
     exposure: 0.55,
   },
   sunset: {
@@ -51,8 +51,8 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     ambientColor: 0xffb98a,
     groundAmbientColor: 0x3a2a1f,
     fogColor: 0xf3a46a,
-    fogNear: 180,
-    fogFar: 1700,
+    fogNear: 300,
+    fogFar: 4200,
     exposure: 0.5,
   },
   midday: {
@@ -68,8 +68,8 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     ambientColor: 0xbfd9ff,
     groundAmbientColor: 0x3a2f20,
     fogColor: 0xcfe6ff,
-    fogNear: 350,
-    fogFar: 2800,
+    fogNear: 500,
+    fogFar: 6000,
     exposure: 0.4,
   },
 };
