@@ -70,20 +70,22 @@ const enemies: Enemy[] = [];
 let kills = 0;
 let enemyCursor = 0;
 
-function spawnEnemy(): void {
+function spawnEnemy(forcedId?: DragonId, at?: { x: number; y: number; z: number }): Enemy {
   const choices = DRAGON_IDS.filter((id) => id !== player.profile.id);
-  const id = choices[enemyCursor++ % choices.length];
+  const id = forcedId ?? choices[enemyCursor++ % choices.length];
   const instance = dragons.create(id);
   const lair = LAIRS[id];
   const angle = Math.random() * Math.PI * 2;
   const x = lair.x + Math.cos(angle) * lair.patrol * 0.6;
   const z = lair.z + Math.sin(angle) * lair.patrol * 0.6;
-  const position = placeOnGround(x, z, instance.tuning.groundOffset, lair.altitude);
+  const position = at ? new CANNON.Vec3(at.x, at.y, at.z) : placeOnGround(x, z, instance.tuning.groundOffset, lair.altitude);
   const controller = new FlyingMountController(physics, scene, instance.model, instance.tuning, heightAt, position);
   controller.setHeading(angle + Math.PI / 2);
   const combatant = new Combatant('enemy', controller, instance);
   combat.add(combatant);
-  enemies.push({ combatant, ai: new DragonAI(combatant, combat, lair) });
+  const enemy: Enemy = { combatant, ai: new DragonAI(combatant, combat, lair) };
+  enemies.push(enemy);
+  return enemy;
 }
 for (let i = 0; i < enemyCount; i++) spawnEnemy();
 
@@ -243,8 +245,20 @@ function simulate(seconds: number, driveInput: Partial<DriveInput> = {}): void {
   cameraRig,
   scene,
   switchDragon,
+  spawnEnemy,
+  removeEnemy,
+  respawnPlayer: () => respawnPlayer(),
+  placeOnGround,
+  getKills: () => kills,
+  selfTest: (groups?: string[]) => import('./debug/selftest').then(({ runSelfTest }) => runSelfTest((window as unknown as { __horizon: never }).__horizon, groups)),
+  enemyCount,
   render: () => postFx.render(),
 };
+
+if (params.has('selftest')) {
+  // Lazy-loaded so the suite is not part of normal play.
+  void import('./debug/selftest').then(({ runSelfTest }) => runSelfTest((window as unknown as { __horizon: never }).__horizon));
+}
 
 requestAnimationFrame(tick);
 (window as unknown as Record<string, unknown>).__horizonReadyMs = Math.round(performance.now());
