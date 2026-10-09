@@ -14,7 +14,7 @@ not used, so these are conservative.
 | Terrain | 3.2 km square, 801 x 801 vertices (heightfield also used by physics) |
 | Trees | 15,100 instanced (near trees swap to a detailed model within 240 m) |
 | Houses | 238 instanced |
-| Dragon models | 7.3 k to 7.9 k triangles each, one skinned mesh set per dragon |
+| Dragon models | about 24 k triangles each (after the detail pass), one skinned mesh set per dragon |
 | Physics step | about 0.1 ms with 60 to 80 active bodies (measured earlier in the project, before dragons were added) |
 | Particles | up to 5,000 flame plus 5,000 smoke/dust (about 650 live during a blast) |
 
@@ -28,4 +28,4 @@ Not measured: frame rate on the RTX 5060, at 4K, or with 5 enemies; GPU time per
 
 ## Known costs
 - World generation (terrain, forests, houses) runs on the main thread at start.
-- 3 GLB dragon files total 4 MB, all landmarks and structures 6.6 MB, environment 3.4 MB.
+- 3 GLB dragon files total about 7.3 MB, landmarks and structures 6.6 MB, environment 3.4 MB. The frame-rate figures above were measured before the detail pass and have not been re-measured.

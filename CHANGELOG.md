@@ -1,8 +1,17 @@
 # Changelog
 
+## 0.5.0 - 2026-10-09
+- The three dragons are now original designs with original names: Cinderwing (The Ember Serpent),
+  Brazenhide (The Bronze Warden) and Elderscale (The Elder Tyrant). Their silhouettes, colours and movement
+  still take general cues from the supplied references, but they are not copies of any film or TV creature.
+  URL option is now `?dragon=cinderwing|brazenhide|elderscale`.
+- Detail pass on the dragon meshes: skin geometry is subdivided and displaced with wrinkles and scale-plate
+  ridges (about 24 k triangles each, up from about 7.5 k). A visible but modest step, not hand-sculpt quality.
+- Reference video link (a Blender dragon-modelling tutorial) reviewed as far as possible; see TEST_REPORT.md.
+
 ## 0.4.0 - 2026-10-09
 - Game is now a dragon-combat game. The car, pegasus and old procedural dragon were removed.
-- Three Blender-built, rigged dragons modelled on the supplied references: Caraxes, Vermithor, Vhagar
+- Three Blender-built, rigged dragons modelled on the supplied references: Cinderwing, Brazenhide, Elderscale
   (single skinned body, scale textures, sculpted heads with horns and teeth, skeletal wings with membrane,
   hind legs; 7 to 8 k triangles each).
 - Rig animation: segmented neck and tail that follow the head, wing flap and fold, walk, head stabilised

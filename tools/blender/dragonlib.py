@@ -71,7 +71,7 @@ class Part:
         self.face_uvs.append(uvs)
         self.face_mats.append(material)
 
-    def build(self, materials, armature):
+    def build(self, materials, armature, relief=None):
         mesh = bpy.data.meshes.new(self.name)
         obj = bpy.data.objects.new(self.name, mesh)
         bpy.context.scene.collection.objects.link(obj)
@@ -102,6 +102,8 @@ class Part:
             for loop, uv in zip(face.loops, uvs):
                 loop[uv_layer].uv = uv
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        if relief:
+            apply_relief(bm, relief)
         bm.to_mesh(mesh)
         bm.free()
 
@@ -109,6 +111,39 @@ class Part:
         modifier.object = armature
         obj.parent = armature
         return obj
+
+
+# ----------------------------------------------------------------------------- relief
+
+def apply_relief(bm, relief):
+    """Subdivide skin geometry and push it along its normals with wrinkles and plate ridges.
+
+    relief: dict(skin=(material indices), cuts=int, scale=float metres-ish size of the creature / 25,
+    wrinkle=amplitude, plates=amplitude, plate_size=metres, seed=int)
+    """
+    skin = set(relief['skin'])
+    size = relief.get('scale', 1.0)
+    if relief.get('cuts', 0) > 0:
+        # Only subdivide faces made of skin so horns, teeth and eyes keep their shape.
+        edges = set()
+        for face in bm.faces:
+            if face.material_index in skin:
+                edges.update(face.edges)
+        bmesh.ops.subdivide_edges(bm, edges=list(edges), cuts=relief['cuts'], use_grid_fill=True, use_smooth_even=False)
+    bm.verts.ensure_lookup_table()
+    bm.normal_update()
+    offset = Vector((relief.get('seed', 0) * 13.7, relief.get('seed', 0) * 7.3, 31.1))
+    from mathutils import noise
+    for vert in bm.verts:
+        if not vert.link_faces or not all(f.material_index in skin for f in vert.link_faces):
+            continue
+        p = vert.co
+        wrinkle = noise.fractal(p * (0.55 / size) + offset, 1.0, 2.0, 4) * relief.get('wrinkle', 0.05) * size
+        # Ridged plates: the distance between the nearest two cell centres is small along cell borders.
+        distances, _ = noise.voronoi(p * (1.0 / relief.get('plate_size', 0.35)) + offset)
+        edge = distances[1] - distances[0]
+        plate = (min(1.0, edge / 0.22) ** 0.8 - 1.0) * relief.get('plates', 0.03) * size
+        vert.co = p + vert.normal * (wrinkle + plate)
 
 
 # ----------------------------------------------------------------------------- primitives

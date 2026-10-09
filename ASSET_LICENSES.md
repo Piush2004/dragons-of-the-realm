@@ -9,9 +9,10 @@ and by code at load time. No third-party models, textures or audio are included.
 series House of the Dragon and other sources. They were used only to study proportions, colours, movement and
 fire behaviour. They are excluded from version control (.gitignore) and must not be redistributed.
 
-The dragon designs are approximations built from those references. The dragons, places and names come from
-the House of the Dragon and A Song of Ice and Fire fiction, which belong to their respective owners. This
-project is an unofficial personal prototype; do not publish or sell it without the necessary permissions.
+The dragons are original designs with original names; the references only guided proportions, colours and
+motion. The realm's geography and landmark names follow the setting of House of the Dragon and A Song of Ice
+and Fire, which belong to their respective owners. This is an unofficial personal prototype; check the setting's
+rights before publishing or selling it.
 
 ## Dependencies
 | Dependency | License | Use |

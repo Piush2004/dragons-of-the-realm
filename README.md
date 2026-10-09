@@ -21,7 +21,7 @@ npm run dev
 Open http://localhost:5173. The first load takes a few seconds while the world is built.
 
 Options on the URL:
-- `?dragon=caraxes|vermithor|vhagar` choose your dragon (default Caraxes)
+- `?dragon=cinderwing|brazenhide|elderscale` choose your dragon (default Cinderwing)
 - `?enemies=0..5` number of enemy dragons (default 2)
 
 ## Controls
@@ -36,11 +36,11 @@ Options on the URL:
 | K or right mouse | Wing buffet |
 | C | Cycle camera (Chase, Far Chase, Wingside, Head-on, Rider) |
 | B (hold) | Look back |
-| 1 / 2 / 3 | Switch to Caraxes / Vermithor / Vhagar |
+| 1 / 2 / 3 | Switch to Cinderwing / Brazenhide / Elderscale |
 | R | Reset to the Dragonpit (or rise again after dying) |
 
 Releasing W lets you glide slowly, which is how you fight at close quarters. Holding W flies at full
-speed, and Caraxes outruns both enemy dragons.
+speed, and Cinderwing outruns both enemy dragons.
 
 ## Build and test
 ```bash

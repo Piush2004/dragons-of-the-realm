@@ -43,7 +43,7 @@ const startTransform = { position: { x: PLAYER_START.x, z: PLAYER_START.z }, yaw
 
 const params = new URLSearchParams(window.location.search);
 const requested = params.get('dragon') as DragonId | null;
-const playerDragon: DragonId = requested && DRAGON_IDS.includes(requested) ? requested : 'caraxes';
+const playerDragon: DragonId = requested && DRAGON_IDS.includes(requested) ? requested : 'cinderwing';
 const enemyCount = Math.max(0, Math.min(5, Number(params.get('enemies') ?? 2)));
 
 const combat = new CombatManager();

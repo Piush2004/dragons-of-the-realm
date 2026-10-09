@@ -13,7 +13,7 @@ physical keyboard and mouse.
 | `npm run typecheck` | Passed | no errors |
 | `npm run build` | Passed | 762 kB bundle (206 kB gzip) |
 | Page loads, console clean | Passed | no errors or warnings; world ready after about 3.3 s |
-| Three dragons export as skinned GLB with rig | Passed | Caraxes, Vermithor, Vhagar load and animate in game |
+| Three dragons export as skinned GLB with rig | Passed | Cinderwing, Brazenhide, Elderscale load and animate in game |
 | Dragons resemble the references | Partly | silhouettes, colours, horns and proportions match; detail is far simpler than the show |
 | Take-off, flight, landing | Passed | 232 to 237 km/h in level flight at 79 to 144 m; lands and walks |
 | Neck leads turns, head stays level in a bank | Passed | measured earlier on the first dragon rig; re-seen in stills on the new rig |
@@ -24,7 +24,7 @@ physical keyboard and mouse.
 | Kill, death event, falling corpse | Passed | health to zero: "slain" event fired, corpse fell 28 m and settled |
 | Enemy wakes only when approached | Passed | idle on a lair patrol at spawn; wakes within 650 m or when hit |
 | Enemy attacks a player who fights | Passed | gliding player took 427 damage and dealt 131 in 120 s (player aim was crude) |
-| Enemy vs a player holding full throttle in circles | Observed | Caraxes (64 m/s) outruns Vermithor (50 m/s) and Vhagar (44 m/s); no damage in 90 s |
+| Enemy vs a player holding full throttle in circles | Observed | Cinderwing (64 m/s) outruns Brazenhide (50 m/s) and Elderscale (44 m/s); no damage in 90 s |
 | Real-time keyboard control | Passed | W and Space events took off and cruised at 237 km/h; about 58 fps |
 | World: King's Landing, Dragonstone, Harrenhal, bay | Passed | screenshots of each; 238 houses, 15,100 trees |
 | HUD: health, cooldowns, name plates, kill feed, death screen | Partly | health, cooldown pips and a name plate seen in screenshots; death screen and kill feed not captured |
@@ -33,6 +33,14 @@ physical keyboard and mouse.
 | Chase cameras 2 to 5 (Far, Wingside, Head-on, Rider) | Not run | only the default chase view was seen |
 | Switch dragon (1, 2, 3) in game | Not run | code path only |
 | Sound | Not implemented | |
+
+## v0.5.0 pass (renamed dragons, detail pass)
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Rebuild all three dragons with relief | Passed | about 24 k triangles each, 2.3 to 2.5 MB GLB |
+| Renamed dragons load and fly in game | Passed | Cinderwing flew at 237 km/h at 157 m; Brazenhide name plate at 886 m; no console messages; ready in 3.0 s |
+| Frame rate after the detail pass | Not re-measured | |
+| Reference video (YouTube Blender dragon tutorial, 38 min) | Mostly not viewable | the page kept reloading in the automation browser; only the opening real-time render of a detailed, textured dragon was seen. The video's modelling steps were not reviewed |
 
 ## Bugs found and fixed this session
 - Vite watcher crashed when the supplied video was locked: reference folders now ignored.
@@ -47,4 +55,4 @@ physical keyboard and mouse.
 - The three dragons share one skeleton layout and animation set, so they differ in size, colour and stats more than in movement.
 - Heads and bodies are far less detailed than the show's; scales are texture-only.
 - The in-app browser pane stops repainting when hidden, so visual checks used another browser.
-- Fight pacing is untuned: a full-speed Caraxes cannot be caught by the AI.
+- Fight pacing is untuned: a full-speed Cinderwing cannot be caught by the AI.

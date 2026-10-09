@@ -1,4 +1,4 @@
-"""Builds the three rigged dragons (Caraxes, Vermithor, Vhagar) and exports one GLB each.
+"""Builds the three rigged dragons (Cinderwing, Brazenhide, Elderscale) and exports one GLB each.
 
 Run:  blender --background --python tools/blender/build_dragons.py -- public/assets/dragons [name ...]
 """
@@ -32,8 +32,8 @@ def fingers(lengths, fans, droop):
     return {'lengths': lengths, 'fans': fans, 'droop': droop}
 
 
-CARAXES = dict(
-    name='caraxes', seed=11, tex_cells=34,
+CINDERWING = dict(
+    name='cinderwing', seed=11, tex_cells=34,
     torso_len=5.6, hip=(0.78, 0.92), waist=(0.72, 0.88), chest=(0.98, 1.22), chest_lift=0.3,
     neck=dict(len=7.4, n=10, base=(0.7, 0.82), mid=(0.36, 0.4), end=(0.27, 0.3), a0=38, a1=-30),
     tail=dict(len=10.5, m=14, base=(0.62, 0.72), tip=0.03),
@@ -56,8 +56,8 @@ CARAXES = dict(
                  horn=(0.025, 0.017, 0.015), eye=(0.95, 0.72, 0.12), metallic=0.12, roughness=0.62, wear=0.0),
 )
 
-VERMITHOR = dict(
-    name='vermithor', seed=23, tex_cells=28,
+BRAZENHIDE = dict(
+    name='brazenhide', seed=23, tex_cells=28,
     torso_len=7.2, hip=(1.5, 1.6), waist=(1.55, 1.7), chest=(1.85, 2.1), chest_lift=0.3, back_band=1.0,
     neck=dict(len=5.0, n=9, base=(1.4, 1.55), mid=(1.0, 1.08), end=(0.8, 0.86), a0=34, a1=-24),
     tail=dict(len=9.2, m=12, base=(1.3, 1.4), tip=0.06),
@@ -79,8 +79,8 @@ VERMITHOR = dict(
                  horn=(0.035, 0.026, 0.02), eye=(1.0, 0.55, 0.08), metallic=0.38, roughness=0.5, wear=0.15),
 )
 
-VHAGAR = dict(
-    name='vhagar', seed=37, tex_cells=24,
+ELDERSCALE = dict(
+    name='elderscale', seed=37, tex_cells=24,
     torso_len=9.2, hip=(2.0, 2.1), waist=(2.1, 2.25), chest=(2.4, 2.65), chest_lift=0.25, back_band=0.9,
     neck=dict(len=5.6, n=9, base=(1.9, 2.05), mid=(1.4, 1.5), end=(1.1, 1.18), a0=26, a1=-22),
     tail=dict(len=12.0, m=12, base=(1.75, 1.85), tip=0.08),
@@ -101,7 +101,7 @@ VHAGAR = dict(
                  horn=(0.18, 0.17, 0.14), eye=(0.82, 0.78, 0.25), metallic=0.05, roughness=0.78, wear=0.65),
 )
 
-SPECS = {s['name']: s for s in (CARAXES, VERMITHOR, VHAGAR)}
+SPECS = {s['name']: s for s in (CINDERWING, BRAZENHIDE, ELDERSCALE)}
 
 
 # ------------------------------------------------------------------------------------------------ builder
@@ -254,8 +254,8 @@ def build_dragon(spec, materials):
         tip = base + up * size - tangent * size * 0.55
         cone(body, base, tip, max(0.03, sizes[i][0] * 0.28), 5, weights[i], HORN)
 
-    # Tail-side spikes in a row, as on Caraxes.
-    if name == 'caraxes':
+    # Tail-side spikes in a row, as on Cinderwing.
+    if name == 'cinderwing':
         for i in range(0, len(tail_pts) - 6, 2):
             t = (i + 2) / (len(tail_pts) - 1)
             w, h = tail_sizes(t)
@@ -548,8 +548,16 @@ def build_dragon(spec, materials):
     lowest = min(min(v[2] for v in legs.verts), 0.0)
     ground_offset = -lowest
 
-    objects = [body.build(materials, armature), head.build(materials, armature), jaw.build(materials, armature),
-               wing_bones_part.build(materials, armature), legs.build(materials, armature)]
+    size = (neck_spec['len'] + tail_spec['len'] + L + Lh) / 25
+
+    def relief(cuts, wrinkle, plates, plate_size):
+        return dict(skin=(SKIN, BELLY, BACK), cuts=cuts, scale=size, wrinkle=wrinkle, plates=plates, plate_size=plate_size * size, seed=spec['seed'])
+
+    objects = [body.build(materials, armature, relief(1, 0.07, 0.03, 0.42)),
+               head.build(materials, armature, relief(2, 0.025, 0.012, 0.16)),
+               jaw.build(materials, armature, relief(2, 0.02, 0.01, 0.16)),
+               wing_bones_part.build(materials, armature, relief(1, 0.02, 0.012, 0.2)),
+               legs.build(materials, armature, relief(1, 0.05, 0.025, 0.3))]
     for mem in membrane_parts.values():
         objects.append(mem.build(materials, armature))
 

@@ -4,7 +4,7 @@ import type { FlyingMountTuning } from '../mounts/MountModel';
 import { DragonModel } from './DragonModel';
 import { DragonRig, type DragonMeta } from './DragonRig';
 
-export type DragonId = 'caraxes' | 'vermithor' | 'vhagar';
+export type DragonId = 'cinderwing' | 'brazenhide' | 'elderscale';
 
 export interface DragonProfile {
   id: DragonId;
@@ -24,20 +24,20 @@ export interface DragonProfile {
   skill: number;
 }
 
-/** Stats follow the show: Caraxes is the fastest, Vermithor the second-largest, Vhagar the biggest and hardest-hitting. */
+/** Stats follow the show: Cinderwing is the fastest, Brazenhide the second-largest, Elderscale the biggest and hardest-hitting. */
 export const DRAGON_PROFILES: Record<DragonId, DragonProfile> = {
-  caraxes: {
-    id: 'caraxes', name: 'Caraxes', title: 'The Blood Wyrm',
+  cinderwing: {
+    id: 'cinderwing', name: 'Cinderwing', title: 'The Ember Serpent',
     maxHealth: 3000, biteDamage: 170, fireDps: 210, biteCooldown: 1.7, fireCooldown: 6.5, buffetCooldown: 5,
     airTopSpeed: 64, groundTopSpeed: 13, turnRate: 1.15, skill: 0.8,
   },
-  vermithor: {
-    id: 'vermithor', name: 'Vermithor', title: 'The Bronze Fury',
+  brazenhide: {
+    id: 'brazenhide', name: 'Brazenhide', title: 'The Bronze Warden',
     maxHealth: 4200, biteDamage: 210, fireDps: 250, biteCooldown: 2.1, fireCooldown: 7.5, buffetCooldown: 5.5,
     airTopSpeed: 50, groundTopSpeed: 11, turnRate: 0.9, skill: 0.7,
   },
-  vhagar: {
-    id: 'vhagar', name: 'Vhagar', title: 'Queen of All Dragons',
+  elderscale: {
+    id: 'elderscale', name: 'Elderscale', title: 'The Elder Tyrant',
     maxHealth: 5600, biteDamage: 260, fireDps: 290, biteCooldown: 2.5, fireCooldown: 8.5, buffetCooldown: 6,
     airTopSpeed: 44, groundTopSpeed: 9, turnRate: 0.72, skill: 0.6,
   },
@@ -51,7 +51,7 @@ export interface DragonInstance {
   model: DragonModel;
   tuning: FlyingMountTuning;
   meta: DragonMeta;
-  /** Dragon size relative to Caraxes, used to scale cameras and effects. */
+  /** Dragon size relative to Cinderwing, used to scale cameras and effects. */
   scale: number;
 }
 

@@ -188,9 +188,9 @@ export interface Lair {
 
 /** Where each dragon makes its home. */
 export const LAIRS: Record<string, Lair> = {
-  vermithor: { x: 1190, z: -645, altitude: 150, patrol: 240 },
-  vhagar: { x: -470, z: 60, altitude: 90, patrol: 260 },
-  caraxes: { x: 990, z: 600, altitude: 90, patrol: 200 },
+  brazenhide: { x: 1190, z: -645, altitude: 150, patrol: 240 },
+  elderscale: { x: -470, z: 60, altitude: 90, patrol: 260 },
+  cinderwing: { x: 990, z: 600, altitude: 90, patrol: 200 },
 };
 
 /** Where the player begins: beside the Dragonpit. */

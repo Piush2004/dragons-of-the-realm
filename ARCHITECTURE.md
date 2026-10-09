@@ -7,7 +7,7 @@ scripts. No backend and no external services.
 tools/blender/             headless Blender scripts that generate every 3D asset
   assetlib.py              shared mesh builders, procedural textures, architecture kit
   dragonlib.py             dragon sweeps, scale/membrane textures, armature helpers
-  build_dragons.py         Caraxes, Vermithor, Vhagar: skinned meshes + bone rig + rig JSON
+  build_dragons.py         Cinderwing, Brazenhide, Elderscale: skinned meshes + bone rig + rig JSON
   build_landmarks.py       Red Keep, Dragonpit, Dragonstone, Harrenhal, High Tide, Great Sept
   build_structures.py      houses, barn, tower, fence
   build_environment.py     trees, rocks, grass
