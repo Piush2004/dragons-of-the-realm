@@ -112,6 +112,59 @@ export const PEGASUS_CAMERA_MODES: CameraMode[] = [
   },
 ];
 
+export const DRAGON_CAMERA_MODES: CameraMode[] = [
+  {
+    id: 'chase',
+    label: 'Chase',
+    offset: new THREE.Vector3(0, 5.5, -19),
+    lookAt: new THREE.Vector3(0, 1.2, 6),
+    fov: 60,
+    speedFov: 12,
+    followRate: 5,
+    speedPullback: 0.25,
+  },
+  {
+    id: 'chase_far',
+    label: 'Far Chase',
+    offset: new THREE.Vector3(0, 10, -32),
+    lookAt: new THREE.Vector3(0, 0.5, 8),
+    fov: 55,
+    speedFov: 10,
+    followRate: 4,
+    speedPullback: 0.3,
+  },
+  {
+    id: 'side',
+    label: 'Wingside',
+    offset: new THREE.Vector3(15, 2.5, 6),
+    lookAt: new THREE.Vector3(0, 0.3, 1.5),
+    fov: 50,
+    speedFov: 6,
+    followRate: 7,
+    speedPullback: 0,
+  },
+  {
+    id: 'front',
+    label: 'Head-on',
+    offset: new THREE.Vector3(5, 1.5, 15),
+    lookAt: new THREE.Vector3(0, 0.3, 3),
+    fov: 50,
+    speedFov: 6,
+    followRate: 7,
+    speedPullback: 0,
+  },
+  {
+    id: 'rider',
+    label: 'Rider',
+    offset: new THREE.Vector3(0, 1.6, 0.9),
+    lookAt: new THREE.Vector3(0, 1.0, 14),
+    fov: 75,
+    speedFov: 8,
+    followRate: null,
+    speedPullback: 0,
+  },
+];
+
 /** Player camera with switchable views, speed-sensitive FOV, look-back and impact shake. */
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;

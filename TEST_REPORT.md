@@ -25,6 +25,26 @@ suite in the repo yet, and nothing here was play-tested by hand with a keyboard.
 | Gamepad | Not run | not implemented |
 | Races, AI, garage, saves, menus, audio | Blocked | not implemented |
 
+## Dragon (v0.3.0), same scripted method
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Type check and production build | Passed | no errors |
+| Take-off, climb, cruise | Passed | 60 m altitude, 214 km/h in level flight |
+| Descend and land, then walk | Passed | grounded, HUD shows WALK, 38 km/h on foot |
+| Head leads the turn | Passed | 0.15 s into a turn: head segment 0.067 rad, base segment 0.002 rad; equal after about 1.7 s |
+| Neck bends into turns | Passed | 1.12 rad total neck yaw at full turn input |
+| Neck looks up in climbs, down in dives | Passed | summed neck pitch -0.43 rad climbing, +0.49 rad diving |
+| Head stays level in a bank | Passed | body rolled 0.75 rad, head up-vector y 0.97 (was 0.77 before stabilisation) |
+| Roar | Passed | jaw opens to 0.75 rad while F is held |
+| Wing, neck and tail appearance | Passed | screenshots in level flight, banked turn (side and head-on) and standing |
+| Walk cycle, folded-wing pose, tail motion, wing-beat neck pump | Not run | code runs, motion not watched in real time |
+| Pegasus mode after the controller refactor | Passed | gallops at 66 km/h, takes off to 19 m in 2 s |
+| Dragon cameras, real key presses | Not run | |
+
+Dragon known issues: folded wings on the ground read as a small bundle on the back rather than
+resting wrists on the ground; it is built from simple shapes, with no skinned mesh or textures;
+walk top speed overshoots its 32 km/h setting slightly.
+
 ## Pegasus (v0.2.0), same scripted method
 | Check | Result | Evidence |
 | --- | --- | --- |

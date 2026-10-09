@@ -13,7 +13,7 @@
 | 8 QA and optimization | Ongoing |
 | 9 Release packaging | Not started (static web build works) |
 
-Current player mount: pegasus (ground + flight). Car kept behind `?mount=car`.
+Current player mount: dragon (ground + flight). Pegasus and car kept behind `?mount=pegasus` and `?mount=car`.
 
 ## Next priorities
 1. Milestone 4: checkpoint race logic, countdown, AI opponents following the track spline, results.

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-10-09
+- Player is now a red dragon (original wyvern-style design): 11-segment neck, 18-segment tail,
+  skeletal bat wings with finger bones and a membrane rebuilt every frame, hind legs, horns, jaw.
+- Neck animation: the head leads turns and each segment follows with a delay; looks up in climbs
+  and down in dives; pumps with the wing beat; idle sway and glances; the head is stabilised
+  against the world so it stays near level while the body banks.
+- Tail follow-through, wing fold on the ground, outer-wing lag on each stroke, legs trail in flight.
+- Roar (hold F): jaw opens and the head lifts. No sound yet.
+- Pegasus flight code generalised into `FlyingMountController` with per-creature tuning;
+  pegasus kept at `?mount=pegasus`, car at `?mount=car`.
+
 ## 0.2.0 - 2026-10-09
 - Player is now a pegasus: gallop on the terrain, flap to take off and climb, glide, descend and land.
 - Procedural pegasus model with gallop cycle, wing fold on the ground and wing-beat animation in flight

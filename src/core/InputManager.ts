@@ -6,6 +6,8 @@ export interface DriveInput {
   handbrake: boolean;
   /** Shift / Q: descend (flying mounts only). */
   descend: boolean;
+  /** F: creature action (roar). */
+  action: boolean;
 }
 
 const THROTTLE_KEYS = ['KeyW', 'ArrowUp'];
@@ -50,6 +52,7 @@ export class InputManager {
       steer,
       handbrake: this.anyPressed(HANDBRAKE_KEYS),
       descend: this.anyPressed(DESCEND_KEYS),
+      action: this.pressed.has('KeyF'),
     };
   }
 }

@@ -5,8 +5,11 @@ import { World } from './world/World';
 import { VehicleController } from './vehicle/VehicleController';
 import { VEHICLE_CONFIGS } from './vehicle/VehicleConfig';
 import { InputManager, type DriveInput } from './core/InputManager';
-import { CameraRig, CAR_CAMERA_MODES, PEGASUS_CAMERA_MODES } from './camera/CameraRig';
-import { PegasusController } from './pegasus/PegasusController';
+import { CameraRig, CAR_CAMERA_MODES, DRAGON_CAMERA_MODES, PEGASUS_CAMERA_MODES } from './camera/CameraRig';
+import { FlyingMountController } from './mounts/FlyingMountController';
+import { DRAGON_TUNING, PEGASUS_TUNING } from './mounts/MountTunings';
+import { DragonModel } from './dragon/DragonModel';
+import { PegasusModel } from './pegasus/PegasusModel';
 import type { PlayerActor } from './core/PlayerActor';
 import { HUD } from './ui/HUD';
 import { PostProcessing } from './core/PostProcessing';
@@ -27,15 +30,35 @@ const world = new World(scene, physics, renderer);
 
 const startTransform = world.track.getStartTransform();
 const startPos = new CANNON.Vec3(startTransform.position.x, startTransform.position.y + 0.9, startTransform.position.z);
-// The pegasus is the default mount; add ?mount=car to the URL to drive the car instead.
-const useCar = new URLSearchParams(window.location.search).get('mount') === 'car';
-const vehicle: PlayerActor = useCar
-  ? new VehicleController(physics, VEHICLE_CONFIGS.verdant_rs, scene, startPos)
-  : new PegasusController(physics, scene, (x, z) => world.terrain.getHeightAt(x, z), startPos);
+// The dragon is the default mount; ?mount=pegasus or ?mount=car select the others.
+const mount = new URLSearchParams(window.location.search).get('mount') ?? 'dragon';
+const heightAt = (x: number, z: number) => world.terrain.getHeightAt(x, z);
+
+function createPlayer(): { actor: PlayerActor; cameraModes: typeof CAR_CAMERA_MODES } {
+  if (mount === 'car') {
+    return {
+      actor: new VehicleController(physics, VEHICLE_CONFIGS.verdant_rs, scene, startPos),
+      cameraModes: CAR_CAMERA_MODES,
+    };
+  }
+  if (mount === 'pegasus') {
+    return {
+      actor: new FlyingMountController(physics, scene, new PegasusModel(), PEGASUS_TUNING, heightAt, startPos),
+      cameraModes: PEGASUS_CAMERA_MODES,
+    };
+  }
+  return {
+    actor: new FlyingMountController(physics, scene, new DragonModel(), DRAGON_TUNING, heightAt, startPos),
+    cameraModes: DRAGON_CAMERA_MODES,
+  };
+}
+
+const player = createPlayer();
+const vehicle = player.actor;
 vehicle.resetTo(startPos, startTransform.yaw);
 
 const input = new InputManager();
-const cameraRig = new CameraRig(window.innerWidth / window.innerHeight, useCar ? CAR_CAMERA_MODES : PEGASUS_CAMERA_MODES);
+const cameraRig = new CameraRig(window.innerWidth / window.innerHeight, player.cameraModes);
 const hud = new HUD(container);
 hud.setHelp(vehicle.helpText);
 const postFx = new PostProcessing(renderer, scene, cameraRig.camera);
@@ -88,7 +111,7 @@ function tick(): void {
 
 /** Deterministic fixed-step simulation for automated tests (independent of requestAnimationFrame). */
 function simulate(seconds: number, driveInput: Partial<DriveInput> = {}): void {
-  const full: DriveInput = { throttle: 0, brake: 0, steer: 0, handbrake: false, descend: false, ...driveInput };
+  const full: DriveInput = { throttle: 0, brake: 0, steer: 0, handbrake: false, descend: false, action: false, ...driveInput };
   const steps = Math.round(seconds * 60);
   for (let i = 0; i < steps; i++) update(1 / 60, full);
   postFx.render();

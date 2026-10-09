@@ -74,7 +74,7 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
   },
 };
 
-const SHADOW_HALF_EXTENT = 85;
+const SHADOW_HALF_EXTENT = 110;
 const SUN_DISTANCE = 400;
 
 /**

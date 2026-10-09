@@ -18,9 +18,12 @@ mountains, with mixed conifer and broadleaf forest. Planned regions: coast, city
 off-road trails, festival hub.
 
 ## Player mount
-The player rides a white pegasus (default). It gallops at up to about 61 km/h, takes off by
-flapping, flies at up to about 158 km/h and glides when the rider stops flapping. The car fleet
-below is kept and reachable with `?mount=car`.
+The player rides a red dragon (default): a wyvern-style design with a long serpentine neck,
+bat wings, hind legs and a long tail. It lumbers on foot, takes off by flapping, flies at up to
+about 210 km/h and glides when the rider stops flapping. Hold F to roar.
+
+A white pegasus (`?mount=pegasus`, gallops at about 61 km/h, flies at about 158 km/h) and the
+car fleet below (`?mount=car`) are also kept.
 
 ## Vehicles
 | Id | Name | Style | Drive | Notes |
