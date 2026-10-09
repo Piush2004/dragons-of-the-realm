@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 - 2026-10-09
+- Player is now a pegasus: gallop on the terrain, flap to take off and climb, glide, descend and land.
+- Procedural pegasus model with gallop cycle, wing fold on the ground and wing-beat animation in flight
+  (beat rate and depth follow climb effort and speed), banking, pitch, tail and neck motion.
+- Pegasus camera set: Chase, Far Chase, Wingside, Rider.
+- `PlayerActor` interface so the loop, camera and HUD work with any mount; the car remains at `?mount=car`.
+- HUD shows GALLOP or altitude for the pegasus.
+- Dev server now binds to localhost only (was exposed to the local network).
+- Space and arrow keys no longer scroll the page.
+
 ## 0.1.0 - 2026-10-09
 - Project scaffold: Vite + TypeScript + Three.js + cannon-es.
 - Raycast-vehicle car with throttle, brake, reverse, handbrake, engine braking and parking hold.

@@ -2,20 +2,28 @@ export interface DriveInput {
   throttle: number; // 0..1
   brake: number; // 0..1
   steer: number; // -1..1 (left negative, right positive)
+  /** Space: handbrake for cars, flap/ascend for the pegasus. */
   handbrake: boolean;
+  /** Shift / Q: descend (flying mounts only). */
+  descend: boolean;
 }
 
 const THROTTLE_KEYS = ['KeyW', 'ArrowUp'];
 const BRAKE_KEYS = ['KeyS', 'ArrowDown'];
 const LEFT_KEYS = ['KeyA', 'ArrowLeft'];
 const RIGHT_KEYS = ['KeyD', 'ArrowRight'];
-const HANDBRAKE_KEYS = ['Space'];
+const HANDBRAKE_KEYS = ['Space', 'KeyE'];
+const DESCEND_KEYS = ['ShiftLeft', 'ShiftRight', 'KeyQ'];
 
 export class InputManager {
   private readonly pressed = new Set<string>();
 
   constructor() {
-    window.addEventListener('keydown', (e) => this.pressed.add(e.code));
+    window.addEventListener('keydown', (e) => {
+      // Stop Space / arrows from scrolling the page while playing.
+      if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+      this.pressed.add(e.code);
+    });
     window.addEventListener('keyup', (e) => this.pressed.delete(e.code));
     // Avoid stuck keys when the window loses focus mid-press.
     window.addEventListener('blur', () => this.pressed.clear());
@@ -41,6 +49,7 @@ export class InputManager {
       brake: this.anyPressed(BRAKE_KEYS) ? 1 : 0,
       steer,
       handbrake: this.anyPressed(HANDBRAKE_KEYS),
+      descend: this.anyPressed(DESCEND_KEYS),
     };
   }
 }

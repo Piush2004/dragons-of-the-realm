@@ -2,6 +2,7 @@ import * as CANNON from 'cannon-es';
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DriveInput } from '../core/InputManager';
+import type { HudStatus, PlayerActor } from '../core/PlayerActor';
 import { getWheelLayout, type VehicleConfig } from './VehicleConfig';
 import { buildCarBody, buildWheel } from './CarModelBuilder';
 
@@ -11,12 +12,14 @@ const WHEEL_ORDER = ['frontLeft', 'frontRight', 'rearLeft', 'rearRight'] as cons
 type WheelName = (typeof WHEEL_ORDER)[number];
 
 /** Arcade-leaning but physically grounded car: raycast suspension, real engine/brake forces, drift via reduced rear slip grip. */
-export class VehicleController {
+export class VehicleController implements PlayerActor {
   readonly config: VehicleConfig;
   readonly chassisBody: CANNON.Body;
   readonly vehicle: CANNON.RaycastVehicle;
   readonly chassisMesh: THREE.Group;
   readonly wheelMeshes: Record<WheelName, THREE.Group>;
+  readonly helpText =
+    'WASD / Arrows — drive   ·   Space — handbrake   ·   C — camera   ·   B — look back   ·   R — reset';
 
   private currentSteer = 0;
   private rpm = 800; // idle RPM, purely presentational
@@ -171,6 +174,19 @@ export class VehicleController {
       mesh.position.set(connection.x, connection.y - this.visualSuspension[i], connection.z);
       mesh.rotation.set(wheel.rotation, wheel.steering, 0, 'YXZ');
     }
+  }
+
+  get mesh(): THREE.Group {
+    return this.chassisMesh;
+  }
+
+  get body(): CANNON.Body {
+    return this.chassisBody;
+  }
+
+  getHudStatus(): HudStatus {
+    const gear = this.getGear();
+    return { label: gear === 0 ? 'GEAR R' : `GEAR ${gear}`, bar: Math.min(1, this.rpm / 7200) };
   }
 
   /** Largest recent impact speed (m/s); decays over time. Drives camera shake and, later, audio. */

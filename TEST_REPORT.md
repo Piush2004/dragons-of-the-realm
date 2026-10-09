@@ -25,7 +25,25 @@ suite in the repo yet, and nothing here was play-tested by hand with a keyboard.
 | Gamepad | Not run | not implemented |
 | Races, AI, garage, saves, menus, audio | Blocked | not implemented |
 
+## Pegasus (v0.2.0), same scripted method
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Type check | Passed | no errors |
+| Gallop | Passed | 74 km/h after 4 s of throttle; coasts to 2 km/h in 3 s; brakes to rest |
+| Turning | Passed | 1.9 rad of heading change in 1 s of left input on the ground |
+| Take-off and climb | Passed | 35 m altitude after 3 s of flapping |
+| Cruise | Passed | 171 km/h in level flight |
+| Glide | Passed | lost 5.6 m of altitude in 5 s with no input |
+| Descend and land | Passed | back on the ground and reported grounded |
+| Tree collision on the ground | Passed | stopped 0.93 m from the trunk centre (sphere 0.65 m + trunk 0.4 m) |
+| Wing animation | Passed | screenshots show folded wings on the ground and up/down strokes in flight |
+| Final tail and wing-fold pose tweak | Not run | loads and flies, but the new pose was not looked at |
+| Car mode (`?mount=car`) after the refactor | Passed | loads, 4 wheels grounded, 52 km/h after 4 s of throttle |
+| Pegasus cameras, real key presses, flight into trees or mountains | Not run | |
+
 ## Known issues
+- The pegasus is built from simple shapes (capsules, cylinders, flat feather panels); it is not a sculpted model.
+- On the ground the pegasus follows terrain height directly, so it can run up any slope.
 - The test autopilot drifted up to 6.8 m from the centreline in one corner (road half-width is 6 m). This is crude test steering and is not confirmed as a handling fault.
 - Cockpit view has no interior model; you see roof lining and bonnet only.
 - Trees are low-poly, and only their trunks collide.

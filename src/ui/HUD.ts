@@ -42,10 +42,9 @@ export class HUD {
     this.helpEl = document.createElement('div');
     this.helpEl.style.cssText = `
       position: absolute; top: 20px; left: 20px; color: #fff; font-family: 'Segoe UI', sans-serif;
-      font-size: 14px; background: rgba(0,0,0,0.35); padding: 10px 14px; border-radius: 8px;
+      font-size: 13px; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 8px; max-width: calc(100% - 64px);
       line-height: 1.5; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
     `;
-    this.helpEl.textContent = 'WASD / Arrows — drive   ·   Space — handbrake   ·   C — camera   ·   B — look back   ·   R — reset';
     container.appendChild(this.helpEl);
 
     this.messageEl = document.createElement('div');
@@ -68,11 +67,14 @@ export class HUD {
     }, durationMs);
   }
 
-  update(speedKmh: number, gear: number, rpm: number): void {
+  setHelp(text: string): void {
+    this.helpEl.textContent = text;
+  }
+
+  update(speedKmh: number, label: string, barRatio: number): void {
     this.speedEl.textContent = Math.round(speedKmh).toString();
-    this.gearEl.textContent = gear === 0 ? 'GEAR R' : `GEAR ${gear}`;
-    const rpmRatio = Math.min(1, rpm / 7200);
-    this.rpmFillEl.style.width = `${rpmRatio * 100}%`;
-    this.rpmFillEl.style.background = rpmRatio > 0.85 ? '#ff3b30' : '#ffb020';
+    this.gearEl.textContent = label;
+    this.rpmFillEl.style.width = `${barRatio * 100}%`;
+    this.rpmFillEl.style.background = barRatio > 0.85 ? '#ff3b30' : '#ffb020';
   }
 }

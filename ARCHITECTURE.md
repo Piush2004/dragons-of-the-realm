@@ -23,6 +23,10 @@ src/
     SkyManager.ts            sky dome, sun, fog, environment map, time-of-day presets
     Vegetation.ts            instanced trees + trunk collider list
     ProceduralTextures.ts    canvas-generated asphalt / grass textures
+  pegasus/
+    PegasusModel.ts          procedural winged horse + gallop / wing animation
+    PegasusController.ts     ground + flight controller on a cannon sphere
+  core/PlayerActor.ts        interface shared by the car and the pegasus
   camera/CameraRig.ts        camera modes, look-back, speed FOV, impact shake
   ui/HUD.ts                  speed / gear / RPM, help line, toast
 ```

@@ -17,6 +17,11 @@ so the result is stylised-realistic, not photoreal.
 mountains, with mixed conifer and broadleaf forest. Planned regions: coast, city, mountain pass,
 off-road trails, festival hub.
 
+## Player mount
+The player rides a white pegasus (default). It gallops at up to about 61 km/h, takes off by
+flapping, flies at up to about 158 km/h and glides when the rider stops flapping. The car fleet
+below is kept and reachable with `?mount=car`.
+
 ## Vehicles
 | Id | Name | Style | Drive | Notes |
 | --- | --- | --- | --- | --- |

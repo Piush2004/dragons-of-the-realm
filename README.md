@@ -1,6 +1,7 @@
 # Project Horizon
 
-An original open-world driving game for PC, running in the browser (TypeScript + Three.js + cannon-es).
+An original open-world riding and driving game for PC, running in the browser (TypeScript + Three.js + cannon-es).
+You play a pegasus that gallops and flies; the car is still available at http://localhost:5173/?mount=car.
 
 ## Requirements
 - Node.js 20+ (developed on 24.16) and npm
@@ -19,7 +20,21 @@ npm run build     # type-checks, then writes a static bundle to dist/
 npm run preview   # serves the built bundle
 ```
 
-## Controls
+## Controls: pegasus (default)
+| Key | Action |
+| --- | --- |
+| W / Up | Speed up |
+| S / Down | Slow down |
+| A, D / Left, Right | Turn (banks in the air) |
+| Space or E | Flap: take off and climb |
+| Shift or Q | Descend |
+| C | Cycle camera (Chase, Far Chase, Wingside, Rider) |
+| B (hold) | Look back |
+| R | Reset to the start line |
+
+Let go of Space at speed to glide. Descend to the ground to land and gallop.
+
+## Controls: car (`?mount=car`)
 | Key | Action |
 | --- | --- |
 | W / Up | Throttle |
@@ -31,7 +46,7 @@ npm run preview   # serves the built bundle
 | R | Reset car to the start line |
 
 ## Status
-Early playable prototype: free-roam driving only. See ROADMAP.md for what is and is not built,
+Early playable prototype: free-roam riding, flying and driving only. See ROADMAP.md for what is and is not built,
 and TEST_REPORT.md for what has been verified.
 
 ## Other docs

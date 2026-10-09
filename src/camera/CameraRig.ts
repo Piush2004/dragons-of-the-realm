@@ -16,7 +16,7 @@ export interface CameraMode {
   speedPullback: number;
 }
 
-export const CAMERA_MODES: CameraMode[] = [
+export const CAR_CAMERA_MODES: CameraMode[] = [
   {
     id: 'chase',
     label: 'Chase',
@@ -69,10 +69,54 @@ export const CAMERA_MODES: CameraMode[] = [
   },
 ];
 
+export const PEGASUS_CAMERA_MODES: CameraMode[] = [
+  {
+    id: 'chase',
+    label: 'Chase',
+    offset: new THREE.Vector3(0, 2.6, -8),
+    lookAt: new THREE.Vector3(0, 0.9, 4),
+    fov: 60,
+    speedFov: 12,
+    followRate: 6,
+    speedPullback: 0.25,
+  },
+  {
+    id: 'chase_far',
+    label: 'Far Chase',
+    offset: new THREE.Vector3(0, 5, -15),
+    lookAt: new THREE.Vector3(0, 0.6, 5),
+    fov: 55,
+    speedFov: 10,
+    followRate: 4.5,
+    speedPullback: 0.3,
+  },
+  {
+    id: 'side',
+    label: 'Wingside',
+    offset: new THREE.Vector3(6.5, 1.4, 2.5),
+    lookAt: new THREE.Vector3(0, 0.6, 0.4),
+    fov: 50,
+    speedFov: 6,
+    followRate: 8,
+    speedPullback: 0,
+  },
+  {
+    id: 'rider',
+    label: 'Rider',
+    offset: new THREE.Vector3(0, 1.75, -0.1),
+    lookAt: new THREE.Vector3(0, 1.3, 12),
+    fov: 72,
+    speedFov: 8,
+    followRate: null,
+    speedPullback: 0,
+  },
+];
+
 /** Player camera with switchable views, speed-sensitive FOV, look-back and impact shake. */
 export class CameraRig {
   readonly camera: THREE.PerspectiveCamera;
 
+  private readonly modes: CameraMode[];
   private modeIndex = 0;
   private readonly currentPosition = new THREE.Vector3();
   private readonly currentLook = new THREE.Vector3();
@@ -80,23 +124,24 @@ export class CameraRig {
   private shake = 0;
   private shakeTime = 0;
 
-  constructor(aspect: number) {
+  constructor(aspect: number, modes: CameraMode[]) {
+    this.modes = modes;
     this.camera = new THREE.PerspectiveCamera(60, aspect, 0.15, 6000);
   }
 
   get mode(): CameraMode {
-    return CAMERA_MODES[this.modeIndex];
+    return this.modes[this.modeIndex];
   }
 
   /** Switches to the next view and returns it. */
   cycleMode(): CameraMode {
-    this.modeIndex = (this.modeIndex + 1) % CAMERA_MODES.length;
+    this.modeIndex = (this.modeIndex + 1) % this.modes.length;
     this.needsSnap = true;
     return this.mode;
   }
 
   setMode(id: string): void {
-    const index = CAMERA_MODES.findIndex((mode) => mode.id === id);
+    const index = this.modes.findIndex((mode) => mode.id === id);
     if (index >= 0) {
       this.modeIndex = index;
       this.needsSnap = true;

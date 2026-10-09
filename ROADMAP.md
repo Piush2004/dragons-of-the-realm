@@ -13,6 +13,8 @@
 | 8 QA and optimization | Ongoing |
 | 9 Release packaging | Not started (static web build works) |
 
+Current player mount: pegasus (ground + flight). Car kept behind `?mount=car`.
+
 ## Next priorities
 1. Milestone 4: checkpoint race logic, countdown, AI opponents following the track spline, results.
 2. Drift and grip tuning, a proper gear/RPM model, gamepad input.
