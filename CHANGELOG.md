@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 - 2026-10-09
+Graphics pass.
+- Post-processing: the scene renders in a half-float HDR buffer; SMAA is now the default antialiasing
+  (`?aa=msaa` keeps 4x MSAA as an option). A final grade pass adds a gentle contrast curve, saturation,
+  warm highlights and cool shadows, a vignette and dither against banding.
+- Sky: a drifting field of 46 soft cumulus clouds that follows the player, lit and shaded to match each
+  time-of-day preset. New `dusk` preset; press T to cycle golden hour, midday, sunset and dusk.
+- Terrain: two scales of the ground texture blend with distance to hide tiling, large-scale tone variation,
+  a procedural detail normal map, and finer per-vertex colour variation.
+- Fixes found while testing: dragon switching leaked GPU textures and geometries (skeletons were never
+  disposed; now +0 over repeated switches); castle platforms were uneven because the road smoothing fought
+  the platform (a Red Keep sample varied 12.5 m, now level to within 3.3 m at 0.8 of the radius); a walking
+  dragon could overshoot its speed cap.
+- Added an in-browser self-test suite (36 checks); see README.
+
 ## 0.5.0 - 2026-10-09
 - The three dragons are now original designs with original names: Cinderwing (The Ember Serpent),
   Brazenhide (The Bronze Warden) and Elderscale (The Elder Tyrant). Their silhouettes, colours and movement

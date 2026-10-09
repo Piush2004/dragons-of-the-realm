@@ -48,5 +48,10 @@ slow down to turn tightly, bite in range, breathe fire at mid range, buffet when
 after a close pass. If the player is on the ground they land and fight on foot. A slain dragon falls, and
 a replacement appears at its lair after a few seconds.
 
+## Look
+Sunlit, painterly fantasy: warm golden-hour light by default, a drifting cumulus sky, softly graded colour
+with a light vignette. T cycles golden hour, midday, sunset and dusk. The time of day is fixed per preset;
+there is no continuous day/night cycle.
+
 ## Not designed or built yet
 Progression, upgrades, saves, multiple missions, riders, a map, weather and a day/night cycle, sound.

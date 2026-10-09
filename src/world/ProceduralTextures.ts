@@ -135,3 +135,20 @@ export function createGrassTexture(anisotropy: number): THREE.Texture {
   ctx.putImageData(image, 0, 0);
   return finishTexture(canvas, true, anisotropy);
 }
+
+/** Fine, tileable ground relief (grass clumps and earth grain) used as a detail normal map. */
+export function createGroundNormalTexture(anisotropy: number): THREE.Texture {
+  const size = 256;
+  const rng = mulberry32(909);
+  const clump = createNoise2D(515);
+  const height = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const px = (x / size) * 10;
+      const py = (y / size) * 10;
+      const wrapped = (a: number, b: number) => clump(((a % 10) + 10) % 10, ((b % 10) + 10) % 10);
+      height[y * size + x] = fbm(wrapped, px, py, 3) * 0.7 + rng() * 0.3;
+    }
+  }
+  return finishTexture(heightToNormalCanvas(height, size, 2.2), false, anisotropy);
+}

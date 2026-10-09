@@ -6,12 +6,13 @@ import { Terrain } from './Terrain';
 import { Vegetation } from './Vegetation';
 import { Grass } from './Grass';
 import { Water } from './Water';
+import { Clouds } from './Clouds';
 import { Settlements } from './Settlements';
 import { AssetLibrary } from './AssetLibrary';
 import { ObstacleField } from '../physics/ObstacleField';
-import { createGrassTexture, createRoadTextures } from './ProceduralTextures';
+import { createGrassTexture, createGroundNormalTexture, createRoadTextures } from './ProceduralTextures';
 import { WATER_LEVEL } from './WorldConfig';
-import { LANDMARKS, ROADS, macroHeight } from './WorldMap';
+import { LANDMARKS, ROADS, macroHeight, padInfluence } from './WorldMap';
 
 const ASSET_FILES = ['/assets/environment.glb', '/assets/structures.glb', '/assets/landmarks.glb'];
 
@@ -32,6 +33,7 @@ export class World {
   private readonly vegetation: Vegetation;
   private readonly grass: Grass;
   private readonly water: Water;
+  private readonly clouds: Clouds;
 
   static async create(scene: THREE.Scene, physics: PhysicsWorld, renderer: THREE.WebGLRenderer): Promise<World> {
     const anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -45,13 +47,17 @@ export class World {
     const anisotropy = renderer.capabilities.getMaxAnisotropy();
 
     this.sky = new SkyManager(scene, renderer);
+    this.clouds = new Clouds();
+    scene.add(this.clouds.mesh);
+    this.sky.onPreset = (preset) => this.clouds.setLighting(new THREE.Color(...preset.cloudLit), new THREE.Color(...preset.cloudShade));
+    this.sky.onPreset(this.sky.current);
 
     const roadTextures = createRoadTextures(anisotropy);
-    this.tracks = ROADS.map((road) => new Track(road.points, roadHeight, roadTextures, road.width, 8, false));
+    this.tracks = ROADS.map((road) => new Track(road.points, roadHeight, roadTextures, road.width, 8, false, padInfluence));
     for (const track of this.tracks) scene.add(track.mesh);
 
     const centerline = this.tracks.flatMap((track) => track.getCenterlineSamples());
-    this.terrain = new Terrain(centerline, physics, createGrassTexture(anisotropy));
+    this.terrain = new Terrain(centerline, physics, createGrassTexture(anisotropy), createGroundNormalTexture(anisotropy));
     scene.add(this.terrain.mesh);
 
     this.water = new Water();
@@ -87,6 +93,7 @@ export class World {
     this.vegetation.update(viewer);
     this.grass.update(viewer, deltaSeconds);
     this.water.update(deltaSeconds);
+    this.clouds.update(viewer, deltaSeconds);
     this.sky.followTarget(viewer);
   }
 

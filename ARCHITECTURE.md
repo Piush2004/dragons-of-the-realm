@@ -15,7 +15,7 @@ public/assets/             generated GLB files (+ dragons/*.json rig data)
 
 src/
   main.ts                  bootstrap, game loop, spawning, input to combat, debug handle (window.__horizon)
-  core/                    InputManager, Noise, PostProcessing (bloom + ACES), PlayerActor
+  core/                    InputManager, Noise, PostProcessing (HDR buffer, bloom, ACES, SMAA, colour grade), PlayerActor
   physics/                 PhysicsWorld (cannon), ObstacleField (streamed tree colliders)
   world/
     WorldMap.ts            the realm's shape: coast, islands, hills, castle pads, settlements, roads, lairs
@@ -24,6 +24,7 @@ src/
     Settlements.ts         houses on jittered street grids
     Vegetation.ts          instanced forests with near/far detail swapping
     Grass.ts, Water.ts, SkyManager.ts, Track.ts, AssetLibrary.ts, ProceduralTextures.ts
+    Clouds.ts              instanced cloud billboards that follow the viewer, lit per time-of-day preset
   dragons/
     DragonRig.ts           drives skinned bones by model-space deltas from rest
     DragonModel.ts         animation: flight, walk, wing fold, neck, tail, head stabilisation, attacks
@@ -35,6 +36,7 @@ src/
     DragonAI.ts            lair patrol, pursuit, attack choice
     Particles.ts           fireball, smoke, dust and ember effects (GPU billboards)
   camera/CameraRig.ts      switchable views, speed FOV, shake, look-back, creature scale
+  debug/selftest.ts        in-browser self-test suite (world, flight, combat, switching, ai, stability, respawn)
   ui/                      HUD (speed, help) and CombatHud (health, cooldowns, name plates, kill feed)
 ```
 

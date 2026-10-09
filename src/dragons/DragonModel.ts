@@ -84,6 +84,10 @@ export class DragonModel implements MountModel {
     this.tailPitch = new Array(this.tailCount).fill(0);
   }
 
+  dispose(): void {
+    this.rig.dispose();
+  }
+
   get meta() {
     return this.rig.meta;
   }

@@ -31,6 +31,8 @@ export class Track {
     roadWidth = 10,
     checkpointCount = 24,
     closed = true,
+    /** 0..1 per point: how strongly to keep the raw ground height instead of the smoothed one (castle platforms). */
+    rawWeight?: (x: number, z: number) => number,
   ) {
     // Lay the path on the ground: sample the plan-view spline densely, read the terrain height under each
     // sample and smooth it, so the road follows the land's broad shape instead of every bump.
@@ -52,7 +54,10 @@ export class Track {
       }
       return sum / count;
     });
-    const points = raw.map((p, i) => new THREE.Vector3(p.x, smoothed[i], p.z));
+    const points = raw.map((p, i) => {
+      const keep = rawWeight ? rawWeight(p.x, p.z) : 0;
+      return new THREE.Vector3(p.x, smoothed[i] + (heights[i] - smoothed[i]) * keep, p.z);
+    });
     this.closed = closed;
     this.curve = new THREE.CatmullRomCurve3(points, closed, 'catmullrom', 0.5);
     this.roadWidth = roadWidth;

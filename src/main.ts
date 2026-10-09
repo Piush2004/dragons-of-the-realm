@@ -96,7 +96,8 @@ cameraRig.setScale(playerInstance.scale);
 const hud = new HUD(container);
 hud.setHelp(playerController.helpText);
 const combatHud = new CombatHud(container);
-const postFx = new PostProcessing(renderer, scene, cameraRig.camera);
+const aa = (params.get('aa') ?? 'smaa') as 'smaa' | 'msaa' | 'none';
+const postFx = new PostProcessing(renderer, scene, cameraRig.camera, { antialias: aa, samples: Number(params.get('msaa') ?? 4) });
 
 combat.onEvent = (message, kind) => {
   combatHud.showMessage(message, kind === 'kill' ? 'kill' : kind === 'death' ? 'death' : 'info');
@@ -158,6 +159,7 @@ window.addEventListener('keydown', (e) => {
     }
   }
   if (e.code === 'KeyC') hud.showMessage(`Camera: ${cameraRig.cycleMode().label}`);
+  if (e.code === 'KeyT') hud.showMessage(`Time of day: ${world.sky.cyclePreset().id}`);
   const digit = Number(e.code.replace('Digit', ''));
   if (digit >= 1 && digit <= DRAGON_IDS.length) switchDragon(DRAGON_IDS[digit - 1]);
 });

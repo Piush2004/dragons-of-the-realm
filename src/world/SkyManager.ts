@@ -18,6 +18,9 @@ export interface TimeOfDayPreset {
   fogNear: number;
   fogFar: number;
   exposure: number;
+  /** HDR colours of the sunlit and shaded sides of clouds. */
+  cloudLit: [number, number, number];
+  cloudShade: [number, number, number];
 }
 
 export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
@@ -37,6 +40,8 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     fogNear: 400,
     fogFar: 5200,
     exposure: 0.55,
+    cloudLit: [2.3, 1.95, 1.55],
+    cloudShade: [0.62, 0.7, 0.9],
   },
   sunset: {
     id: 'sunset',
@@ -54,6 +59,27 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     fogNear: 300,
     fogFar: 4200,
     exposure: 0.5,
+    cloudLit: [3.0, 1.45, 0.75],
+    cloudShade: [0.55, 0.34, 0.5],
+  },
+  dusk: {
+    id: 'dusk',
+    elevationDeg: 1.2,
+    azimuthDeg: 215,
+    turbidity: 9,
+    rayleigh: 3.9,
+    mieCoefficient: 0.02,
+    mieDirectionalG: 0.93,
+    sunLightColor: 0xff7a3d,
+    sunLightIntensity: 2.4,
+    ambientColor: 0x7c78b4,
+    groundAmbientColor: 0x2a2030,
+    fogColor: 0xb98a92,
+    fogNear: 300,
+    fogFar: 3600,
+    exposure: 0.62,
+    cloudLit: [2.4, 0.85, 0.55],
+    cloudShade: [0.32, 0.26, 0.5],
   },
   midday: {
     id: 'midday',
@@ -71,6 +97,8 @@ export const TIME_OF_DAY_PRESETS: Record<string, TimeOfDayPreset> = {
     fogNear: 500,
     fogFar: 6000,
     exposure: 0.4,
+    cloudLit: [2.2, 2.2, 2.2],
+    cloudShade: [0.7, 0.8, 1.0],
   },
 };
 
@@ -125,7 +153,12 @@ export class SkyManager {
     this.applyPreset(TIME_OF_DAY_PRESETS.golden);
   }
 
+  /** Fires after a preset is applied, e.g. so clouds can re-tint themselves. */
+  onPreset: (preset: TimeOfDayPreset) => void = () => {};
+  current: TimeOfDayPreset = TIME_OF_DAY_PRESETS.golden;
+
   applyPreset(preset: TimeOfDayPreset): void {
+    this.current = preset;
     const uniforms = this.sky.material.uniforms;
     uniforms.turbidity.value = preset.turbidity;
     uniforms.rayleigh.value = preset.rayleigh;
@@ -160,6 +193,15 @@ export class SkyManager {
     this.hemiLight.groundColor.set(preset.groundAmbientColor);
 
     this.scene.fog = new THREE.Fog(preset.fogColor, preset.fogNear, preset.fogFar);
+    this.onPreset(preset);
+  }
+
+  /** Steps to the next time of day and returns it. */
+  cyclePreset(): TimeOfDayPreset {
+    const order = ['golden', 'midday', 'sunset', 'dusk'];
+    const next = order[(order.indexOf(this.current.id) + 1) % order.length];
+    this.applyPreset(TIME_OF_DAY_PRESETS[next]);
+    return this.current;
   }
 
   /** Keeps the sun + shadow frustum centered on the player so shadows stay sharp while driving far from origin. */

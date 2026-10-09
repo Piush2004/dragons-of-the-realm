@@ -23,6 +23,8 @@ Open http://localhost:5173. The first load takes a few seconds while the world i
 Options on the URL:
 - `?dragon=cinderwing|brazenhide|elderscale` choose your dragon (default Cinderwing)
 - `?enemies=0..5` number of enemy dragons (default 2)
+- `?aa=smaa|msaa|none` antialiasing (default `smaa`, cheap; `msaa` is sharper but about half the frame rate on an integrated GPU); `?msaa=N` sets the sample count
+- `?selftest=1` run the in-browser self-test suite after loading and print the results to the console
 
 ## Controls
 | Input | Action |
@@ -37,6 +39,7 @@ Options on the URL:
 | C | Cycle camera (Chase, Far Chase, Wingside, Head-on, Rider) |
 | B (hold) | Look back |
 | 1 / 2 / 3 | Switch to Cinderwing / Brazenhide / Elderscale |
+| T | Cycle time of day (golden hour, midday, sunset, dusk) |
 | R | Reset to the Dragonpit (or rise again after dying) |
 
 Releasing W lets you glide slowly, which is how you fight at close quarters. Holding W flies at full
@@ -48,7 +51,10 @@ npm run typecheck   # strict TypeScript check
 npm run build       # type-check, then a static bundle in dist/
 npm run preview     # serve the built bundle
 ```
-There is no automated test suite yet. See TEST_REPORT.md for what was verified and how.
+There is no command-line test runner. Instead the game carries an in-browser self-test suite
+(`src/debug/selftest.ts`, 36 checks over the world, flight, combat, dragon switching, enemy AI, stability and
+respawn). Run it with `http://localhost:5173/?selftest=1` and read the console, or call
+`window.__horizon.selfTest()` from the console. See TEST_REPORT.md for what was verified and how.
 
 ## Regenerating the 3D assets
 ```bash

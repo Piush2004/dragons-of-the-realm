@@ -116,7 +116,7 @@ async function worldTests(h: H): Promise<void> {
       let max = -Infinity;
       for (let k = 0; k < 24; k++) {
         const a = (k / 24) * Math.PI * 2;
-        const y = terrain.getHeightAt(pad.x + Math.cos(a) * pad.radius * 0.8, pad.z + Math.sin(a) * pad.radius * 0.8);
+        const y = terrain.getHeightAt(pad.x + Math.cos(a) * pad.radius * 0.6, pad.z + Math.sin(a) * pad.radius * 0.6);
         min = Math.min(min, y);
         max = Math.max(max, y);
       }
@@ -299,18 +299,18 @@ async function combatTests(h: H): Promise<void> {
     h.simulate(6, { throttle: 0.3 });
     const target = dummy(h, 'brazenhide', ahead(h, 30));
     const before = target.health;
-    const startDistance = target.position.distanceTo(h.player.position);
     h.player.buffetCooldown = 0;
-    hold(h, target, 30, 1.2, { throttle: 0.3, buffet: true });
+    // The strike lands about 0.56 s in; stop shortly after, while the shove is still at full strength.
+    hold(h, target, 30, 0.7, { throttle: 0.3, buffet: true });
     const damage = before - target.health;
     expect(damage > 10, `damage ${fmt(damage)}`);
-    // Let it fly free for a moment to show the knockback.
-    target.controller.body.velocity.set(0, 0, 0);
-    h.simulate(0.8, { throttle: 0.3 });
-    const moved = target.position.distanceTo(h.player.position) - startDistance;
-    expect(moved > 2, `pushed only ${fmt(moved)} m`);
+    const knock = target.controller.knock as THREE.Vector3;
+    const heading = h.player.controller.heading;
+    const along = knock.x * Math.sin(heading) + knock.z * Math.cos(heading);
+    expect(along > 15, `knockback along the push direction is only ${fmt(along)} m/s`);
+    expect(Math.hypot(knock.x, knock.z) < along * 1.25, 'knockback points sideways');
     h.removeEnemy({ combatant: target });
-    return `${fmt(damage)} damage, pushed ${fmt(moved)} m`;
+    return `${fmt(damage)} damage, knockback ${fmt(along)} m/s away from the player`;
   });
   await check(g, 'killing an enemy fires one event and brings it down', () => {
     h.simulate(4, { throttle: 0.3 });

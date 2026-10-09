@@ -75,6 +75,11 @@ export class DragonRig {
     }
   }
 
+  /** Releases the GPU bone textures of this dragon's skeletons. */
+  dispose(): void {
+    for (const mesh of this.skinned) mesh.skeleton.dispose();
+  }
+
   has(name: string): boolean {
     return this.bones.has(name);
   }

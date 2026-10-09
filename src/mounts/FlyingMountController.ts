@@ -19,7 +19,7 @@ export class FlyingMountController implements PlayerActor {
   mesh: THREE.Object3D;
   readonly body: CANNON.Body;
   readonly helpText =
-    'W/S speed · A/D turn · Space climb · Shift dive · J bite · F fire · K wing buffet · C camera · B look back · R reset';
+    'W/S speed · A/D turn · Space climb · Shift dive · J bite · F fire · K wing buffet · C camera · T time of day · B look back · R reset';
 
   model: MountModel;
   tuning: FlyingMountTuning;
@@ -75,6 +75,7 @@ export class FlyingMountController implements PlayerActor {
   /** Replaces the creature (model, handling and collision size) while keeping position and heading. */
   swapCreature(model: MountModel, tuning: FlyingMountTuning): void {
     this.scene.remove(this.mesh);
+    this.model.dispose?.();
     this.model = model;
     this.tuning = tuning;
     this.mesh = model.group;
@@ -90,6 +91,7 @@ export class FlyingMountController implements PlayerActor {
   /** Removes the creature from the world. */
   dispose(): void {
     this.scene.remove(this.mesh);
+    this.model.dispose?.();
     this.physics.world.removeBody(this.body);
   }
 
@@ -142,7 +144,8 @@ export class FlyingMountController implements PlayerActor {
     this.speed = Math.min(this.speed, Math.max(0, measured) + 2);
     const topSpeed = this.grounded ? tuning.groundTopSpeed : tuning.airTopSpeed;
     if (input.throttle > 0) {
-      this.speed += tuning.acceleration * input.throttle * deltaSeconds;
+      // Accelerate only up to the top speed; anything above it (e.g. landing from a dive) bleeds off below.
+      if (this.speed < topSpeed) this.speed = Math.min(topSpeed, this.speed + tuning.acceleration * input.throttle * deltaSeconds);
     } else if (input.brake > 0) {
       this.speed -= tuning.braking * input.brake * deltaSeconds;
     } else {

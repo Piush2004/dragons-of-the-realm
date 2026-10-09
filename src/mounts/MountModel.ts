@@ -18,6 +18,8 @@ export interface MountAnimationState {
 export interface MountModel {
   readonly group: THREE.Group;
   update(deltaSeconds: number, state: MountAnimationState): void;
+  /** Frees GPU resources owned by this instance (not the shared meshes and textures). */
+  dispose?(): void;
 }
 
 /** Handling numbers for a creature that can run on the ground and fly. Speeds in m/s. */

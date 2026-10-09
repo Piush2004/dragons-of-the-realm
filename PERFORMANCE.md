@@ -20,6 +20,19 @@ not used, so these are conservative.
 
 Not measured: frame rate on the RTX 5060, at 4K, or with 5 enemies; GPU time per pass; memory beyond JS heap.
 
+## Antialiasing and graphics pass (2026-10-09, v0.6.0)
+Same machine, browser and window size as above (Radeon 780M, 1920x889, dev server), two enemies, real-time loop.
+| Antialiasing | Average frame rate | Notes |
+| --- | --- | --- |
+| SMAA (default) | 75 fps (13.3 ms average, 17.4 ms 95th percentile) | the shipped setting |
+| None | 86 fps | |
+| 4x MSAA on the HDR buffer | 39 fps | too slow on an integrated GPU, so it is opt-in |
+
+The 58 fps in the first table came from an earlier session (before the detail pass and the graphics pass) and the
+cause of the difference to the SMAA figure was not isolated, so the two tables are not a like-for-like comparison.
+No frame rate was measured with a fireball on screen or with five enemies. The self-test measures about 0.38 ms per
+simulation step (update, physics, one render call), which excludes GPU time.
+
 ## What keeps it fast
 - Instanced forests and houses, near/far tree detail swap, grass that follows the player.
 - Tree colliders streamed in a 3 x 3 cell window instead of thousands of static bodies.
@@ -28,4 +41,4 @@ Not measured: frame rate on the RTX 5060, at 4K, or with 5 enemies; GPU time per
 
 ## Known costs
 - World generation (terrain, forests, houses) runs on the main thread at start.
-- 3 GLB dragon files total about 7.3 MB, landmarks and structures 6.6 MB, environment 3.4 MB. The frame-rate figures above were measured before the detail pass and have not been re-measured.
+- 3 GLB dragon files total about 7.3 MB, landmarks and structures 6.6 MB, environment 3.4 MB. The first table's figures predate the detail pass; the antialiasing table above was measured after it.

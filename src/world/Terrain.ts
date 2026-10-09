@@ -36,12 +36,12 @@ export class Terrain {
   private readonly cell = Terrain.SIZE / Terrain.SEGMENTS;
   private readonly stride = Terrain.SEGMENTS + 1;
 
-  constructor(roadSamples: RoadSample[], physics: PhysicsWorld, grassMap: THREE.Texture) {
+  constructor(roadSamples: RoadSample[], physics: PhysicsWorld, grassMap: THREE.Texture, detailNormal?: THREE.Texture) {
     const n = this.stride;
     this.heights = new Float32Array(n * n);
     this.roadDistances = new Float32Array(n * n);
     this.computeHeights(roadSamples);
-    this.mesh = this.buildMesh(grassMap);
+    this.mesh = this.buildMesh(grassMap, detailNormal);
     this.buildPhysics(physics);
   }
 
@@ -84,14 +84,15 @@ export class Terrain {
         if (distance >= FAR) {
           this.heights[index] = wild;
         } else {
-          const blend = smoothstep(Terrain.ROAD_FLAT_RADIUS, 55, distance);
+          // On a castle platform the platform wins over the road, which is laid to match it.
+          const blend = Math.max(smoothstep(Terrain.ROAD_FLAT_RADIUS, 55, distance), padInfluence(x, z));
           this.heights[index] = roadHeights[index] + (wild - roadHeights[index]) * blend;
         }
       }
     }
   }
 
-  private buildMesh(grassMap: THREE.Texture): THREE.Mesh {
+  private buildMesh(grassMap: THREE.Texture, detailNormal?: THREE.Texture): THREE.Mesh {
     const n = this.stride;
     const half = Terrain.SIZE / 2;
     const positions = new Float32Array(n * n * 3);
@@ -143,6 +144,7 @@ export class Terrain {
       const z = positions[index * 3 + 2];
       const slope = 1 - normals.getY(index);
       const patch = fbm(colorNoise, x / 60, z / 60, 3);
+      const fineShade = 0.84 + fbm(colorNoise, x / 13 + 50, z / 13 + 50, 2) * 0.36;
 
       color.copy(grass).lerp(dryGrass, smoothstep(0.35, 0.75, patch));
       color.lerp(rock, smoothstep(0.24, 0.5, slope + (patch - 0.5) * 0.08));
@@ -153,6 +155,7 @@ export class Terrain {
       const shoulder = 1 - smoothstep(Terrain.ROAD_FLAT_RADIUS - 1.5, Terrain.ROAD_FLAT_RADIUS + 4, this.roadDistances[index]);
       color.lerp(dirt, shoulder * 0.85);
 
+      color.multiplyScalar(fineShade);
       colors[index * 3] = color.r;
       colors[index * 3 + 1] = color.g;
       colors[index * 3 + 2] = color.b;
@@ -161,10 +164,42 @@ export class Terrain {
 
     const material = new THREE.MeshStandardMaterial({
       map: grassMap,
+      normalMap: detailNormal,
+      normalScale: new THREE.Vector2(0.55, 0.55),
       vertexColors: true,
       roughness: 0.95,
       metalness: 0,
     });
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vTerrainWorld;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTerrainWorld = (modelMatrix * vec4(position, 1.0)).xyz;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          varying vec3 vTerrainWorld;
+          float tHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float tNoise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(tHash(i), tHash(i + vec2(1.0, 0.0)), f.x), mix(tHash(i + vec2(0.0, 1.0)), tHash(i + vec2(1.0, 1.0)), f.x), f.y);
+          }`,
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#ifdef USE_MAP
+            // Two scales of the same texture, blended by distance, hide the tiling; slow value noise varies the tone.
+            vec4 nearTexel = texture2D(map, vMapUv);
+            vec4 farTexel = texture2D(map, vMapUv * 0.11 + vec2(0.37, 0.61));
+            float viewDistance = length(vViewPosition);
+            vec4 sampledDiffuseColor = mix(nearTexel, mix(nearTexel, farTexel * 1.08, 0.55), smoothstep(30.0, 240.0, viewDistance));
+            float macroTone = tNoise(vTerrainWorld.xz * 0.0045) * 0.5 + tNoise(vTerrainWorld.xz * 0.017) * 0.32 + tNoise(vTerrainWorld.xz * 0.075) * 0.18;
+            sampledDiffuseColor.rgb *= 0.74 + macroTone * 0.58;
+            diffuseColor *= sampledDiffuseColor;
+          #endif`,
+        );
+    };
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
     return mesh;
