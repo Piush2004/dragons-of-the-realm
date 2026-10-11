@@ -144,16 +144,21 @@ namespace BlockRealm.Sim
         /// <summary>Raised with the server's id the first time it is learned, so the caller can remember (pin) it.</summary>
         public Action<string> ServerIdLearned;
 
+        /// <param name="dialAddress">
+        /// The address the player connected to ("play.example.com:25565"). Credentials are bound to it, so a proof given to
+        /// one host cannot be relayed to another. It is required: in-process games pass "local", and a real network
+        /// connection with a placeholder address is refused, so the protection can never be silently switched off.
+        /// </param>
         /// <param name="identityKey">A random secret kept by this machine; proves the name is yours on later visits.</param>
         /// <param name="expectedServerId">The id this server had on a previous visit; a different one is refused.</param>
-        /// <param name="dialAddress">
-        /// The address the player connected to ("localhost:25565"); credentials are bound to it, so a proof given to one
-        /// host cannot be relayed to another. In-process games use "local".
-        /// </param>
-        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "",
-            string expectedServerId = "", string dialAddress = "local")
+        public GameClient(IConnection connection, string name, string dialAddress, string identityKey = "", string adminToken = "",
+            string expectedServerId = "")
         {
-            _dialAddress = dialAddress ?? "local";
+            if (dialAddress == null) throw new ArgumentNullException("dialAddress");
+            bool placeholder = dialAddress.Trim().Length == 0 || dialAddress.Trim().ToLowerInvariant() == "local";
+            if (placeholder && !(connection is LoopbackConnection))
+                throw new ArgumentException("a network connection needs the address that was dialled", "dialAddress");
+            _dialAddress = dialAddress;
             Connection = connection;
             PlayerName = name;
             _identityKey = identityKey ?? "";
@@ -683,6 +688,12 @@ namespace BlockRealm.Sim
         public void ClickSlot(int slot, int button, bool shift)
         {
             Send(new InventoryClickPacket { Window = WindowId, Slot = (short)slot, Button = (byte)button, Shift = shift });
+        }
+
+        /// <summary>Creative mode: puts an item of the given kind on the cursor (a full stack, or one).</summary>
+        public void CreativePick(ushort itemId, bool single)
+        {
+            Send(new InventoryClickPacket { Window = GameServer.CreativePaletteWindow, Slot = (short)itemId, Button = (byte)(single ? 1 : 0) });
         }
 
         public void DropCursor(bool single) { Send(new InventoryClickPacket { Window = WindowId, Slot = -1, Button = (byte)(single ? 1 : 0) }); }

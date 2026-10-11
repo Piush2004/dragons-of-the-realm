@@ -29,7 +29,7 @@ namespace BlockRealm.Tests
             LoopbackConnection a, b;
             LoopbackConnection.CreatePair(out a, out b);
             Server.AddConnection(b);
-            GameClient c = new GameClient(a, name);
+            GameClient c = new GameClient(a, name, "local");
             Clients.Add(c);
             Inputs[c] = new PlayerInput();
             Actions[c] = new ClientActions();
@@ -395,6 +395,28 @@ namespace BlockRealm.Tests
                     rig.Run(10);
                     Check.True(!c.Dead, "alive again");
                     Check.Equal(20f, c.Health);
+                }
+            });
+            Harness.Run("creative players can pick any item, survival players cannot", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    c.CreativePick(B.Obsidian, false);
+                    rig.Run(3);
+                    Check.True(c.Cursor.IsEmpty, "survival refused");
+                    Say(c, "/gamemode creative");
+                    rig.Run(3);
+                    c.CreativePick(B.Obsidian, false);
+                    rig.Run(3);
+                    Check.Equal((ushort)B.Obsidian, c.Cursor.Id);
+                    Check.Equal((byte)64, c.Cursor.Count);
+                    c.CreativePick(ItemIds.DiamondPickaxe, true);
+                    rig.Run(3);
+                    Check.Equal(ItemIds.DiamondPickaxe, c.Cursor.Id);
+                    c.CreativePick(250, true);
+                    rig.Run(3);
+                    Check.Equal(ItemIds.DiamondPickaxe, c.Cursor.Id, "undefined ids are ignored");
                 }
             });
             Harness.Run("eating restores hunger", () =>

@@ -374,8 +374,20 @@ namespace BlockRealm.Sim
             }
         }
 
+        /// <summary>Window id used by the creative item palette: Slot is the item id, Button 1 asks for a single item.</summary>
+        public const byte CreativePaletteWindow = 253;
+
         private void OnInventoryClick(ServerPlayer p, InventoryClickPacket pk)
         {
+            if (pk.Window == CreativePaletteWindow)
+            {
+                if (!p.GodMode || pk.Slot <= 0 || pk.Slot > ItemIds.MaxId || !Items.IsDefined((ushort)pk.Slot)) return;
+                ushort pick = (ushort)pk.Slot;
+                int count = pk.Button == 1 ? 1 : Items.Get(pick).MaxStack;
+                p.Inventory.Cursor = new ItemStack(pick, count);
+                p.InventoryDirty = true;
+                return;
+            }
             Window w = null;
             if (p.OpenWindow != null && p.OpenWindow.Id == pk.Window) w = p.OpenWindow;
             else if (pk.Window == 0 && p.OpenWindow == null) w = p.Personal;

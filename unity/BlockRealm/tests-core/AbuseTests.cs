@@ -274,7 +274,7 @@ namespace BlockRealm.Tests
                     LoopbackConnection a, b;
                     LoopbackConnection.CreatePair(out a, out b);
                     s.AddConnection(new RemoteLike(b, "3.3.3.3:1"));
-                    GameClient client = new GameClient(a, "Pinned", key, "", "a-different-server-id-0000000");
+                    GameClient client = new GameClient(a, "Pinned", "local", key, "", "a-different-server-id-0000000");
                     PlayerInput none = new PlayerInput();
                     ClientActions noActs = new ClientActions();
                     for (int i = 0; i < 12; i++) { s.Tick(); client.Update(0.05f, none, noActs); }
@@ -287,7 +287,7 @@ namespace BlockRealm.Tests
                     LoopbackConnection.CreatePair(out c, out d);
                     s.AddConnection(new RemoteLike(d, "3.3.3.4:1"));
                     string learned = null;
-                    GameClient ok = new GameClient(c, "Pinned", key, "", s.ServerId);
+                    GameClient ok = new GameClient(c, "Pinned", "local", key, "", s.ServerId);
                     ok.ServerIdLearned = id => learned = id;
                     for (int i = 0; i < 12; i++) { s.Tick(); ok.Update(0.05f, none, noActs); }
                     Check.True(s.FindPlayer("Pinned") != null, "correct pin logs in");
@@ -332,6 +332,19 @@ namespace BlockRealm.Tests
                     Check.True(s.FindPlayer("Real") != null && s.FindPlayer("Real").Op, "dialling the real address grants admin");
                 }
                 finally { s.Shutdown(); }
+            });
+            Harness.Run("a network client cannot be built without the dialled address", () =>
+            {
+                LoopbackConnection a, b;
+                LoopbackConnection.CreatePair(out a, out b);
+                RemoteLike network = new RemoteLike(a, "1.2.3.4:5");
+                Check.Throws(() => new GameClient(network, "X", "local"), "placeholder address on a network connection");
+                Check.Throws(() => new GameClient(network, "X", ""), "empty address");
+                Check.Throws(() => new GameClient(network, "X", null), "missing address");
+                GameClient ok = new GameClient(network, "X", "1.2.3.4:5");
+                Check.True(ok != null, "a real address is accepted");
+                GameClient local = new GameClient(a, "X", "local");
+                Check.True(local != null, "in-process clients may use local");
             });
             Harness.Run("a generated admin token is accepted and is strong", () =>
             {

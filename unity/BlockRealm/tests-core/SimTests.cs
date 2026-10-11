@@ -362,7 +362,7 @@ namespace BlockRealm.Tests
                 Check.True(port > 0, "listening on " + port);
                 TcpConnection ca = TcpConnection.Connect("127.0.0.1", port, 3000);
                 TcpConnection cb = TcpConnection.Connect("127.0.0.1", port, 3000);
-                GameClient a = new GameClient(ca, "Net_Ada"), b = new GameClient(cb, "Net_Bob");
+                GameClient a = new GameClient(ca, "Net_Ada", "127.0.0.1:" + port), b = new GameClient(cb, "Net_Bob", "127.0.0.1:" + port);
                 try
                 {
                     PlayerInput none = new PlayerInput();

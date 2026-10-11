@@ -58,6 +58,8 @@ namespace BlockRealm.Sim
         public int DayTick = 1000;
         public Vec3i SpawnPoint;
         public WorldStorage Storage;
+        /// <summary>Optional sink for human-readable events (joins, leaves), used by the dedicated server console.</summary>
+        public Action<string> LogLine;
 
         private int _nextEntityId = 1;
         private readonly List<Entity> _entityScratch = new List<Entity>();
@@ -330,6 +332,7 @@ namespace BlockRealm.Sim
             SendFullInventory(p);
             SendStats(p);
             Broadcast(new ChatMessagePacket { Text = name + " joined the game" });
+            if (LogLine != null) LogLine(name + " joined from " + c.Description + (p.Op ? " (operator)" : ""));
         }
 
         private readonly Dictionary<string, string> _identityHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -441,6 +444,7 @@ namespace BlockRealm.Sim
             Players.Remove(p);
             RemoveEntityInternal(p);
             Broadcast(new ChatMessagePacket { Text = p.Name + " left the game" });
+            if (LogLine != null) LogLine(p.Name + " left: " + reason);
             p.Connection.Close();
         }
 
