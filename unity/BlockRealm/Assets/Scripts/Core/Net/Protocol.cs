@@ -105,7 +105,7 @@ namespace BlockRealm.Net
         Welcome = 40, ColumnData = 41, ColumnUnload = 42, BlockUpdate = 43, EntitySpawn = 44, EntityDespawn = 45,
         EntityStates = 46, PlayerTeleport = 47, HealthUpdate = 48, WindowItems = 49, SetSlot = 50, OpenWindow = 51,
         WindowProperty = 52, TimeUpdate = 53, ChatMessage = 54, EntityEvent = 55, Effect = 56, BreakProgress = 57,
-        Disconnect = 58, SetCursor = 59,
+        Disconnect = 58, SetCursor = 59, Knockback = 60, Mount = 61,
     }
 
     public abstract class Packet
@@ -184,6 +184,8 @@ namespace BlockRealm.Net
                 case PacketId.BreakProgress: return new BreakProgressPacket();
                 case PacketId.Disconnect: return new DisconnectPacket();
                 case PacketId.SetCursor: return new SetCursorPacket();
+                case PacketId.Knockback: return new KnockbackPacket();
+                case PacketId.Mount: return new MountPacket();
             }
             return null;
         }
@@ -574,5 +576,25 @@ namespace BlockRealm.Net
         public override PacketId Id { get { return PacketId.Disconnect; } }
         public override void Write(PacketWriter w) { w.Str(Reason); }
         public override void Read(PacketReader r) { Reason = r.Str(); }
+    }
+
+    /// <summary>An impulse applied to the receiving player (hits, explosions). Players move themselves, so the server asks.</summary>
+    public sealed class KnockbackPacket : Packet
+    {
+        public Vec3 Velocity;
+        public override PacketId Id { get { return PacketId.Knockback; } }
+        public override void Write(PacketWriter w) { w.Vec(Velocity); }
+        public override void Read(PacketReader r) { Velocity = r.Vec(); }
+    }
+
+    /// <summary>Tells a player they are now riding (or no longer riding) a dragon.</summary>
+    public sealed class MountPacket : Packet
+    {
+        public int EntityId;
+        public byte Kind;
+        public bool Mounted;
+        public override PacketId Id { get { return PacketId.Mount; } }
+        public override void Write(PacketWriter w) { w.I32(EntityId); w.U8(Kind); w.Bool(Mounted); }
+        public override void Read(PacketReader r) { EntityId = r.I32(); Kind = r.U8(); Mounted = r.Bool(); }
     }
 }

@@ -1,0 +1,585 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using BlockRealm.Net;
+
+namespace BlockRealm.Sim
+{
+    public sealed class ServerOptions
+    {
+        public long Seed = 2024;
+        public string Name = "BlockRealm";
+        public int ViewDistance = 8;
+        public GameMode DefaultMode = GameMode.Survival;
+        public bool Pvp = true;
+        public int MaxPlayers = 8;
+        public bool SpawnMobs = true;
+        public bool SpawnDragons = true;
+        public bool SynchronousWorldGen;        // tests: generate on the calling thread
+        public string SaveDir;                  // null = nothing is saved
+        public bool AllowCommands = true;
+        public bool HostIsOp = true;
+    }
+
+    /// <summary>
+    /// The authoritative game simulation. One instance serves the single-player world (over a loopback connection)
+    /// and a dedicated or hosted multiplayer world (over TCP) with exactly the same rules.
+    /// </summary>
+    public sealed partial class GameServer
+    {
+        public readonly ServerOptions Options;
+        public readonly World World;
+        public readonly WorldGenerator Generator;
+        public readonly Rng Random;
+        public readonly List<ServerPlayer> Players = new List<ServerPlayer>();
+        public readonly Dictionary<int, Entity> Entities = new Dictionary<int, Entity>();
+        public int TickCount;
+        public int DayTick = 1000;
+        public Vec3i SpawnPoint;
+        public WorldStorage Storage;
+
+        private int _nextEntityId = 1;
+        private readonly List<Entity> _entityScratch = new List<Entity>();
+        private readonly List<PendingConnection> _pendingConnections = new List<PendingConnection>();
+        private readonly List<IConnection> _acceptedLoopbacks = new List<IConnection>();
+        private readonly HashSet<ColumnPos> _generating = new HashSet<ColumnPos>();
+        private readonly ConcurrentQueue<Column> _generated = new ConcurrentQueue<Column>();
+        private readonly Dictionary<ColumnPos, int> _columnNeededTick = new Dictionary<ColumnPos, int>();
+        private readonly List<Packet> _chatScratch = new List<Packet>();
+        private TcpGameListener _listener;
+
+        private struct PendingConnection { public IConnection Connection; public int Deadline; }
+
+        public GameServer(ServerOptions options)
+        {
+            Options = options;
+            World = new World(options.Seed);
+            Generator = new WorldGenerator(options.Seed);
+            Random = new Rng(options.Seed ^ 0x5EED);
+            SpawnPoint = Generator.FindSpawn();
+            if (options.SaveDir != null)
+            {
+                Storage = new WorldStorage(options.SaveDir);
+                WorldStorage.LevelInfo level;
+                if (Storage.TryLoadLevel(out level)) { DayTick = level.DayTick; }
+            }
+            World.BlockChanged = OnBlockChanged;
+        }
+
+        // ------------------------------------------------------------------ connections
+
+        public void StartListening(int port)
+        {
+            _listener = new TcpGameListener(port);
+            _listener.Start();
+        }
+
+        public int ListeningPort { get { return _listener == null ? 0 : _listener.Port; } }
+
+        public void AddConnection(IConnection c)
+        {
+            lock (_pendingConnections) _pendingConnections.Add(new PendingConnection { Connection = c, Deadline = TickCount + 20 * 15 });
+        }
+
+        public void Shutdown()
+        {
+            if (_listener != null) _listener.Dispose();
+            foreach (ServerPlayer p in Players.ToArray()) DisconnectPlayer(p, "Server closed");
+            SaveAll();
+        }
+
+        private void AcceptNetworkConnections()
+        {
+            if (_listener == null) return;
+            IConnection c;
+            while (_listener.TryAccept(out c)) AddConnection(c);
+        }
+
+        private void ProcessPendingConnections()
+        {
+            PendingConnection[] snapshot;
+            lock (_pendingConnections)
+            {
+                if (_pendingConnections.Count == 0) return;
+                snapshot = _pendingConnections.ToArray();
+                _pendingConnections.Clear();
+            }
+            List<PendingConnection> keep = new List<PendingConnection>();
+            foreach (PendingConnection pc in snapshot)
+            {
+                byte[] data;
+                bool handled = false;
+                if (!pc.Connection.IsOpen) continue;
+                if (pc.Connection.TryReceive(out data))
+                {
+                    Packet p;
+                    HelloPacket hello;
+                    if (Packet.TryDeserialize(data, out p) && (hello = p as HelloPacket) != null)
+                    {
+                        handled = true;
+                        AcceptPlayer(pc.Connection, hello);
+                    }
+                    else
+                    {
+                        pc.Connection.Close();
+                        handled = true;
+                    }
+                }
+                if (!handled)
+                {
+                    if (TickCount > pc.Deadline) pc.Connection.Close();
+                    else keep.Add(pc);
+                }
+            }
+            if (keep.Count > 0) lock (_pendingConnections) _pendingConnections.AddRange(keep);
+        }
+
+        private static string CleanName(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return "Player";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            foreach (char ch in raw)
+            {
+                if (char.IsLetterOrDigit(ch) || ch == '_' || ch == '-') sb.Append(ch);
+                if (sb.Length >= 16) break;
+            }
+            return sb.Length == 0 ? "Player" : sb.ToString();
+        }
+
+        private void AcceptPlayer(IConnection c, HelloPacket hello)
+        {
+            if (hello.Protocol != HelloPacket.ProtocolVersion)
+            {
+                c.Send(new DisconnectPacket { Reason = "Protocol version mismatch (server " + HelloPacket.ProtocolVersion + ")" }.Serialize());
+                c.Close();
+                return;
+            }
+            if (Players.Count >= Options.MaxPlayers)
+            {
+                c.Send(new DisconnectPacket { Reason = "Server is full" }.Serialize());
+                c.Close();
+                return;
+            }
+            string name = CleanName(hello.Name);
+            // Names must be unique.
+            string baseName = name; int n = 2;
+            while (FindPlayer(name) != null) name = baseName + n++;
+
+            ServerPlayer p = new ServerPlayer(c, name);
+            p.Id = _nextEntityId++;
+            p.Mode = Options.DefaultMode;
+            p.Op = Options.HostIsOp || Players.Count == 0;
+            p.LastPacketTick = TickCount;
+            Vec3i sp = SpawnPoint;
+            int surface = World.GetSurfaceY(sp.X, sp.Z);
+            p.Pos = new Vec3(sp.X + 0.5f, (surface >= 0 ? surface + 1 : sp.Y) + 0.1f, sp.Z + 0.5f);
+            if (Storage != null) Storage.LoadPlayer(p);
+            p.FallPeakY = p.Pos.Y;
+            p.LastStatePos = p.Pos;
+            p.LastStateTick = TickCount;
+            Players.Add(p);
+            Entities[p.Id] = p;
+
+            p.Send(new WelcomePacket
+            {
+                PlayerId = p.Id, Seed = Options.Seed, Position = p.Pos, DayTick = DayTick, Mode = p.Mode,
+                ViewDistance = Options.ViewDistance, ServerName = Options.Name,
+            });
+            p.Welcomed = true;
+            SendFullInventory(p);
+            SendStats(p);
+            Broadcast(new ChatMessagePacket { Text = name + " joined the game" });
+        }
+
+        public ServerPlayer FindPlayer(string name)
+        {
+            for (int i = 0; i < Players.Count; i++)
+                if (string.Equals(Players[i].Name, name, StringComparison.OrdinalIgnoreCase)) return Players[i];
+            return null;
+        }
+
+        public void DisconnectPlayer(ServerPlayer p, string reason)
+        {
+            if (!Players.Contains(p)) return;
+            try { p.Send(new DisconnectPacket { Reason = reason }); } catch (Exception) { }
+            if (Storage != null) Storage.SavePlayer(p);
+            DropOpenWindowContents(p);
+            Players.Remove(p);
+            RemoveEntityInternal(p);
+            Broadcast(new ChatMessagePacket { Text = p.Name + " left the game" });
+            p.Connection.Close();
+        }
+
+        public void Broadcast(Packet packet)
+        {
+            byte[] data = packet.Serialize();
+            for (int i = 0; i < Players.Count; i++) Players[i].Connection.Send(data);
+        }
+
+        // ------------------------------------------------------------------ world access for entities
+
+        public bool IsDaylight { get { return DayTick < 13000 || DayTick >= 23000; } }
+        public bool IsNight { get { return !IsDaylight; } }
+
+        /// <summary>Sky light at a position as the player would see it, accounting for the time of day.</summary>
+        public int SkyLightAt(Vec3 p)
+        {
+            int sky = World.GetSkyLight(MathUtil.FloorInt(p.X), MathUtil.FloorInt(p.Y), MathUtil.FloorInt(p.Z));
+            if (IsNight) sky = Math.Max(0, sky - 11);
+            return sky;
+        }
+
+        public bool HasLineOfSight(Vec3 a, Vec3 b)
+        {
+            Vec3 d = b - a;
+            float len = d.Length;
+            if (len < 0.01f) return true;
+            RayHit h = VoxelPhysics.Raycast(World, a, d, len);
+            return !h.Hit || h.Distance >= len - 0.3f;
+        }
+
+        public Entity GetEntity(int id)
+        {
+            Entity e;
+            return Entities.TryGetValue(id, out e) ? e : null;
+        }
+
+        public List<Entity> EntitiesNear(Vec3 pos, float radius)
+        {
+            List<Entity> list = new List<Entity>();
+            float r2 = radius * radius;
+            foreach (KeyValuePair<int, Entity> kv in Entities)
+            {
+                Entity e = kv.Value;
+                if (e.Removed) continue;
+                if (Vec3.DistanceSq(e.Pos, pos) <= r2) list.Add(e);
+            }
+            return list;
+        }
+
+        public ServerPlayer NearestPlayer(Vec3 pos, float maxDist, bool survivalOnly)
+        {
+            ServerPlayer best = null; float bestD = maxDist * maxDist;
+            for (int i = 0; i < Players.Count; i++)
+            {
+                ServerPlayer p = Players[i];
+                if (p.Dead) continue;
+                if (survivalOnly && p.Mode == GameMode.Creative) continue;
+                float d = Vec3.DistanceSq(p.Pos, pos);
+                if (d <= bestD) { bestD = d; best = p; }
+            }
+            return best;
+        }
+
+        public void AddEntity(Entity e)
+        {
+            e.Id = _nextEntityId++;
+            Entities[e.Id] = e;
+        }
+
+        public void RemoveEntity(Entity e) { RemoveEntityInternal(e); }
+
+        private void RemoveEntityInternal(Entity e)
+        {
+            if (e.Removed) return;
+            e.Removed = true;
+            Entities.Remove(e.Id);
+            byte[] data = new EntityDespawnPacket { EntityId = e.Id }.Serialize();
+            for (int i = 0; i < Players.Count; i++)
+            {
+                if (Players[i].KnownEntities.Remove(e.Id)) Players[i].Connection.Send(data);
+            }
+        }
+
+        // ------------------------------------------------------------------ main tick
+
+        /// <summary>Advances the simulation by one 50 ms tick. Call it 20 times a second.</summary>
+        public void Tick()
+        {
+            TickCount++;
+            AcceptNetworkConnections();
+            ProcessPendingConnections();
+
+            for (int i = Players.Count - 1; i >= 0; i--)
+            {
+                ServerPlayer p = Players[i];
+                if (!p.Connection.IsOpen) { DisconnectPlayer(p, "Connection lost"); continue; }
+                ProcessPackets(p);
+            }
+
+            IntegrateGeneratedColumns();
+            DayTick = (DayTick + 1) % WorldConst.DayLengthTicks;
+            if (TickCount % 100 == 0) Broadcast(new TimeUpdatePacket { DayTick = DayTick });
+
+            for (int i = 0; i < Players.Count; i++) TickPlayer(Players[i]);
+            TickTileEntities();
+            TickBlockUpdates();
+
+            _entityScratch.Clear();
+            foreach (KeyValuePair<int, Entity> kv in Entities) _entityScratch.Add(kv.Value);
+            for (int i = 0; i < _entityScratch.Count; i++)
+            {
+                Entity e = _entityScratch[i];
+                if (!e.Removed && !(e is ServerPlayer)) e.Tick(this);
+            }
+
+            if (TickCount % 20 == 0)
+            {
+                if (Options.SpawnMobs) SpawnMobs();
+                DespawnFarMobs();
+            }
+            if (Options.SpawnDragons && TickCount % 20 == 0) TickLairs();
+
+            StreamColumns();
+            ReplicateEntities();
+            FlushDirty();
+            if (TickCount % (20 * 60) == 0) SaveAll();
+        }
+
+        // ------------------------------------------------------------------ column streaming
+
+        private static void ColumnsInRadius(int cx, int cz, int radius, List<ColumnPos> into)
+        {
+            into.Clear();
+            int r2 = radius * radius;
+            for (int dz = -radius; dz <= radius; dz++)
+                for (int dx = -radius; dx <= radius; dx++)
+                    if (dx * dx + dz * dz <= r2) into.Add(new ColumnPos(cx + dx, cz + dz));
+            into.Sort((a, b) =>
+            {
+                int da = (a.X - cx) * (a.X - cx) + (a.Z - cz) * (a.Z - cz);
+                int db = (b.X - cx) * (b.X - cx) + (b.Z - cz) * (b.Z - cz);
+                return da.CompareTo(db);
+            });
+        }
+
+        private readonly List<ColumnPos> _columnScratch = new List<ColumnPos>();
+
+        private void StreamColumns()
+        {
+            int view = Options.ViewDistance;
+            for (int pi = 0; pi < Players.Count; pi++)
+            {
+                ServerPlayer p = Players[pi];
+                if (!p.Welcomed) continue;
+                int pcx = MathUtil.FloorDiv(MathUtil.FloorInt(p.Pos.X), 16), pcz = MathUtil.FloorDiv(MathUtil.FloorInt(p.Pos.Z), 16);
+                ColumnsInRadius(pcx, pcz, view, _columnScratch);
+                int sent = 0;
+                int requested = 0;
+                for (int i = 0; i < _columnScratch.Count; i++)
+                {
+                    ColumnPos cp = _columnScratch[i];
+                    _columnNeededTick[cp] = TickCount;
+                    if (p.SentColumns.Contains(cp)) continue;
+                    Column col = World.GetColumn(cp.X, cp.Z);
+                    if (col != null)
+                    {
+                        // Only the nearest few go out each tick so a join does not flood the connection.
+                        if (sent < 4)
+                        {
+                            p.Send(new ColumnDataPacket { Cx = cp.X, Cz = cp.Z, Data = ColumnCodec.Encode(col) });
+                            p.SentColumns.Add(cp);
+                            sent++;
+                        }
+                    }
+                    else if (requested < 6)
+                    {
+                        RequestColumn(cp.X, cp.Z);
+                        requested++;
+                    }
+                }
+                // Tell the client to forget columns that are now far away.
+                if (TickCount % 10 == 0)
+                {
+                    List<ColumnPos> drop = null;
+                    foreach (ColumnPos cp in p.SentColumns)
+                    {
+                        int dx = cp.X - pcx, dz = cp.Z - pcz;
+                        if (dx * dx + dz * dz > (view + 2) * (view + 2))
+                        {
+                            if (drop == null) drop = new List<ColumnPos>();
+                            drop.Add(cp);
+                        }
+                    }
+                    if (drop != null)
+                        foreach (ColumnPos cp in drop)
+                        {
+                            p.SentColumns.Remove(cp);
+                            p.Send(new ColumnUnloadPacket { Cx = cp.X, Cz = cp.Z });
+                        }
+                }
+            }
+            if (TickCount % 100 == 0) UnloadUnusedColumns();
+        }
+
+        private void UnloadUnusedColumns()
+        {
+            List<ColumnPos> remove = null;
+            foreach (KeyValuePair<ColumnPos, int> kv in _columnNeededTick)
+            {
+                if (TickCount - kv.Value < 20 * 20) continue;
+                if (remove == null) remove = new List<ColumnPos>();
+                remove.Add(kv.Key);
+            }
+            if (remove == null) return;
+            foreach (ColumnPos cp in remove)
+            {
+                _columnNeededTick.Remove(cp);
+                Column col = World.GetColumn(cp.X, cp.Z);
+                if (col == null) continue;
+                if (Storage != null && col.Modified) SaveColumn(col);
+                World.RemoveColumn(cp.X, cp.Z);
+                RemoveTileEntitiesIn(cp);
+            }
+        }
+
+        public void RequestColumn(int cx, int cz)
+        {
+            ColumnPos cp = new ColumnPos(cx, cz);
+            if (World.HasColumn(cx, cz) || _generating.Contains(cp)) return;
+            _generating.Add(cp);
+            if (Options.SynchronousWorldGen)
+            {
+                _generated.Enqueue(LoadOrGenerate(cx, cz));
+                return;
+            }
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                try { _generated.Enqueue(LoadOrGenerate(cx, cz)); }
+                catch (Exception) { /* a failed column is retried next time it is needed */ _failedColumns.Enqueue(cp); }
+            });
+        }
+
+        private readonly ConcurrentQueue<ColumnPos> _failedColumns = new ConcurrentQueue<ColumnPos>();
+
+        private Column LoadOrGenerate(int cx, int cz)
+        {
+            Column col = null;
+            if (Storage != null) col = Storage.TryLoadColumn(cx, cz);
+            if (col == null) col = Generator.GenerateColumn(cx, cz);
+            LightEngine.InitColumn(col);
+            return col;
+        }
+
+        private void IntegrateGeneratedColumns()
+        {
+            ColumnPos failed;
+            while (_failedColumns.TryDequeue(out failed)) _generating.Remove(failed);
+            int budget = 6;
+            Column col;
+            while (budget-- > 0 && _generated.TryDequeue(out col))
+            {
+                ColumnPos cp = new ColumnPos(col.X, col.Z);
+                _generating.Remove(cp);
+                World.AddColumn(col);
+                LightEngine.Stitch(World, col);
+                if (Storage != null) Storage.LoadTileEntities(this, col);
+                _columnNeededTick[cp] = TickCount;
+            }
+        }
+
+        /// <summary>Test helper: loads the columns around a point right now (works in synchronous generation mode).</summary>
+        public void EnsureLoaded(int blockX, int blockZ, int radiusColumns)
+        {
+            int cx = MathUtil.FloorDiv(blockX, 16), cz = MathUtil.FloorDiv(blockZ, 16);
+            for (int dz = -radiusColumns; dz <= radiusColumns; dz++)
+                for (int dx = -radiusColumns; dx <= radiusColumns; dx++)
+                    RequestColumn(cx + dx, cz + dz);
+            // Drain: with synchronous generation everything is already queued.
+            for (int guard = 0; guard < 100 && _generating.Count > 0; guard++)
+            {
+                Column col;
+                while (_generated.TryDequeue(out col))
+                {
+                    ColumnPos cp = new ColumnPos(col.X, col.Z);
+                    _generating.Remove(cp);
+                    World.AddColumn(col);
+                    LightEngine.Stitch(World, col);
+                    if (Storage != null) Storage.LoadTileEntities(this, col);
+                    _columnNeededTick[cp] = TickCount;
+                }
+                if (_generating.Count > 0) Thread.Sleep(5);
+            }
+        }
+
+        // ------------------------------------------------------------------ replication of entities
+
+        private readonly List<EntityStateEntry> _stateScratch = new List<EntityStateEntry>();
+
+        private void ReplicateEntities()
+        {
+            const float Range = 100f, DragonRange = 220f;
+            bool sendStates = TickCount % 2 == 0;
+            for (int pi = 0; pi < Players.Count; pi++)
+            {
+                ServerPlayer p = Players[pi];
+                if (!p.Welcomed) continue;
+                _stateScratch.Clear();
+                foreach (KeyValuePair<int, Entity> kv in Entities)
+                {
+                    Entity e = kv.Value;
+                    if (e.Removed || e == p) continue;
+                    float range = e.Type == EntityType.Dragon ? DragonRange : Range;
+                    float d2 = Vec3.DistanceSq(e.Pos, p.Pos);
+                    bool inRange = d2 <= range * range;
+                    bool known = p.KnownEntities.Contains(e.Id);
+                    if (inRange && !known)
+                    {
+                        EntitySpawnPacket sp = new EntitySpawnPacket
+                        {
+                            EntityId = e.Id, Type = e.Type, Variant = e.Variant, Position = e.Pos, Yaw = e.Yaw, Name = e.Name,
+                        };
+                        ItemEntity item = e as ItemEntity;
+                        if (item != null) sp.Extra = item.Stack.Id;
+                        p.Send(sp);
+                        p.KnownEntities.Add(e.Id);
+                        known = true;
+                    }
+                    else if (!inRange && known && d2 > (range + 20f) * (range + 20f))
+                    {
+                        p.Send(new EntityDespawnPacket { EntityId = e.Id });
+                        p.KnownEntities.Remove(e.Id);
+                        continue;
+                    }
+                    if (known && sendStates && _stateScratch.Count < PacketLimits.MaxEntityStates)
+                    {
+                        EntityStateEntry st = new EntityStateEntry();
+                        st.EntityId = e.Id; st.Position = e.Pos; st.Yaw = e.Yaw; st.Pitch = e.Pitch;
+                        st.Flags = e.Flags; st.HealthPercent = (byte)(e.HealthFraction * 100f);
+                        _stateScratch.Add(st);
+                    }
+                }
+                if (_stateScratch.Count > 0)
+                {
+                    EntityStatesPacket packet = new EntityStatesPacket();
+                    packet.Entries.AddRange(_stateScratch);
+                    p.Send(packet);
+                }
+            }
+        }
+
+        private void FlushDirty()
+        {
+            for (int i = 0; i < Players.Count; i++)
+            {
+                ServerPlayer p = Players[i];
+                if (p.InventoryDirty) { SendFullInventory(p); p.InventoryDirty = false; }
+                if (p.StatsDirty) { SendStats(p); p.StatsDirty = false; }
+            }
+        }
+
+        public void SendStats(ServerPlayer p)
+        {
+            p.Send(new HealthUpdatePacket { Health = p.Health, Hunger = p.Hunger, Saturation = p.Saturation, Dead = p.Dead });
+        }
+
+        public void SendFullInventory(ServerPlayer p)
+        {
+            Window w = p.OpenWindow ?? p.Personal;
+            p.Send(new WindowItemsPacket { Window = w.Id, Items = w.Snapshot() });
+            p.Send(new SetCursorPacket { Stack = p.Inventory.Cursor });
+            p.Send(new SetSlotPacket { Window = 255, Slot = (short)p.Inventory.Selected, Stack = p.Inventory.Held });
+        }
+    }
+}
