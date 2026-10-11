@@ -6,21 +6,33 @@ namespace BlockRealm.Sim
     public sealed class SourceLimiter
     {
         private readonly Dictionary<string, Queue<int>> _events = new Dictionary<string, Queue<int>>();
-        private const int MaxSources = 4096;
+        private readonly int _eventsPerSource;
+        private readonly int _maxSources;
+
+        /// <param name="eventsPerSource">
+        /// How many recent events are remembered per source. It must exceed every threshold the caller compares
+        /// against, or that threshold could never be reached.
+        /// </param>
+        public SourceLimiter(int eventsPerSource = 64, int maxSources = 16384)
+        {
+            _eventsPerSource = eventsPerSource;
+            _maxSources = maxSources;
+        }
 
         /// <summary>
         /// How many events this source produced within the last <paramref name="windowTicks"/> ticks. When the table is
-        /// full of other sources and this one cannot be tracked, the answer is "too many": the limiter fails closed.
+        /// full of other active sources and this one cannot be tracked, the answer is "too many": the limiter fails
+        /// closed (an attacker would otherwise escape limits by making the table overflow).
         /// </summary>
         public int Count(string source, int nowTick, int windowTicks)
         {
             Queue<int> q;
             if (!_events.TryGetValue(source, out q))
             {
-                if (_events.Count >= MaxSources)
+                if (_events.Count >= _maxSources)
                 {
-                    Prune(nowTick);
-                    if (_events.Count >= MaxSources) return int.MaxValue;
+                    Prune(nowTick, windowTicks);
+                    if (_events.Count >= _maxSources) return int.MaxValue;
                 }
                 return 0;
             }
@@ -34,24 +46,30 @@ namespace BlockRealm.Sim
             Queue<int> q;
             if (!_events.TryGetValue(source, out q))
             {
-                if (_events.Count >= MaxSources) Prune(nowTick);
-                if (_events.Count >= MaxSources) return;      // Count() already reports such a source as over the limit
+                if (_events.Count >= _maxSources) Prune(nowTick, 20 * 60);
+                if (_events.Count >= _maxSources) return;      // Count() already reports such a source as over the limit
                 q = new Queue<int>();
                 _events[source] = q;
             }
             q.Enqueue(nowTick);
-            if (q.Count > 64) q.Dequeue();
+            while (q.Count > _eventsPerSource) q.Dequeue();
         }
 
-        private void Prune(int nowTick)
+        private void Prune(int nowTick, int windowTicks)
         {
             List<string> stale = null;
             foreach (KeyValuePair<string, Queue<int>> kv in _events)
             {
-                if (kv.Value.Count == 0 || nowTick - kv.Value.Peek() > 20 * 120)
+                if (kv.Value.Count == 0 || nowTick - kv.Value.Peek() > windowTicks)
                 {
-                    if (stale == null) stale = new List<string>();
-                    stale.Add(kv.Key);
+                    // Re-check with the newest event: a source is idle only if even its latest event is outside the window.
+                    int newest = 0;
+                    foreach (int t in kv.Value) newest = t;
+                    if (kv.Value.Count == 0 || nowTick - newest > windowTicks)
+                    {
+                        if (stale == null) stale = new List<string>();
+                        stale.Add(kv.Key);
+                    }
                 }
             }
             if (stale != null) foreach (string k in stale) _events.Remove(k);

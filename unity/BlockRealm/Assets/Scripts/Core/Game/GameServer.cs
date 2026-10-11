@@ -71,8 +71,9 @@ namespace BlockRealm.Sim
             public string KnownVerifier; // what we remember for this name, if anything
         }
 
-        private readonly SourceLimiter _adminFailures = new SourceLimiter();
-        private readonly SourceLimiter _newNames = new SourceLimiter();
+        // Per-source queues are short; the shared "*" source needs room for its (much larger) thresholds.
+        private readonly SourceLimiter _adminFailures = new SourceLimiter(512);
+        private readonly SourceLimiter _newNames = new SourceLimiter(512);
         // Backstops across all addresses, far above any honest rate, so a many-address flood is still bounded.
         private const string AllSources = "*";
         private const int GlobalAdminFailuresPerMinute = 200;
@@ -328,9 +329,41 @@ namespace BlockRealm.Sim
         private static string SourceKey(IConnection c)
         {
             if (c is LoopbackConnection) return "local";
-            string d = c.Description ?? "unknown";
-            int colon = d.LastIndexOf(':');
-            return colon > 0 && d.IndexOf(':') == colon ? d.Substring(0, colon) : d;   // keep IPv6 literals whole
+            return SourceKeyFor(c.Description);
+        }
+
+        /// <summary>
+        /// Normalises an endpoint description to a rate-limit key: the IPv4 address, or the /64 network for IPv6 (a single
+        /// subscriber can rotate through billions of addresses inside their /64, so those must share one allowance).
+        /// </summary>
+        public static string SourceKeyFor(string description)
+        {
+            string d = description ?? "unknown";
+            string host = d;
+            if (d.StartsWith("["))
+            {
+                int close = d.IndexOf(']');
+                host = close > 0 ? d.Substring(1, close - 1) : d.Substring(1);
+            }
+            else
+            {
+                int first = d.IndexOf(':'), last = d.LastIndexOf(':');
+                if (first > 0 && first == last) host = d.Substring(0, last);        // ipv4:port
+            }
+            if (host.IndexOf(':') >= 0)
+            {
+                // IPv6: keep the first four 16-bit groups. A leading "::" or short form still maps deterministically.
+                string[] groups = host.Split(':');
+                System.Text.StringBuilder sb = new System.Text.StringBuilder("v6/");
+                int taken = 0;
+                for (int i = 0; i < groups.Length && taken < 4; i++)
+                {
+                    sb.Append(groups[i].ToLowerInvariant()).Append(':');
+                    taken++;
+                }
+                return sb.ToString();
+            }
+            return host;
         }
 
         private static bool IsHex64(string s)
@@ -345,10 +378,6 @@ namespace BlockRealm.Sim
             return true;
         }
 
-        /// <summary>
-        /// Reserves a free name for an identity. Never overwrites an existing reservation, and is rate-limited so a
-        /// flood of throwaway names cannot fill the disk or memory.
-        /// </summary>
         private bool TryReserveName(string name, string verifier, string source)
         {
             if (LookupVerifier(name) != null) return false;
