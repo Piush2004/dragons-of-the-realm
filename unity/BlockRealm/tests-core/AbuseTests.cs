@@ -295,6 +295,62 @@ namespace BlockRealm.Tests
                 }
                 finally { try { System.IO.Directory.Delete(dir, true); } catch (Exception) { } }
             });
+            Harness.Run("two connections racing for a free name cannot steal it from each other", () =>
+            {
+                GameServer s = NewServer();
+                try
+                {
+                    // Both are challenged while the name is still free, then both answer in the same tick.
+                    RawClient first = new RawClient(s, "Racer", true, "key-of-the-first");
+                    RawClient second = new RawClient(s, "Racer", true, "key-of-the-second");
+                    RawClient[] both = { first, second };
+                    Run(s, both, 6);
+                    int online = 0;
+                    foreach (ServerPlayer pl in s.Players) if (pl.Name == "Racer") online++;
+                    Check.Equal(1, online, "only one claimant gets the name");
+                    int refused = 0;
+                    foreach (RawClient rc in both)
+                        foreach (Packet pk in rc.Received) { DisconnectPacket d = pk as DisconnectPacket; if (d != null && d.Reason.Contains("belongs")) refused++; }
+                    // (Whichever lost is told the name is taken, or was given a numbered name; it is never silently merged.)
+                    first.Conn.Close(); second.Conn.Close();
+                    Run(s, both, 5);
+                    RawClient again1 = new RawClient(s, "Racer", true, "key-of-the-first");
+                    RawClient again2 = new RawClient(s, "Racer", true, "key-of-the-second");
+                    Run(s, new[] { again1, again2 }, 6);
+                    int holders = 0;
+                    foreach (ServerPlayer pl in s.Players) if (pl.Name == "Racer") holders++;
+                    Check.Equal(1, holders, "the reservation has exactly one owner afterwards");
+                }
+                finally { s.Shutdown(); }
+            });
+            Harness.Run("names are plain ASCII so look-alike letters cannot impersonate", () =>
+            {
+                GameServer s = NewServer();
+                try
+                {
+                    RawClient real = new RawClient(s, "Admin", true, "k1");
+                    RawClient fake = new RawClient(s, "Аdmіn", true, "k2");     // Cyrillic A and i
+                    Run(s, new[] { real, fake }, 6);
+                    Check.True(s.FindPlayer("Admin") != null, "real name present");
+                    foreach (ServerPlayer pl in s.Players)
+                        foreach (char ch in pl.Name) Check.True(ch < 128, "non-ASCII character in a player name");
+                }
+                finally { s.Shutdown(); }
+            });
+            Harness.Run("a flood of throwaway names is rate limited", () =>
+            {
+                GameServer s = NewServer(o => o.MaxPlayers = 200);
+                try
+                {
+                    List<RawClient> clients = new List<RawClient>();
+                    for (int i = 0; i < 60; i++) clients.Add(new RawClient(s, "Flood" + i, true, "k" + i));
+                    Run(s, clients.ToArray(), 8);
+                    Console.WriteLine("        accepted " + s.Players.Count + " of 60 fresh names in a burst");
+                    Check.True(s.Players.Count <= 31, "bounded: " + s.Players.Count);
+                    Check.True(s.Players.Count >= 20, "but legitimate bursts still work: " + s.Players.Count);
+                }
+                finally { s.Shutdown(); }
+            });
             Harness.Run("guessing the admin token is locked out", () =>
             {
                 GameServer s = NewServer(o => { o.AdminToken = "right-token"; });

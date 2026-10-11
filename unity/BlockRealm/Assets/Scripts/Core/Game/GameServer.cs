@@ -180,7 +180,8 @@ namespace BlockRealm.Sim
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
             foreach (char ch in raw)
             {
-                if (char.IsLetterOrDigit(ch) || ch == '_' || ch == '-') sb.Append(ch);
+                bool ascii = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9');
+                if (ascii || ch == '_' || ch == '-') sb.Append(ch);
                 if (sb.Length >= 16) break;
             }
             return sb.Length == 0 ? "Player" : sb.ToString();
@@ -197,12 +198,24 @@ namespace BlockRealm.Sim
             }
             string name = pc.Name;
 
-            // Identity: a returning name must answer the challenge with the key it was reserved with.
-            string verifier = pc.KnownVerifier;
+            // Identity. The reservation is looked up again now: another connection may have claimed the name since
+            // this one said hello, and a stale answer must never overwrite it.
+            string verifier = LookupVerifier(name);
             if (verifier != null)
             {
-                string expected = AuthCrypto.Proof(verifier, pc.Nonce);
-                if (!AuthCrypto.ConstantTimeEquals(expected, auth.Proof))
+                bool ok;
+                if (pc.KnownVerifier != null)
+                {
+                    // We asked for a proof, so require one.
+                    ok = AuthCrypto.ConstantTimeEquals(AuthCrypto.Proof(verifier, pc.Nonce), auth.Proof);
+                }
+                else
+                {
+                    // The name was free when challenged and has been claimed meanwhile. It is fine only if the claimant
+                    // presents the very same verifier (the same player connecting twice); anyone else is refused.
+                    ok = IsHex64(auth.Verifier) && AuthCrypto.ConstantTimeEquals(verifier, auth.Verifier.ToLowerInvariant());
+                }
+                if (!ok)
                 {
                     c.Send(new DisconnectPacket { Reason = "The name \"" + name + "\" belongs to another player." }.Serialize());
                     c.Close();
@@ -211,9 +224,14 @@ namespace BlockRealm.Sim
             }
             else
             {
-                if (auth.Verifier.Length != 64) { c.Close(); return; }
+                if (!IsHex64(auth.Verifier)) { c.Close(); return; }
                 verifier = auth.Verifier.ToLowerInvariant();
-                ReserveName(name, verifier);
+                if (!TryReserveName(name, verifier))
+                {
+                    c.Send(new DisconnectPacket { Reason = "The server is not accepting new names right now." }.Serialize());
+                    c.Close();
+                    return;
+                }
             }
 
             // Names must be unique among connected players. A suffixed variant is taken only if nobody is using it and
@@ -225,7 +243,12 @@ namespace BlockRealm.Sim
                 string reserved = LookupVerifier(name);
                 if (!inUse && (reserved == null || AuthCrypto.ConstantTimeEquals(reserved, verifier)))
                 {
-                    if (reserved == null) ReserveName(name, verifier);
+                    if (reserved == null && !TryReserveName(name, verifier))
+                    {
+                        c.Send(new DisconnectPacket { Reason = "The server is not accepting new names right now." }.Serialize());
+                        c.Close();
+                        return;
+                    }
                     break;
                 }
                 name = baseName + n++;
@@ -290,10 +313,35 @@ namespace BlockRealm.Sim
             return null;
         }
 
-        private void ReserveName(string name, string verifier)
+        private readonly Queue<int> _newNameTicks = new Queue<int>();
+        private const int MaxReservedNames = 10000;
+        private const int MaxNewNamesPerMinute = 30;
+
+        private static bool IsHex64(string s)
         {
+            if (s == null || s.Length != 64) return false;
+            for (int i = 0; i < s.Length; i++)
+            {
+                char ch = s[i];
+                bool hex = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+                if (!hex) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Reserves a free name for an identity. Never overwrites an existing reservation, and is rate-limited so a
+        /// flood of throwaway names cannot fill the disk or memory.
+        /// </summary>
+        private bool TryReserveName(string name, string verifier)
+        {
+            if (LookupVerifier(name) != null) return false;
+            while (_newNameTicks.Count > 0 && TickCount - _newNameTicks.Peek() > 20 * 60) _newNameTicks.Dequeue();
+            if (_newNameTicks.Count >= MaxNewNamesPerMinute || _identityHashes.Count >= MaxReservedNames) return false;
+            _newNameTicks.Enqueue(TickCount);
             _identityHashes[name] = verifier;
             if (Storage != null) Storage.SaveIdentity(name, verifier);
+            return true;
         }
 
         public ServerPlayer FindPlayer(string name)
