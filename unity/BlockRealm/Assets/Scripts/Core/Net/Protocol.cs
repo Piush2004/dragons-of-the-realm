@@ -5,6 +5,18 @@ using System.Text;
 
 namespace BlockRealm.Net
 {
+    /// <summary>Size limits shared by the writer and the reader so they can never disagree.</summary>
+    public static class PacketLimits
+    {
+        public const int MaxStringBytes = 4096;
+        public const int MaxByteArray = ColumnCodec.MaxEncodedBytes;
+        public const int MaxEntityStates = 1000;
+        public const int MaxWindowSlots = 128;
+        public const int MaxFrameBytes = ColumnCodec.MaxEncodedBytes + 1024;
+        public const int EntityStateBytes = 4 + 12 + 4 + 4 + 2 + 1;
+        public const int StackBytes = 5;
+    }
+
     public sealed class PacketWriter
     {
         private readonly MemoryStream _ms = new MemoryStream(256);
@@ -20,34 +32,66 @@ namespace BlockRealm.Net
         public void Str(string s)
         {
             byte[] b = Encoding.UTF8.GetBytes(s ?? "");
-            if (b.Length > 32000) throw new InvalidDataException("string too long");
+            if (b.Length > PacketLimits.MaxStringBytes) throw new InvalidDataException("string too long");
             _w.Write((ushort)b.Length); _w.Write(b);
         }
-        public void Bytes(byte[] b) { _w.Write(b.Length); _w.Write(b); }
+        public void Bytes(byte[] b)
+        {
+            if (b.Length > PacketLimits.MaxByteArray) throw new InvalidDataException("byte array too long");
+            _w.Write(b.Length); _w.Write(b);
+        }
         public void Stack(ItemStack s) { _w.Write(s.Id); _w.Write(s.Count); _w.Write(s.Wear); }
         public void Vec(Vec3 v) { F32(v.X); F32(v.Y); F32(v.Z); }
         public byte[] ToArray() { _w.Flush(); return _ms.ToArray(); }
     }
 
+    /// <summary>Reads untrusted packets: every length is checked against the bytes that are really left.</summary>
     public sealed class PacketReader
     {
+        private readonly MemoryStream _ms;
         private readonly BinaryReader _r;
-        public PacketReader(byte[] data) { _r = new BinaryReader(new MemoryStream(data), Encoding.UTF8); }
-        public byte U8() { return _r.ReadByte(); }
-        public bool Bool() { return _r.ReadByte() != 0; }
-        public short I16() { return _r.ReadInt16(); }
-        public ushort U16() { return _r.ReadUInt16(); }
-        public int I32() { return _r.ReadInt32(); }
-        public long I64() { return _r.ReadInt64(); }
-        public float F32() { return _r.ReadSingle(); }
-        public string Str() { int n = _r.ReadUInt16(); return Encoding.UTF8.GetString(_r.ReadBytes(n)); }
+        public PacketReader(byte[] data) { _ms = new MemoryStream(data); _r = new BinaryReader(_ms, Encoding.UTF8); }
+        public int Remaining { get { return (int)(_ms.Length - _ms.Position); } }
+
+        /// <summary>Throws unless at least the given number of bytes remain, so a tiny packet cannot request a huge allocation.</summary>
+        public void Require(long bytes)
+        {
+            if (bytes < 0 || bytes > Remaining) throw new InvalidDataException("packet is shorter than it claims");
+        }
+
+        public byte U8() { Require(1); return _r.ReadByte(); }
+        public bool Bool() { return U8() != 0; }
+        public short I16() { Require(2); return _r.ReadInt16(); }
+        public ushort U16() { Require(2); return _r.ReadUInt16(); }
+        public int I32() { Require(4); return _r.ReadInt32(); }
+        public long I64() { Require(8); return _r.ReadInt64(); }
+        public float F32()
+        {
+            Require(4);
+            float f = _r.ReadSingle();
+            if (float.IsNaN(f) || float.IsInfinity(f)) throw new InvalidDataException("non-finite number in packet");
+            return f;
+        }
+        public string Str()
+        {
+            int n = U16();
+            if (n > PacketLimits.MaxStringBytes) throw new InvalidDataException("string too long");
+            Require(n);
+            return Encoding.UTF8.GetString(_r.ReadBytes(n));
+        }
         public byte[] Bytes()
         {
-            int n = _r.ReadInt32();
-            if (n < 0 || n > 8 * 1024 * 1024) throw new InvalidDataException("bad byte array length " + n);
+            int n = I32();
+            if (n < 0 || n > PacketLimits.MaxByteArray) throw new InvalidDataException("bad byte array length " + n);
+            Require(n);
             return _r.ReadBytes(n);
         }
-        public ItemStack Stack() { ItemStack s = new ItemStack(); s.Id = _r.ReadUInt16(); s.Count = _r.ReadByte(); s.Wear = _r.ReadInt16(); return s; }
+        public ItemStack Stack()
+        {
+            Require(PacketLimits.StackBytes);
+            ItemStack s = new ItemStack(); s.Id = _r.ReadUInt16(); s.Count = _r.ReadByte(); s.Wear = _r.ReadInt16();
+            return s;
+        }
         public Vec3 Vec() { return new Vec3(F32(), F32(), F32()); }
     }
 
@@ -78,14 +122,27 @@ namespace BlockRealm.Net
             return w.ToArray();
         }
 
+        /// <summary>Parses a packet, throwing InvalidDataException (and nothing else) for any malformed input.</summary>
         public static Packet Deserialize(byte[] data)
         {
-            PacketReader r = new PacketReader(data);
-            PacketId id = (PacketId)r.U8();
-            Packet p = Create(id);
-            if (p == null) throw new InvalidDataException("unknown packet id " + (int)id);
-            p.Read(r);
-            return p;
+            if (data == null || data.Length == 0) throw new InvalidDataException("empty packet");
+            try
+            {
+                PacketReader r = new PacketReader(data);
+                PacketId id = (PacketId)r.U8();
+                Packet p = Create(id);
+                if (p == null) throw new InvalidDataException("unknown packet id " + (int)id);
+                p.Read(r);
+                return p;
+            }
+            catch (InvalidDataException) { throw; }
+            catch (Exception e) { throw new InvalidDataException("malformed packet: " + e.Message); }
+        }
+
+        public static bool TryDeserialize(byte[] data, out Packet packet)
+        {
+            try { packet = Deserialize(data); return true; }
+            catch (InvalidDataException) { packet = null; return false; }
         }
 
         private static Packet Create(PacketId id)
@@ -359,6 +416,7 @@ namespace BlockRealm.Net
         public override PacketId Id { get { return PacketId.EntityStates; } }
         public override void Write(PacketWriter w)
         {
+            if (Entries.Count > PacketLimits.MaxEntityStates) throw new InvalidDataException("too many entity states");
             w.U16((ushort)Entries.Count);
             for (int i = 0; i < Entries.Count; i++)
             {
@@ -369,6 +427,8 @@ namespace BlockRealm.Net
         public override void Read(PacketReader r)
         {
             int n = r.U16();
+            if (n > PacketLimits.MaxEntityStates) throw new InvalidDataException("too many entity states");
+            r.Require((long)n * PacketLimits.EntityStateBytes);
             Entries.Clear();
             for (int i = 0; i < n; i++)
             {
@@ -403,10 +463,17 @@ namespace BlockRealm.Net
         public byte Window;
         public ItemStack[] Items = new ItemStack[0];
         public override PacketId Id { get { return PacketId.WindowItems; } }
-        public override void Write(PacketWriter w) { w.U8(Window); w.U16((ushort)Items.Length); for (int i = 0; i < Items.Length; i++) w.Stack(Items[i]); }
+        public override void Write(PacketWriter w)
+        {
+            if (Items.Length > PacketLimits.MaxWindowSlots) throw new InvalidDataException("too many window slots");
+            w.U8(Window); w.U16((ushort)Items.Length); for (int i = 0; i < Items.Length; i++) w.Stack(Items[i]);
+        }
         public override void Read(PacketReader r)
         {
-            Window = r.U8(); int n = r.U16(); Items = new ItemStack[n];
+            Window = r.U8(); int n = r.U16();
+            if (n > PacketLimits.MaxWindowSlots) throw new InvalidDataException("too many window slots");
+            r.Require((long)n * PacketLimits.StackBytes);
+            Items = new ItemStack[n];
             for (int i = 0; i < n; i++) Items[i] = r.Stack();
         }
     }
