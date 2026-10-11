@@ -140,15 +140,19 @@ namespace BlockRealm.Sim
         private const int MaxEntities = 4096;
         private const int MaxQueuedColumns = 1024;
 
-        private readonly string _identityKey, _adminToken;
+        private readonly string _identityKey, _adminToken, _expectedServerId;
+        /// <summary>Raised with the server's id the first time it is learned, so the caller can remember (pin) it.</summary>
+        public Action<string> ServerIdLearned;
 
         /// <param name="identityKey">A random secret kept by this machine; proves the name is yours on later visits.</param>
-        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "")
+        /// <param name="expectedServerId">The id this server had on a previous visit; a different one is refused.</param>
+        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "", string expectedServerId = "")
         {
             Connection = connection;
             PlayerName = name;
             _identityKey = identityKey ?? "";
             _adminToken = adminToken ?? "";
+            _expectedServerId = expectedServerId ?? "";
         }
 
         public void SendHello()
@@ -411,11 +415,20 @@ namespace BlockRealm.Sim
                 {
                     // Answer with proofs derived from the secrets; the secrets themselves never leave this machine.
                     ChallengePacket ch = (ChallengePacket)packet;
+                    // A server whose id has changed since the last visit is not the server we trusted: stop before
+                    // sending anything derived from our secrets.
+                    if (_expectedServerId.Length > 0 && !AuthCrypto.ConstantTimeEquals(_expectedServerId, ch.ServerId))
+                    {
+                        Fail("This server's identity has changed since your last visit; not logging in.");
+                        Connection.Close();
+                        break;
+                    }
+                    if (ServerIdLearned != null && ch.ServerId.Length > 0) ServerIdLearned(ch.ServerId);
                     AuthPacket auth = new AuthPacket();
-                    string verifier = AuthCrypto.Verifier(_identityKey);
+                    string verifier = AuthCrypto.Verifier(_identityKey, ch.ServerId);
                     if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce);
                     else auth.Verifier = verifier;
-                    if (_adminToken.Length > 0) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_adminToken), ch.Nonce);
+                    if (_adminToken.Length > 0) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_adminToken, ch.ServerId), ch.Nonce);
                     Send(auth);
                     break;
                 }

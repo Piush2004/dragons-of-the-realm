@@ -220,6 +220,23 @@ namespace BlockRealm.Sim
             catch (Exception) { return null; }
         }
 
+        public string LoadServerId()
+        {
+            try
+            {
+                string path = Path.Combine(Directory, "server.id");
+                if (!File.Exists(path)) return null;
+                string id = File.ReadAllText(path).Trim();
+                return id.Length >= 16 && id.Length <= 64 ? id : null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        public void SaveServerId(string id)
+        {
+            try { File.WriteAllText(Path.Combine(Directory, "server.id"), id); } catch (Exception) { }
+        }
+
         public int CountIdentities()
         {
             try { return System.IO.Directory.GetFiles(Path.Combine(Directory, "players"), "*.id").Length; }

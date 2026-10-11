@@ -30,17 +30,20 @@ namespace BlockRealm.Net
         /// <summary>A strong random admin token (64 hex characters = 256 bits), suitable for GameServer's AdminToken.</summary>
         public static string NewAdminToken() { return RandomNonce() + RandomNonce(); }
 
-        /// <summary>What the server remembers for a player: a hash of their secret key.</summary>
-        public static string Verifier(string identityKey)
+        /// <summary>
+        /// What a server remembers for a player: a hash of their secret key bound to that server's id. A different
+        /// server derives a different value, so a leaked or malicious server's copy is useless anywhere else.
+        /// </summary>
+        public static string Verifier(string identityKey, string serverId)
         {
             using (SHA256 sha = SHA256.Create())
-                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:identity:" + (identityKey ?? ""))));
+                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:identity:v3:" + (serverId ?? "") + ":" + (identityKey ?? ""))));
         }
 
-        public static string AdminVerifier(string token)
+        public static string AdminVerifier(string token, string serverId)
         {
             using (SHA256 sha = SHA256.Create())
-                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:admin:" + (token ?? ""))));
+                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:admin:v3:" + (serverId ?? "") + ":" + (token ?? ""))));
         }
 
         /// <summary>HMAC of the challenge keyed by a verifier; only someone who knows the key can produce it.</summary>

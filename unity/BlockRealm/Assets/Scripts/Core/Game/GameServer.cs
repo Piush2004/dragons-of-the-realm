@@ -44,6 +44,8 @@ namespace BlockRealm.Sim
         public readonly World World;
         public readonly WorldGenerator Generator;
         public readonly Rng Random;
+        /// <summary>Random id of this world, announced in every challenge; player credentials are scoped to it.</summary>
+        public readonly string ServerId;
         public readonly List<ServerPlayer> Players = new List<ServerPlayer>();
         public readonly Dictionary<int, Entity> Entities = new Dictionary<int, Entity>();
         public int TickCount;
@@ -96,9 +98,12 @@ namespace BlockRealm.Sim
             Generator = new WorldGenerator(options.Seed);
             Random = new Rng(options.Seed ^ 0x5EED);
             SpawnPoint = Generator.FindSpawn();
+            ServerId = AuthCrypto.RandomNonce();
             if (options.SaveDir != null)
             {
                 Storage = new WorldStorage(options.SaveDir);
+                string savedId = Storage.LoadServerId();
+                if (savedId != null) ServerId = savedId; else Storage.SaveServerId(ServerId);
                 WorldStorage.LevelInfo level;
                 if (Storage.TryLoadLevel(out level)) { DayTick = level.DayTick; }
             }
@@ -173,7 +178,7 @@ namespace BlockRealm.Sim
                         pc.Nonce = AuthCrypto.RandomNonce();
                         pc.Stage = 1;
                         pc.Deadline = TickCount + 20 * 15;
-                        pc.Connection.Send(new ChallengePacket { Nonce = pc.Nonce, NameKnown = pc.KnownVerifier != null }.Serialize());
+                        pc.Connection.Send(new ChallengePacket { Nonce = pc.Nonce, NameKnown = pc.KnownVerifier != null, ServerId = ServerId }.Serialize());
                     }
                     else
                     {
@@ -286,7 +291,7 @@ namespace BlockRealm.Sim
                 }
                 else
                 {
-                    string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken), pc.Nonce);
+                    string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken, ServerId), pc.Nonce);
                     tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
                     if (!tokenOk) _adminFailures.Add(source, TickCount);
                 }

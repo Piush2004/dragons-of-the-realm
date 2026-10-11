@@ -197,7 +197,7 @@ namespace BlockRealm.Net
 
     public sealed class HelloPacket : Packet
     {
-        public const int ProtocolVersion = 3;
+        public const int ProtocolVersion = 4;
         public int Protocol = ProtocolVersion;
         public string Name = "Player";
         public override PacketId Id { get { return PacketId.Hello; } }
@@ -605,12 +605,14 @@ namespace BlockRealm.Net
     {
         public string Nonce = "";
         public bool NameKnown;
+        /// <summary>Stable random id of this server's world; credentials are derived per server id.</summary>
+        public string ServerId = "";
         public override PacketId Id { get { return PacketId.Challenge; } }
-        public override void Write(PacketWriter w) { w.Str(Nonce); w.Bool(NameKnown); }
+        public override void Write(PacketWriter w) { w.Str(Nonce); w.Bool(NameKnown); w.Str(ServerId); }
         public override void Read(PacketReader r)
         {
-            Nonce = r.Str(); NameKnown = r.Bool();
-            if (Nonce.Length > 64) throw new InvalidDataException("nonce too long");
+            Nonce = r.Str(); NameKnown = r.Bool(); ServerId = r.Str();
+            if (Nonce.Length > 64 || ServerId.Length > 64) throw new InvalidDataException("challenge field too long");
         }
     }
 

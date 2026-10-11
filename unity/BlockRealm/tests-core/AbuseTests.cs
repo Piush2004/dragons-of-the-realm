@@ -40,9 +40,9 @@ namespace BlockRealm.Tests
                 if (ch != null)
                 {
                     AuthPacket auth = new AuthPacket();
-                    string verifier = AuthCrypto.Verifier(_identity);
+                    string verifier = AuthCrypto.Verifier(_identity, ch.ServerId);
                     if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce); else auth.Verifier = verifier;
-                    if (!string.IsNullOrEmpty(_token)) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_token), ch.Nonce);
+                    if (!string.IsNullOrEmpty(_token)) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_token, ch.ServerId), ch.Nonce);
                     LastAuth = auth.Serialize();
                     Send(auth);
                 }
@@ -252,6 +252,42 @@ namespace BlockRealm.Tests
                     RawClient r = new RawClient(s, "Boss", true, "", "short", "4.4.4.4:100");
                     Run(s, new[] { r }, 4);
                     Check.True(s.FindPlayer("Boss") != null && !s.FindPlayer("Boss").Op, "weak token grants nothing");
+                }
+                finally { s.Shutdown(); }
+            });
+            Harness.Run("credentials are scoped to one server and a changed server identity is refused", () =>
+            {
+                // The same player secret gives unrelated verifiers on different servers.
+                string key = "player-secret-key-value-0123456789abcdef";
+                string v1 = AuthCrypto.Verifier(key, "server-one-id-000000000000");
+                string v2 = AuthCrypto.Verifier(key, "server-two-id-111111111111");
+                Check.True(v1 != v2, "verifiers differ per server");
+                Check.True(AuthCrypto.AdminVerifier("tok", "a") != AuthCrypto.AdminVerifier("tok", "b"), "admin verifiers differ per server");
+
+                GameServer s = NewServer();
+                try
+                {
+                    LoopbackConnection a, b;
+                    LoopbackConnection.CreatePair(out a, out b);
+                    s.AddConnection(new RemoteLike(b, "3.3.3.3:1"));
+                    GameClient client = new GameClient(a, "Pinned", key, "", "a-different-server-id-0000000");
+                    PlayerInput none = new PlayerInput();
+                    ClientActions noActs = new ClientActions();
+                    for (int i = 0; i < 12; i++) { s.Tick(); client.Update(0.05f, none, noActs); }
+                    Check.Equal(ClientState.Disconnected, client.State, "client refused to log in");
+                    Check.True(client.DisconnectReason.Contains("identity"), "told why: " + client.DisconnectReason);
+                    Check.True(s.FindPlayer("Pinned") == null, "nothing derived from the secret was sent");
+
+                    // With the right pin it logs in, and learns the id.
+                    LoopbackConnection c, d;
+                    LoopbackConnection.CreatePair(out c, out d);
+                    s.AddConnection(new RemoteLike(d, "3.3.3.4:1"));
+                    string learned = null;
+                    GameClient ok = new GameClient(c, "Pinned", key, "", s.ServerId);
+                    ok.ServerIdLearned = id => learned = id;
+                    for (int i = 0; i < 12; i++) { s.Tick(); ok.Update(0.05f, none, noActs); }
+                    Check.True(s.FindPlayer("Pinned") != null, "correct pin logs in");
+                    Check.Equal(s.ServerId, learned, "server id reported to the caller");
                 }
                 finally { s.Shutdown(); }
             });
