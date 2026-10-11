@@ -41,6 +41,13 @@ namespace BlockRealm.Sim
             return q.Count;
         }
 
+        /// <summary>Like <see cref="Count"/>, but an untrackable source counts as clean (used where locking out is the greater risk).</summary>
+        public int CountOpen(string source, int nowTick, int windowTicks)
+        {
+            int n = Count(source, nowTick, windowTicks);
+            return n == int.MaxValue ? 0 : n;
+        }
+
         public void Add(string source, int nowTick)
         {
             Queue<int> q;

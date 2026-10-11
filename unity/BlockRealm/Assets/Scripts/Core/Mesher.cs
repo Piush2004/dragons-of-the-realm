@@ -3,14 +3,17 @@ using System.Runtime.InteropServices;
 
 namespace BlockRealm
 {
-    /// <summary>One vertex, 32 bytes, laid out so Unity can upload the array directly.</summary>
+    /// <summary>
+    /// One vertex, 32 bytes, laid out so Unity can upload the array directly. The field order matches Unity's
+    /// required attribute order within a stream: position, normal, colour, then texture coordinates.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct MeshVertex
     {
-        public float PX, PY, PZ;
-        public sbyte NX, NY, NZ, NW;
-        public float U, V, Layer;
-        public byte Sky, Block, Ao, Flags;      // light 0..255, ambient occlusion 0..255, flags (bit0 = water top)
+        public float PX, PY, PZ;                // position (12 bytes)
+        public sbyte NX, NY, NZ, NW;            // normal as signed normalised bytes (4)
+        public byte Sky, Block, Ao, Flags;      // colour: sky light, block light, ambient occlusion, flags (4)
+        public float U, V, Layer;               // texture-array coordinates (12)
     }
 
     /// <summary>Geometry for one section: a shared vertex array and three index ranges (opaque, cutout, water).</summary>

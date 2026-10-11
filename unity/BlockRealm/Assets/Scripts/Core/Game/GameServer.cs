@@ -76,12 +76,18 @@ namespace BlockRealm.Sim
         private readonly SourceLimiter _newNames = new SourceLimiter(512);
         // Backstops across all addresses, far above any honest rate, so a many-address flood is still bounded.
         private const string AllSources = "*";
-        private const int GlobalAdminFailuresPerMinute = 200;
         private const int GlobalNewNamesPerMinute = 120;
+
+        /// <summary>Admin tokens shorter than this are ignored: a long random token cannot be guessed, so no global lockout is needed.</summary>
+        public const int MinAdminTokenLength = 16;
 
         public GameServer(ServerOptions options)
         {
             Options = options;
+            if (!string.IsNullOrEmpty(options.AdminToken) && options.AdminToken.Length < MinAdminTokenLength)
+            {
+                options.AdminToken = null;     // too weak to protect anything; remote operators stay disabled
+            }
             World = new World(options.Seed);
             Generator = new WorldGenerator(options.Seed);
             Random = new Rng(options.Seed ^ 0x5EED);
@@ -266,8 +272,10 @@ namespace BlockRealm.Sim
             if (!string.IsNullOrEmpty(Options.AdminToken) && !string.IsNullOrEmpty(auth.AdminProof))
             {
                 string source = SourceKey(c);
-                if (_adminFailures.Count(source, TickCount, 20 * 60) >= 5 ||
-                    _adminFailures.Count(AllSources, TickCount, 20 * 60) >= GlobalAdminFailuresPerMinute)
+                // Only the guesser's own address is throttled. There is deliberately no global admin lockout: that would let
+                // anyone with enough addresses keep the real admin out. Guessing is pointless anyway because tokens must
+                // be long (see MinAdminTokenLength); the per-address limit just keeps the noise down.
+                if (_adminFailures.CountOpen(source, TickCount, 20 * 60) >= 5)
                 {
                     // This source has guessed wrong too often lately: ignore its admin proofs for a minute.
                     // Other sources are unaffected, so an attacker cannot lock the real admin out.
@@ -276,7 +284,7 @@ namespace BlockRealm.Sim
                 {
                     string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken), pc.Nonce);
                     tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
-                    if (!tokenOk) { _adminFailures.Add(source, TickCount); _adminFailures.Add(AllSources, TickCount); }
+                    if (!tokenOk) _adminFailures.Add(source, TickCount);
                 }
             }
 
