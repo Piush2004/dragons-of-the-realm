@@ -195,12 +195,20 @@ namespace BlockRealm.Net
 
     public sealed class HelloPacket : Packet
     {
-        public const int ProtocolVersion = 1;
+        public const int ProtocolVersion = 2;
         public int Protocol = ProtocolVersion;
         public string Name = "Player";
+        /// <summary>A random secret the player's machine keeps. It proves the name is theirs on later visits.</summary>
+        public string IdentityKey = "";
+        /// <summary>Optional server admin token; grants operator rights when it matches the server's.</summary>
+        public string AdminToken = "";
         public override PacketId Id { get { return PacketId.Hello; } }
-        public override void Write(PacketWriter w) { w.I32(Protocol); w.Str(Name); }
-        public override void Read(PacketReader r) { Protocol = r.I32(); Name = r.Str(); }
+        public override void Write(PacketWriter w) { w.I32(Protocol); w.Str(Name); w.Str(IdentityKey); w.Str(AdminToken); }
+        public override void Read(PacketReader r)
+        {
+            Protocol = r.I32(); Name = r.Str(); IdentityKey = r.Str(); AdminToken = r.Str();
+            if (IdentityKey.Length > 128 || AdminToken.Length > 128) throw new InvalidDataException("credential too long");
+        }
     }
 
     [Flags]

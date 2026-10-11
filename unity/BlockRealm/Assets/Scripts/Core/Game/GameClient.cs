@@ -140,17 +140,22 @@ namespace BlockRealm.Sim
         private const int MaxEntities = 4096;
         private const int MaxQueuedColumns = 1024;
 
-        public GameClient(IConnection connection, string name)
+        private readonly string _identityKey, _adminToken;
+
+        /// <param name="identityKey">A random secret kept by this machine; proves the name is yours on later visits.</param>
+        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "")
         {
             Connection = connection;
             PlayerName = name;
+            _identityKey = identityKey ?? "";
+            _adminToken = adminToken ?? "";
         }
 
         public void SendHello()
         {
             if (_sentHello) return;
             _sentHello = true;
-            Send(new HelloPacket { Name = PlayerName });
+            Send(new HelloPacket { Name = PlayerName, IdentityKey = _identityKey, AdminToken = _adminToken });
         }
 
         public void Send(Packet p) { if (Connection.IsOpen) Connection.Send(p.Serialize()); }

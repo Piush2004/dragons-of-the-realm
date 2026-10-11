@@ -19,10 +19,16 @@ namespace BlockRealm.Sim
         public bool SynchronousWorldGen;        // tests: generate on the calling thread
         public string SaveDir;                  // null = nothing is saved
         public bool AllowCommands = true;
-        /// <summary>The first player to join (the person hosting) may use commands.</summary>
-        public bool HostIsOp = true;
-        /// <summary>Extra operators by name (case-insensitive). Everyone else is a normal player.</summary>
-        public readonly HashSet<string> Operators = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
+        /// The person running the game on this machine (a connection that never touches the network) may use
+        /// commands. Remote players never get this just by connecting.
+        /// </summary>
+        public bool HostIsOp;
+        /// <summary>
+        /// Secret that grants operator rights to a remote player who presents it. Null or empty disables remote
+        /// operators entirely; a name is never enough, because anyone can type any name.
+        /// </summary>
+        public string AdminToken;
         /// <summary>Tests and private servers only: every player may use commands.</summary>
         public bool EveryoneIsOp;
         public int MaxPendingConnections = 32;
@@ -173,14 +179,23 @@ namespace BlockRealm.Sim
                 return;
             }
             string name = CleanName(hello.Name);
-            // Names must be unique.
+            // A saved player belongs to whoever first used that name: later visits must present the same identity key.
+            if (!IdentityAllowed(name, hello.IdentityKey))
+            {
+                c.Send(new DisconnectPacket { Reason = "The name \"" + name + "\" belongs to another player." }.Serialize());
+                c.Close();
+                return;
+            }
+            // Names must be unique among connected players.
             string baseName = name; int n = 2;
-            while (FindPlayer(name) != null) name = baseName + n++;
+            while (FindPlayer(name) != null || !IdentityAllowed(name, hello.IdentityKey)) name = baseName + n++;
+            bool isLocal = c is LoopbackConnection;
+            bool tokenOk = !string.IsNullOrEmpty(Options.AdminToken) && ConstantTimeEquals(Options.AdminToken, hello.AdminToken);
 
             ServerPlayer p = new ServerPlayer(c, name);
             p.Id = _nextEntityId++;
             p.Mode = Options.DefaultMode;
-            p.Op = Options.EveryoneIsOp || (Options.HostIsOp && Players.Count == 0) || Options.Operators.Contains(name);
+            p.Op = Options.EveryoneIsOp || (Options.HostIsOp && isLocal) || tokenOk;
             p.LastPacketTick = TickCount;
             Vec3i sp = SpawnPoint;
             int surface = World.GetSurfaceY(sp.X, sp.Z);
@@ -201,6 +216,47 @@ namespace BlockRealm.Sim
             SendFullInventory(p);
             SendStats(p);
             Broadcast(new ChatMessagePacket { Text = name + " joined the game" });
+        }
+
+        private readonly Dictionary<string, string> _identityHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        private static string HashKey(string key)
+        {
+            using (System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] h = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("blockrealm:" + (key ?? "")));
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                for (int i = 0; i < h.Length; i++) sb.Append(h[i].ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        private static bool ConstantTimeEquals(string a, string b)
+        {
+            if (a == null || b == null) return false;
+            int diff = a.Length ^ b.Length;
+            int n = Math.Min(a.Length, b.Length);
+            for (int i = 0; i < n; i++) diff |= a[i] ^ b[i];
+            return diff == 0;
+        }
+
+        /// <summary>
+        /// First use of a name reserves it for that identity key (remembered across restarts when the world is saved).
+        /// A different key is refused, so nobody can walk off with an offline player's inventory.
+        /// </summary>
+        private bool IdentityAllowed(string name, string key)
+        {
+            string hash = HashKey(key);
+            string known;
+            if (!_identityHashes.TryGetValue(name, out known) && Storage != null) known = Storage.LoadIdentity(name);
+            if (known == null)
+            {
+                _identityHashes[name] = hash;
+                if (Storage != null) Storage.SaveIdentity(name, hash);
+                return true;
+            }
+            _identityHashes[name] = known;
+            return ConstantTimeEquals(known, hash);
         }
 
         public ServerPlayer FindPlayer(string name)

@@ -12,13 +12,14 @@ namespace BlockRealm.Tests
         public readonly List<Packet> Received = new List<Packet>();
         public int PlayerId;
 
-        public RawClient(GameServer server, string name)
+        public RawClient(GameServer server, string name, bool remote = false, string identity = "", string token = "")
         {
             LoopbackConnection a, b;
             LoopbackConnection.CreatePair(out a, out b);
-            server.AddConnection(b);
+            // A wrapped connection stands in for a TCP peer: the server must not treat it as the local host.
+            server.AddConnection(remote ? (IConnection)new RemoteLike(b) : b);
             Conn = a;
-            Send(new HelloPacket { Name = name });
+            Send(new HelloPacket { Name = name, IdentityKey = identity, AdminToken = token });
         }
 
         public void Send(Packet p) { Conn.Send(p.Serialize()); }
@@ -43,6 +44,19 @@ namespace BlockRealm.Tests
         }
     }
 
+    /// <summary>Test stand-in for a network peer: same behaviour, but not an in-process loopback.</summary>
+    public sealed class RemoteLike : IConnection
+    {
+        private readonly LoopbackConnection _inner;
+        public RemoteLike(LoopbackConnection inner) { _inner = inner; }
+        public bool IsOpen { get { return _inner.IsOpen; } }
+        public string Description { get { return "remote-like"; } }
+        public void Send(byte[] payload) { _inner.Send(payload); }
+        public bool TryReceive(out byte[] payload) { return _inner.TryReceive(out payload); }
+        public void Close() { _inner.Close(); }
+        public void Dispose() { _inner.Dispose(); }
+    }
+
     public static class AbuseTests
     {
         private static void Run(GameServer s, RawClient[] clients, int ticks)
@@ -64,25 +78,60 @@ namespace BlockRealm.Tests
         public static void RunAll()
         {
             Harness.Group("abuse resistance");
-            Harness.Run("only the host and listed operators may use commands", () =>
+            Harness.Run("operator rights come from being local or presenting the admin token, never from a name", () =>
             {
-                GameServer s = NewServer(o => { o.HostIsOp = true; });
+                GameServer s = NewServer(o => { o.HostIsOp = true; o.AdminToken = "s3cret-token"; });
                 try
                 {
-                    s.Options.Operators.Add("Helper");
-                    RawClient host = new RawClient(s, "Host"), guest = new RawClient(s, "Guest"), helper = new RawClient(s, "Helper");
-                    RawClient[] all = { host, guest, helper };
+                    // A remote peer (anything that is not an in-process connection), however early it connects and whatever it is called.
+                    RawClient remoteFirst = new RawClient(s, "Admin", true);
+                    RawClient host = new RawClient(s, "Host");
+                    RawClient token = new RawClient(s, "Trusted", true, "", "s3cret-token");
+                    RawClient wrong = new RawClient(s, "Wrong", true, "", "guess");
+                    RawClient[] all = { remoteFirst, host, token, wrong };
                     Run(s, all, 5);
-                    Check.True(s.FindPlayer("Host").Op && !s.FindPlayer("Guest").Op && s.FindPlayer("Helper").Op, "op flags");
-                    guest.Send(new ChatPacket { Text = "/give diamond 20" });
-                    guest.Send(new ChatPacket { Text = "/gamemode creative" });
-                    helper.Send(new ChatPacket { Text = "/give diamond 3" });
+                    Check.True(!s.FindPlayer("Admin").Op, "first remote connection is not an operator");
+                    Check.True(s.FindPlayer("Host").Op, "the local host is");
+                    Check.True(s.FindPlayer("Trusted").Op, "valid token is");
+                    Check.True(!s.FindPlayer("Wrong").Op, "wrong token is not");
+                    remoteFirst.Send(new ChatPacket { Text = "/give diamond 20" });
+                    remoteFirst.Send(new ChatPacket { Text = "/gamemode creative" });
+                    token.Send(new ChatPacket { Text = "/give diamond 3" });
                     Run(s, all, 5);
-                    Check.Equal(0, s.FindPlayer("Guest").Inventory.Count(ItemIds.Diamond), "guest got nothing");
-                    Check.Equal(GameMode.Survival, s.FindPlayer("Guest").Mode);
-                    Check.Equal(3, s.FindPlayer("Helper").Inventory.Count(ItemIds.Diamond), "listed operator may");
+                    Check.Equal(0, s.FindPlayer("Admin").Inventory.Count(ItemIds.Diamond), "remote player got nothing");
+                    Check.Equal(GameMode.Survival, s.FindPlayer("Admin").Mode);
+                    Check.Equal(3, s.FindPlayer("Trusted").Inventory.Count(ItemIds.Diamond), "token holder may");
                 }
                 finally { s.Shutdown(); }
+            });
+            Harness.Run("a saved name cannot be taken over by someone with a different identity", () =>
+            {
+                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brauth_" + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    GameServer s = NewServer(o => { o.SaveDir = dir; });
+                    RawClient ada = new RawClient(s, "Ada", true, "ada-secret-key");
+                    Run(s, new[] { ada }, 5);
+                    s.FindPlayer("Ada").Inventory.Add(new ItemStack(ItemIds.Diamond, 9));
+                    ada.Conn.Close();
+                    Run(s, new[] { ada }, 5);
+                    Check.True(s.FindPlayer("Ada") == null, "Ada left");
+                    s.Shutdown();
+
+                    s = NewServer(o => { o.SaveDir = dir; });
+                    RawClient thief = new RawClient(s, "Ada", true, "not-the-key");
+                    Run(s, new[] { thief }, 5);
+                    Check.True(s.FindPlayer("Ada") == null, "impostor refused");
+                    bool told = false;
+                    foreach (Packet p in thief.Received) { DisconnectPacket d = p as DisconnectPacket; if (d != null && d.Reason.Contains("belongs")) told = true; }
+                    Check.True(told, "impostor told why");
+                    RawClient real = new RawClient(s, "Ada", true, "ada-secret-key");
+                    Run(s, new[] { real }, 5);
+                    Check.True(s.FindPlayer("Ada") != null, "the real Ada is welcome");
+                    Check.Equal(9, s.FindPlayer("Ada").Inventory.Count(ItemIds.Diamond), "with her inventory");
+                    s.Shutdown();
+                }
+                finally { try { System.IO.Directory.Delete(dir, true); } catch (Exception) { } }
             });
             Harness.Run("survival players cannot claim flight or bank up a free teleport", () =>
             {

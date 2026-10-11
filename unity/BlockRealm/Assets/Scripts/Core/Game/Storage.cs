@@ -206,6 +206,25 @@ namespace BlockRealm.Sim
             catch (Exception) { /* unreadable file: start fresh */ }
         }
 
+        // ------------------------------------------------------------------ identities
+
+        private string IdentityPath(string name) { return Path.Combine(Directory, "players", Path.GetFileName(name) + ".id"); }
+
+        public string LoadIdentity(string name)
+        {
+            try
+            {
+                string path = IdentityPath(name);
+                return File.Exists(path) ? File.ReadAllText(path).Trim() : null;
+            }
+            catch (Exception) { return null; }
+        }
+
+        public void SaveIdentity(string name, string hash)
+        {
+            try { File.WriteAllText(IdentityPath(name), hash); } catch (Exception) { }
+        }
+
         // ------------------------------------------------------------------ stacks
 
         private static void WriteStack(BinaryWriter w, ItemStack s) { w.Write(s.Id); w.Write(s.Count); w.Write(s.Wear); }
