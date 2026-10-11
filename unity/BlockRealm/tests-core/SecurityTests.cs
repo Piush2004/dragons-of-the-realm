@@ -77,6 +77,14 @@ namespace BlockRealm.Tests
                 Check.True(a != c, "different /64");
                 Check.Equal("203.0.113.9", BlockRealm.Sim.GameServer.SourceKeyFor("203.0.113.9:25565"));
             });
+            Harness.Run("text from a server is stripped of control characters and markup before display", () =>
+            {
+                Check.Equal("helloworld", BlockRealm.Sim.GameClient.Sanitize("hello" + (char)13 + (char)10 + "world", 50));
+                Check.Equal("(b)bold(/b)", BlockRealm.Sim.GameClient.Sanitize("<b>bold</b>", 50));
+                Check.Equal("ab", BlockRealm.Sim.GameClient.Sanitize("a" + (char)0 + (char)7 + "b", 50));
+                Check.Equal(10, BlockRealm.Sim.GameClient.Sanitize(new string('x', 500), 10).Length);
+                Check.Equal("", BlockRealm.Sim.GameClient.Sanitize(null, 10));
+            });
             Harness.Run("random bytes never crash the column decoder", () =>
             {
                 Rng rng = new Rng(99);

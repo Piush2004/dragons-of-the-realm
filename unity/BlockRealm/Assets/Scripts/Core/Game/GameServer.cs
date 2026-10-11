@@ -35,6 +35,11 @@ namespace BlockRealm.Sim
         /// listed, remote administration is disabled.
         /// </summary>
         public readonly List<string> PublicAddresses = new List<string>();
+        /// <summary>
+        /// Admin credentials already derived for each public address (address -> verifier). Preferred over AdminToken
+        /// because a verifier can be stored on disk without ever writing the token itself.
+        /// </summary>
+        public readonly Dictionary<string, string> AdminVerifiers = new Dictionary<string, string>();
         /// <summary>Tests and private servers only: every player may use commands.</summary>
         public bool EveryoneIsOp;
         public int MaxPendingConnections = 32;
@@ -116,6 +121,17 @@ namespace BlockRealm.Sim
                 if (Storage.TryLoadLevel(out level)) { DayTick = level.DayTick; }
             }
             World.BlockChanged = OnBlockChanged;
+
+            // Turn the admin token (if any) into per-address verifiers and forget the token itself.
+            if (!string.IsNullOrEmpty(options.AdminToken))
+            {
+                for (int i = 0; i < options.PublicAddresses.Count; i++)
+                {
+                    string addr = AuthCrypto.NormaliseAddress(options.PublicAddresses[i]);
+                    options.AdminVerifiers[addr] = AuthCrypto.AdminVerifier(options.AdminToken, ServerId, addr);
+                }
+                options.AdminToken = null;
+            }
         }
 
         // ------------------------------------------------------------------ connections
@@ -286,7 +302,7 @@ namespace BlockRealm.Sim
             // Operator rights: the local host, or a remote that answered the challenge with the admin token.
             bool isLocal = c is LoopbackConnection;
             bool tokenOk = false;
-            if (!string.IsNullOrEmpty(Options.AdminToken) && !string.IsNullOrEmpty(auth.AdminProof))
+            if (Options.AdminVerifiers.Count > 0 && !string.IsNullOrEmpty(auth.AdminProof))
             {
                 string source = SourceKey(c);
                 // Only the guesser's own address is throttled. There is deliberately no global admin lockout: that would let
@@ -299,10 +315,10 @@ namespace BlockRealm.Sim
                 }
                 else
                 {
-                    for (int ai = 0; ai < Options.PublicAddresses.Count && !tokenOk; ai++)
+                    foreach (KeyValuePair<string, string> kv in Options.AdminVerifiers)
                     {
-                        string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken, ServerId, Options.PublicAddresses[ai]), pc.Nonce);
-                        tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
+                        string expectedAdmin = AuthCrypto.Proof(kv.Value, pc.Nonce);
+                        if (AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof)) { tokenOk = true; break; }
                     }
                     if (!tokenOk) _adminFailures.Add(source, TickCount);
                 }

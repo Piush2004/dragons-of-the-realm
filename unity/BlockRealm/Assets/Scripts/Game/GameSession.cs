@@ -280,7 +280,7 @@ namespace BlockRealm.Game
                     try { pin = PlayerPrefs.GetString(PinKey(_connectAddress), ""); } catch (Exception) { }
                     string addr = _connectAddress;
                     GameClient c = new GameClient(t.Result, GameSettings.PlayerName, _connectAddress, GameSettings.IdentityKey,
-                        GameSettings.AdminToken, pin);
+                        GameSettings.AdminTokenFor(_connectAddress), pin);
                     c.ServerIdLearned = id =>
                     {
                         try { if (PlayerPrefs.GetString(PinKey(addr), "").Length == 0) { PlayerPrefs.SetString(PinKey(addr), id); PlayerPrefs.Save(); } }

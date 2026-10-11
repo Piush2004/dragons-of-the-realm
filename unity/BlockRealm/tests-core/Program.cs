@@ -9,6 +9,8 @@ static class Program
         Console.WriteLine("BlockRealm core tests");
 
         if (args.Length > 0 && args[0] == "--debug") { DebugTests.Run(); return 0; }
+        if (args.Length >= 1 && args[0] == "--serve") return ConsoleModes.Serve(args);
+        if (args.Length >= 1 && args[0] == "--bot") return ConsoleModes.Bot(args);
         if (args.Length >= 2 && args[0] == "--tiles") return ToolCommands.WriteTileList(args[1]);
         if (args.Length >= 2 && args[0] == "--map")
         {

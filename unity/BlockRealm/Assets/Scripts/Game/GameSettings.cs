@@ -75,10 +75,24 @@ namespace BlockRealm.Game
             set { Set("br.host", value); }
         }
 
-        public static string AdminToken
+        /// <summary>
+        /// Admin tokens are remembered per server address and only ever used for that address (and even then only a proof
+        /// derived from the token is sent, never the token). They live in PlayerPrefs, so treat this machine's user
+        /// profile as the trust boundary.
+        /// </summary>
+        public static string AdminTokenFor(string address)
         {
-            get { return GetString("br.admintoken", ""); }
-            set { Set("br.admintoken", value); }
+            return GetString("br.admin." + AuthCrypto.NormaliseAddress(address), "");
+        }
+
+        public static void SetAdminTokenFor(string address, string token)
+        {
+            string key = "br.admin." + AuthCrypto.NormaliseAddress(address);
+            try
+            {
+                if (string.IsNullOrEmpty(token)) PlayerPrefs.DeleteKey(key); else PlayerPrefs.SetString(key, token);
+            }
+            catch (Exception) { }
         }
 
         /// <summary>

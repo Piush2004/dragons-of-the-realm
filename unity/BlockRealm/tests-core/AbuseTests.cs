@@ -346,6 +346,54 @@ namespace BlockRealm.Tests
                 GameClient local = new GameClient(a, "X", "local");
                 Check.True(local != null, "in-process clients may use local");
             });
+            Harness.Run("the raw admin token is dropped after start-up; only verifiers are kept", () =>
+            {
+                string token = AuthCrypto.NewAdminToken();
+                GameServer s = NewServer(o => { o.AdminToken = token; o.PublicAddresses.Add("Play.Example:25565"); });
+                try
+                {
+                    Check.True(s.Options.AdminToken == null, "token forgotten after deriving verifiers");
+                    Check.Equal(1, s.Options.AdminVerifiers.Count);
+                    string v;
+                    Check.True(s.Options.AdminVerifiers.TryGetValue("play.example:25565", out v), "keyed by the normalised address");
+                    Check.Equal(AuthCrypto.AdminVerifier(token, s.ServerId, "play.example:25565"), v);
+                    Check.True(!v.Contains(token), "verifier does not contain the token");
+                }
+                finally { s.Shutdown(); }
+
+                // A server restarted from stored verifiers (no token at all) still recognises its admin.
+                GameServer first = NewServer(o => { o.AdminToken = token; o.PublicAddresses.Add("play.example:25565"); o.SaveDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brverif_" + Guid.NewGuid().ToString("N")); });
+                string dir = first.Options.SaveDir;
+                string id = first.ServerId;
+                string verifier = first.Options.AdminVerifiers["play.example:25565"];
+                first.Shutdown();
+                try
+                {
+                    GameServer second = NewServer(o => { o.SaveDir = dir; o.AdminVerifiers["play.example:25565"] = verifier; });
+                    try
+                    {
+                        Check.Equal(id, second.ServerId, "server id persists");
+                        RawClient admin = new RawClient(second, "Boss", true, "", token, "4.4.4.4:100");
+                        Run(second, new[] { admin }, 4);
+                        // RawClient binds proofs to "test-address", so this admin (dialling play.example) is built by hand:
+                        LoopbackConnection a, b;
+                        LoopbackConnection.CreatePair(out a, out b);
+                        second.AddConnection(new RemoteLike(b, "5.5.5.5:1"));
+                        a.Send(new HelloPacket { Name = "RealBoss" }.Serialize());
+                        byte[] data = null;
+                        for (int i = 0; i < 5 && data == null; i++) { second.Tick(); a.TryReceive(out data); }
+                        ChallengePacket ch = (ChallengePacket)Packet.Deserialize(data);
+                        AuthPacket auth = new AuthPacket();
+                        auth.Verifier = AuthCrypto.Verifier("k", ch.ServerId, "play.example:25565");
+                        auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(token, ch.ServerId, "play.example:25565"), ch.Nonce);
+                        a.Send(auth.Serialize());
+                        for (int i = 0; i < 5; i++) second.Tick();
+                        Check.True(second.FindPlayer("RealBoss") != null && second.FindPlayer("RealBoss").Op, "admin recognised from the stored verifier alone");
+                    }
+                    finally { second.Shutdown(); }
+                }
+                finally { try { System.IO.Directory.Delete(dir, true); } catch (Exception) { } }
+            });
             Harness.Run("a generated admin token is accepted and is strong", () =>
             {
                 string token = AuthCrypto.NewAdminToken();

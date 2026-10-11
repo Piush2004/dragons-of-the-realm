@@ -11,7 +11,7 @@ w() { cygpath -w "$1"; }
 
 REFS=()
 REFS+=("-r:$(w "$ED/NetStandard/ref/2.1.0/netstandard.dll")")
-for f in "$ED"/Managed/UnityEngine/UnityEngine*.dll "$ED"/Managed/UnityEngine/UnityEditor*.dll "$ED"/Managed/UnityEditor.dll; do
+for f in "$ED"/Managed/UnityEngine/UnityEngine*.dll "$ED"/Managed/UnityEngine/UnityEditor*.dll ; do
   [ -f "$f" ] && REFS+=("-r:$(w "$f")")
 done
 

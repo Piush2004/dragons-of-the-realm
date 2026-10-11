@@ -273,7 +273,7 @@ namespace BlockRealm.Game
                 _menuInit = true;
                 _joinAddress = GameSettings.LastHost;
                 _playerName = GameSettings.PlayerName;
-                _adminToken = GameSettings.AdminToken;
+                _adminToken = GameSettings.AdminTokenFor(_joinAddress);
                 _worlds = GameSession.ListWorlds();
                 _newSeed = UnityEngine.Random.Range(1, 999999999).ToString();
             }
@@ -404,7 +404,7 @@ namespace BlockRealm.Game
             _adminToken = GUI.PasswordField(new Rect(cx - 110f, 114f, 220f, 12f), _adminToken, '*', 128, _field);
             if (Btn(new Rect(cx - 110f, 134f, 220f, 18f), "Join server"))
             {
-                GameSettings.AdminToken = _adminToken;
+                GameSettings.SetAdminTokenFor(_joinAddress, _adminToken);
                 Session.Join(_joinAddress);
             }
             if (Btn(new Rect(cx - 110f, 156f, 220f, 18f), "Host a world on this network")) { _page = MenuPage.Host; _worlds = GameSession.ListWorlds(); }

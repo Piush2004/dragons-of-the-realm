@@ -151,6 +151,24 @@ namespace BlockRealm.Sim
         /// </param>
         /// <param name="identityKey">A random secret kept by this machine; proves the name is yours on later visits.</param>
         /// <param name="expectedServerId">The id this server had on a previous visit; a different one is refused.</param>
+        /// <summary>
+        /// Cleans text that came from the server before it can be displayed: control characters and line breaks
+        /// removed, length capped. (Interface code also renders it as plain text, never as markup.)
+        /// </summary>
+        public static string Sanitize(string text, int max)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder(Math.Min(text.Length, max));
+            foreach (char ch in text)
+            {
+                if (ch < 32 || ch == 127 || ch == '\u2028' || ch == '\u2029') continue;
+                if (ch == '<' || ch == '>') { sb.Append(ch == '<' ? '(' : ')'); }
+                else sb.Append(ch);
+                if (sb.Length >= max) break;
+            }
+            return sb.ToString();
+        }
+
         public GameClient(IConnection connection, string name, string dialAddress, string identityKey = "", string adminToken = "",
             string expectedServerId = "")
         {
@@ -260,8 +278,8 @@ namespace BlockRealm.Sim
                 {
                     WelcomePacket w = (WelcomePacket)packet;
                     bool first = State != ClientState.Joined;
-                    PlayerId = w.PlayerId; Seed = w.Seed; Mode = w.Mode; ViewDistance = w.ViewDistance;
-                    ServerName = w.ServerName; DayTick = w.DayTick;
+                    PlayerId = w.PlayerId; Seed = w.Seed; Mode = w.Mode; ViewDistance = MathUtil.Clamp(w.ViewDistance, 2, 32);
+                    ServerName = Sanitize(w.ServerName, 48); DayTick = w.DayTick;
                     if (first)
                     {
                         World = new World(Seed);
@@ -301,7 +319,7 @@ namespace BlockRealm.Sim
                     if (Entities.Count >= MaxEntities && !Entities.ContainsKey(e.EntityId)) break;
                     RemoteEntity r = new RemoteEntity
                     {
-                        Id = e.EntityId, Type = e.Type, Variant = e.Variant, Name = e.Name, ItemId = e.Extra,
+                        Id = e.EntityId, Type = e.Type, Variant = e.Variant, Name = Sanitize(e.Name, 24), ItemId = e.Extra,
                         TargetPos = e.Position, RenderPos = e.Position, TargetYaw = e.Yaw, RenderYaw = e.Yaw,
                     };
                     Entities[e.EntityId] = r;
@@ -364,7 +382,7 @@ namespace BlockRealm.Sim
                 case PacketId.OpenWindow:
                 {
                     OpenWindowPacket o = (OpenWindowPacket)packet;
-                    WindowId = o.Window; OpenWindowKind = o.Kind; WindowTitle = o.Title; WindowOpen = true;
+                    WindowId = o.Window; OpenWindowKind = o.Kind; WindowTitle = Sanitize(o.Title, 32); WindowOpen = true;
                     WindowPos = new Vec3i(o.X, o.Y, o.Z);
                     break;
                 }
@@ -385,7 +403,7 @@ namespace BlockRealm.Sim
                     break;
                 case PacketId.ChatMessage:
                 {
-                    string text = ((ChatMessagePacket)packet).Text;
+                    string text = Sanitize(((ChatMessagePacket)packet).Text, 256);
                     Chat.Add(text);
                     if (Chat.Count > 100) Chat.RemoveAt(0);
                     if (ChatReceived != null) ChatReceived(text);
@@ -444,7 +462,7 @@ namespace BlockRealm.Sim
                     break;
                 }
                 case PacketId.Disconnect:
-                    Fail(((DisconnectPacket)packet).Reason);
+                    Fail(Sanitize(((DisconnectPacket)packet).Reason, 160));
                     Connection.Close();
                     break;
                 case PacketId.KeepAlive:
