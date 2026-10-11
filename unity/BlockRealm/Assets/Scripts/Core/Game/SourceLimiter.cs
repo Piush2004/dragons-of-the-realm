@@ -8,11 +8,22 @@ namespace BlockRealm.Sim
         private readonly Dictionary<string, Queue<int>> _events = new Dictionary<string, Queue<int>>();
         private const int MaxSources = 4096;
 
-        /// <summary>How many events this source produced within the last <paramref name="windowTicks"/> ticks.</summary>
+        /// <summary>
+        /// How many events this source produced within the last <paramref name="windowTicks"/> ticks. When the table is
+        /// full of other sources and this one cannot be tracked, the answer is "too many": the limiter fails closed.
+        /// </summary>
         public int Count(string source, int nowTick, int windowTicks)
         {
             Queue<int> q;
-            if (!_events.TryGetValue(source, out q)) return 0;
+            if (!_events.TryGetValue(source, out q))
+            {
+                if (_events.Count >= MaxSources)
+                {
+                    Prune(nowTick);
+                    if (_events.Count >= MaxSources) return int.MaxValue;
+                }
+                return 0;
+            }
             while (q.Count > 0 && nowTick - q.Peek() > windowTicks) q.Dequeue();
             if (q.Count == 0) _events.Remove(source);
             return q.Count;
@@ -24,7 +35,7 @@ namespace BlockRealm.Sim
             if (!_events.TryGetValue(source, out q))
             {
                 if (_events.Count >= MaxSources) Prune(nowTick);
-                if (_events.Count >= MaxSources) return;      // refuse to track more; callers treat unknown as clean
+                if (_events.Count >= MaxSources) return;      // Count() already reports such a source as over the limit
                 q = new Queue<int>();
                 _events[source] = q;
             }

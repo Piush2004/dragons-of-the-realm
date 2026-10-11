@@ -73,6 +73,10 @@ namespace BlockRealm.Sim
 
         private readonly SourceLimiter _adminFailures = new SourceLimiter();
         private readonly SourceLimiter _newNames = new SourceLimiter();
+        // Backstops across all addresses, far above any honest rate, so a many-address flood is still bounded.
+        private const string AllSources = "*";
+        private const int GlobalAdminFailuresPerMinute = 200;
+        private const int GlobalNewNamesPerMinute = 120;
 
         public GameServer(ServerOptions options)
         {
@@ -261,7 +265,8 @@ namespace BlockRealm.Sim
             if (!string.IsNullOrEmpty(Options.AdminToken) && !string.IsNullOrEmpty(auth.AdminProof))
             {
                 string source = SourceKey(c);
-                if (_adminFailures.Count(source, TickCount, 20 * 60) >= 5)
+                if (_adminFailures.Count(source, TickCount, 20 * 60) >= 5 ||
+                    _adminFailures.Count(AllSources, TickCount, 20 * 60) >= GlobalAdminFailuresPerMinute)
                 {
                     // This source has guessed wrong too often lately: ignore its admin proofs for a minute.
                     // Other sources are unaffected, so an attacker cannot lock the real admin out.
@@ -270,7 +275,7 @@ namespace BlockRealm.Sim
                 {
                     string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken), pc.Nonce);
                     tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
-                    if (!tokenOk) _adminFailures.Add(source, TickCount);
+                    if (!tokenOk) { _adminFailures.Add(source, TickCount); _adminFailures.Add(AllSources, TickCount); }
                 }
             }
 
@@ -349,7 +354,8 @@ namespace BlockRealm.Sim
             if (LookupVerifier(name) != null) return false;
             // One source cannot use up everyone's allowance: the limit is per address.
             bool trusted = source == "local";
-            if (!trusted && _newNames.Count(source, TickCount, 20 * 60) >= MaxNewNamesPerSourcePerMinute) return false;
+            if (!trusted && (_newNames.Count(source, TickCount, 20 * 60) >= MaxNewNamesPerSourcePerMinute ||
+                             _newNames.Count(AllSources, TickCount, 20 * 60) >= GlobalNewNamesPerMinute)) return false;
             // The cap counts what is stored on disk, not just this session's memory.
             if (Storage != null)
             {
@@ -357,7 +363,7 @@ namespace BlockRealm.Sim
                 if (_persistedIdentities >= MaxReservedNames) return false;
             }
             else if (_identityHashes.Count >= MaxReservedNames) return false;
-            if (!trusted) _newNames.Add(source, TickCount);
+            if (!trusted) { _newNames.Add(source, TickCount); _newNames.Add(AllSources, TickCount); }
             _identityHashes[name] = verifier;
             if (Storage != null) { Storage.SaveIdentity(name, verifier); _persistedIdentities++; }
             return true;

@@ -50,6 +50,15 @@ namespace BlockRealm.Tests
                 Column c = ColumnCodec.Decode(0, 0, Deflate(raw));
                 Check.Equal(B.Air, c.GetBlock(3, 3, 3));
             });
+            Harness.Run("the per-address limiter fails closed when it cannot track a source", () =>
+            {
+                BlockRealm.Sim.SourceLimiter lim = new BlockRealm.Sim.SourceLimiter();
+                for (int i = 0; i < 4096; i++) lim.Add("src" + i, 100);          // fill the table with recent sources
+                Check.True(lim.Count("fresh-source", 101, 1200) >= 5, "an untrackable source counts as over the limit");
+                Check.Equal(1, lim.Count("src5", 101, 1200), "tracked sources count normally");
+                // After the window passes the table empties and new sources are tracked again.
+                Check.Equal(0, lim.Count("fresh-source", 100 + 1200 + 2400 + 10, 1200), "recovers once old entries expire");
+            });
             Harness.Run("random bytes never crash the column decoder", () =>
             {
                 Rng rng = new Rng(99);
