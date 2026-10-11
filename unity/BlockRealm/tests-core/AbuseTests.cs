@@ -14,12 +14,12 @@ namespace BlockRealm.Tests
         public byte[] LastAuth;
         private readonly string _identity, _token;
 
-        public RawClient(GameServer server, string name, bool remote = false, string identity = "", string token = "")
+        public RawClient(GameServer server, string name, bool remote = false, string identity = "", string token = "", string source = "10.0.0.1:5000")
         {
             LoopbackConnection a, b;
             LoopbackConnection.CreatePair(out a, out b);
             // A wrapped connection stands in for a TCP peer: the server must not treat it as the local host.
-            server.AddConnection(remote ? (IConnection)new RemoteLike(b) : b);
+            server.AddConnection(remote ? (IConnection)new RemoteLike(b, source) : b);
             Conn = a;
             _identity = identity; _token = token;
             Send(new HelloPacket { Name = name });
@@ -61,9 +61,10 @@ namespace BlockRealm.Tests
     public sealed class RemoteLike : IConnection
     {
         private readonly LoopbackConnection _inner;
-        public RemoteLike(LoopbackConnection inner) { _inner = inner; }
+        private readonly string _description;
+        public RemoteLike(LoopbackConnection inner, string description = "10.0.0.1:5000") { _inner = inner; _description = description; }
         public bool IsOpen { get { return _inner.IsOpen; } }
-        public string Description { get { return "remote-like"; } }
+        public string Description { get { return _description; } }
         public void Send(byte[] payload) { _inner.Send(payload); }
         public bool TryReceive(out byte[] payload) { return _inner.TryReceive(out payload); }
         public void Close() { _inner.Close(); }
@@ -285,7 +286,7 @@ namespace BlockRealm.Tests
                     // An eavesdropper replays the recorded answer on a fresh connection (new nonce).
                     LoopbackConnection a, b;
                     LoopbackConnection.CreatePair(out a, out b);
-                    s.AddConnection(new RemoteLike(b));
+                    s.AddConnection(new RemoteLike(b, "10.0.0.9:7000"));
                     a.Send(new HelloPacket { Name = "Ada" }.Serialize());
                     Run(s, new RawClient[0], 3);
                     a.Send(recording);
@@ -337,35 +338,51 @@ namespace BlockRealm.Tests
                 }
                 finally { s.Shutdown(); }
             });
-            Harness.Run("a flood of throwaway names is rate limited", () =>
+            Harness.Run("a flood of throwaway names from one address is bounded and does not block others", () =>
             {
                 GameServer s = NewServer(o => o.MaxPlayers = 200);
                 try
                 {
-                    List<RawClient> clients = new List<RawClient>();
-                    for (int i = 0; i < 60; i++) clients.Add(new RawClient(s, "Flood" + i, true, "k" + i));
-                    Run(s, clients.ToArray(), 8);
-                    Console.WriteLine("        accepted " + s.Players.Count + " of 60 fresh names in a burst");
-                    Check.True(s.Players.Count <= 31, "bounded: " + s.Players.Count);
-                    Check.True(s.Players.Count >= 20, "but legitimate bursts still work: " + s.Players.Count);
+                    List<RawClient> flood = new List<RawClient>();
+                    for (int i = 0; i < 40; i++) flood.Add(new RawClient(s, "Flood" + i, true, "k" + i, "", "5.5.5.5:" + (3000 + i)));
+                    Run(s, flood.ToArray(), 8);
+                    Console.WriteLine("        accepted " + s.Players.Count + " of 40 fresh names from one address");
+                    Check.True(s.Players.Count <= 5, "one address is capped: " + s.Players.Count);
+                    // Someone else is not affected by that flood.
+                    RawClient honest = new RawClient(s, "Honest", true, "hk", "", "8.8.8.8:1234");
+                    Run(s, new[] { honest }, 6);
+                    Check.True(s.FindPlayer("Honest") != null, "an honest player from another address still gets in");
+                    // And many different addresses are fine.
+                    List<RawClient> many = new List<RawClient>();
+                    for (int i = 0; i < 25; i++) many.Add(new RawClient(s, "Many" + i, true, "m" + i, "", "9.9.9." + i + ":1000"));
+                    Run(s, many.ToArray(), 8);
+                    int joined = 0;
+                    for (int i = 0; i < 25; i++) if (s.FindPlayer("Many" + i) != null) joined++;
+                    Check.Equal(25, joined, "distinct addresses are not throttled");
                 }
                 finally { s.Shutdown(); }
             });
-            Harness.Run("guessing the admin token is locked out", () =>
+            Harness.Run("guessing the admin token locks out the guesser, not the real admin", () =>
             {
-                GameServer s = NewServer(o => { o.AdminToken = "right-token"; });
+                GameServer s = NewServer(o => { o.AdminToken = "right-token"; o.MaxPlayers = 50; });
                 try
                 {
+                    // One address guesses six times.
                     for (int i = 0; i < 6; i++)
                     {
-                        RawClient guess = new RawClient(s, "G" + i, true, "", "wrong-" + i);
+                        RawClient guess = new RawClient(s, "G" + (i % 3), true, "", "wrong-" + i, "6.6.6.6:" + (4000 + i));
                         Run(s, new[] { guess }, 3);
-                        Check.True(!s.FindPlayer("G" + i).Op, "guess " + i + " fails");
+                        guess.Conn.Close();
+                        Run(s, new[] { guess }, 2);
                     }
-                    // Even the right token is refused for a while after repeated failures.
-                    RawClient real = new RawClient(s, "Real", true, "", "right-token");
+                    // Even the right token from that address is refused for a while.
+                    RawClient attackerRight = new RawClient(s, "Mallet", true, "", "right-token", "6.6.6.6:4999");
+                    Run(s, new[] { attackerRight }, 3);
+                    Check.True(s.FindPlayer("Mallet") != null && !s.FindPlayer("Mallet").Op, "the guessing address is locked out");
+                    // The real admin from elsewhere is unaffected.
+                    RawClient real = new RawClient(s, "Real", true, "", "right-token", "7.7.7.7:4000");
                     Run(s, new[] { real }, 3);
-                    Check.True(s.FindPlayer("Real") != null && !s.FindPlayer("Real").Op, "locked out after repeated failures");
+                    Check.True(s.FindPlayer("Real") != null && s.FindPlayer("Real").Op, "other addresses are not locked out");
                 }
                 finally { s.Shutdown(); }
             });

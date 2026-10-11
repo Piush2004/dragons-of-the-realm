@@ -71,7 +71,8 @@ namespace BlockRealm.Sim
             public string KnownVerifier; // what we remember for this name, if anything
         }
 
-        private readonly Queue<int> _adminFailureTicks = new Queue<int>();
+        private readonly SourceLimiter _adminFailures = new SourceLimiter();
+        private readonly SourceLimiter _newNames = new SourceLimiter();
 
         public GameServer(ServerOptions options)
         {
@@ -226,9 +227,9 @@ namespace BlockRealm.Sim
             {
                 if (!IsHex64(auth.Verifier)) { c.Close(); return; }
                 verifier = auth.Verifier.ToLowerInvariant();
-                if (!TryReserveName(name, verifier))
+                if (!TryReserveName(name, verifier, SourceKey(c)))
                 {
-                    c.Send(new DisconnectPacket { Reason = "The server is not accepting new names right now." }.Serialize());
+                    c.Send(new DisconnectPacket { Reason = "Too many new names from your address; try again in a minute." }.Serialize());
                     c.Close();
                     return;
                 }
@@ -243,9 +244,9 @@ namespace BlockRealm.Sim
                 string reserved = LookupVerifier(name);
                 if (!inUse && (reserved == null || AuthCrypto.ConstantTimeEquals(reserved, verifier)))
                 {
-                    if (reserved == null && !TryReserveName(name, verifier))
+                    if (reserved == null && !TryReserveName(name, verifier, SourceKey(c)))
                     {
-                        c.Send(new DisconnectPacket { Reason = "The server is not accepting new names right now." }.Serialize());
+                        c.Send(new DisconnectPacket { Reason = "Too many new names from your address; try again in a minute." }.Serialize());
                         c.Close();
                         return;
                     }
@@ -259,16 +260,17 @@ namespace BlockRealm.Sim
             bool tokenOk = false;
             if (!string.IsNullOrEmpty(Options.AdminToken) && !string.IsNullOrEmpty(auth.AdminProof))
             {
-                while (_adminFailureTicks.Count > 0 && TickCount - _adminFailureTicks.Peek() > 20 * 60) _adminFailureTicks.Dequeue();
-                if (_adminFailureTicks.Count >= 5)
+                string source = SourceKey(c);
+                if (_adminFailures.Count(source, TickCount, 20 * 60) >= 5)
                 {
-                    // Too many wrong guesses lately: refuse admin logins for a minute whatever is sent.
+                    // This source has guessed wrong too often lately: ignore its admin proofs for a minute.
+                    // Other sources are unaffected, so an attacker cannot lock the real admin out.
                 }
                 else
                 {
                     string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken), pc.Nonce);
                     tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
-                    if (!tokenOk) _adminFailureTicks.Enqueue(TickCount);
+                    if (!tokenOk) _adminFailures.Add(source, TickCount);
                 }
             }
 
@@ -313,9 +315,18 @@ namespace BlockRealm.Sim
             return null;
         }
 
-        private readonly Queue<int> _newNameTicks = new Queue<int>();
         private const int MaxReservedNames = 10000;
-        private const int MaxNewNamesPerMinute = 30;
+        private const int MaxNewNamesPerSourcePerMinute = 4;
+        private int _persistedIdentities = -1;
+
+        /// <summary>The network address a connection comes from (without the port); in-process connections share "local".</summary>
+        private static string SourceKey(IConnection c)
+        {
+            if (c is LoopbackConnection) return "local";
+            string d = c.Description ?? "unknown";
+            int colon = d.LastIndexOf(':');
+            return colon > 0 && d.IndexOf(':') == colon ? d.Substring(0, colon) : d;   // keep IPv6 literals whole
+        }
 
         private static bool IsHex64(string s)
         {
@@ -333,14 +344,22 @@ namespace BlockRealm.Sim
         /// Reserves a free name for an identity. Never overwrites an existing reservation, and is rate-limited so a
         /// flood of throwaway names cannot fill the disk or memory.
         /// </summary>
-        private bool TryReserveName(string name, string verifier)
+        private bool TryReserveName(string name, string verifier, string source)
         {
             if (LookupVerifier(name) != null) return false;
-            while (_newNameTicks.Count > 0 && TickCount - _newNameTicks.Peek() > 20 * 60) _newNameTicks.Dequeue();
-            if (_newNameTicks.Count >= MaxNewNamesPerMinute || _identityHashes.Count >= MaxReservedNames) return false;
-            _newNameTicks.Enqueue(TickCount);
+            // One source cannot use up everyone's allowance: the limit is per address.
+            bool trusted = source == "local";
+            if (!trusted && _newNames.Count(source, TickCount, 20 * 60) >= MaxNewNamesPerSourcePerMinute) return false;
+            // The cap counts what is stored on disk, not just this session's memory.
+            if (Storage != null)
+            {
+                if (_persistedIdentities < 0) _persistedIdentities = Storage.CountIdentities();
+                if (_persistedIdentities >= MaxReservedNames) return false;
+            }
+            else if (_identityHashes.Count >= MaxReservedNames) return false;
+            if (!trusted) _newNames.Add(source, TickCount);
             _identityHashes[name] = verifier;
-            if (Storage != null) Storage.SaveIdentity(name, verifier);
+            if (Storage != null) { Storage.SaveIdentity(name, verifier); _persistedIdentities++; }
             return true;
         }
 

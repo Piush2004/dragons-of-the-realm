@@ -220,6 +220,12 @@ namespace BlockRealm.Sim
             catch (Exception) { return null; }
         }
 
+        public int CountIdentities()
+        {
+            try { return System.IO.Directory.GetFiles(Path.Combine(Directory, "players"), "*.id").Length; }
+            catch (Exception) { return 0; }
+        }
+
         public void SaveIdentity(string name, string hash)
         {
             try { File.WriteAllText(IdentityPath(name), hash); } catch (Exception) { }
