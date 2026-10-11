@@ -31,7 +31,11 @@ namespace BlockRealm.Sim
         public int LastStateTick;
         public Vec3 LastStatePos;
 
-        public bool Op = true;
+        public bool Op;
+
+        // Abuse limits (token buckets, refilled every tick).
+        public float BreakTokens = 6f, PlaceTokens = 8f, ChatTokens = 4f;
+        public int LastCorrectionTick = -100;
         public bool InventoryDirty, StatsDirty;
         public int AttackCooldown;
         public int Invulnerable;

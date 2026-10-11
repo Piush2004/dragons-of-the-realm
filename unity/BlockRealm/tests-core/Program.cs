@@ -23,6 +23,8 @@ static class Program
         SecurityTests.RunAll();
         GameTests.RunAll();
         NetTests.RunAll();
+        SimTests.RunAll();
+        AbuseTests.RunAll();
 
         Console.WriteLine();
         Console.WriteLine("passed " + Harness.Passed + ", failed " + Harness.Failed);

@@ -223,14 +223,14 @@ namespace BlockRealm.Sim
             // A and D turn the dragon (and bank it); the mouse still aims the camera independently via input.Yaw.
             RideYaw -= input.MoveX * 1.5f * dt;
 
+            // Space climbs and Shift dives regardless of forward speed, so a dragon can always take off.
             float climb = (input.Jump ? 1f : 0f) - (input.Sneak ? 1f : 0f);
             float targetPitch = -climb * 0.55f;
             RidePitch += (targetPitch - RidePitch) * Math.Min(1f, 3f * dt);
 
-            float cp = (float)Math.Cos(RidePitch);
-            Vec3 dir = new Vec3((float)Math.Sin(RideYaw) * cp, -(float)Math.Sin(RidePitch), (float)Math.Cos(RideYaw) * cp);
-            Vel = dir * RideSpeedNow;
-            if (RideSpeedNow < 3f) Vel.Y -= 6f * (1f - RideSpeedNow / 3f);      // stalls sink
+            float vy = climb > 0f ? climb * 9f : climb * 14f;
+            if (RideSpeedNow < 3f && climb <= 0f) vy -= 5f * (1f - RideSpeedNow / 3f);   // stalls sink
+            Vel = new Vec3((float)Math.Sin(RideYaw) * RideSpeedNow, vy, (float)Math.Cos(RideYaw) * RideSpeedNow);
 
             // The rider's body sits on the dragon; move the dragon's box and place the rider on top of it.
             float halfWidth = DragonStats.HalfWidth[MathUtil.Clamp(RideKind, 0, 2)];

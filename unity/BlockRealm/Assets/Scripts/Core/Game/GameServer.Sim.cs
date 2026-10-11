@@ -236,6 +236,9 @@ namespace BlockRealm.Sim
         private void TickPlayer(ServerPlayer p)
         {
             if (p.Dead) { p.DeadTicks++; return; }
+            p.BreakTokens = Math.Min(8f, p.BreakTokens + 0.75f);       // up to about 15 blocks a second
+            p.PlaceTokens = Math.Min(10f, p.PlaceTokens + 0.9f);       // about 18 placements a second
+            p.ChatTokens = Math.Min(5f, p.ChatTokens + 0.05f);         // one message a second, bursts of five
             if (p.AttackCooldown > 0) p.AttackCooldown--;
             if (p.Invulnerable > 0) p.Invulnerable--;
             if (p.HurtTicks > 0) p.HurtTicks--;

@@ -137,6 +137,8 @@ namespace BlockRealm.Sim
         private float _lightingBudgetMs = 4f;
         private bool _sentHello;
         public int ColumnsReceived, PacketsReceived, BadPackets;
+        private const int MaxEntities = 4096;
+        private const int MaxQueuedColumns = 1024;
 
         public GameClient(IConnection connection, string name)
         {
@@ -251,6 +253,7 @@ namespace BlockRealm.Sim
                 case PacketId.ColumnData:
                 {
                     ColumnDataPacket c = (ColumnDataPacket)packet;
+                    if (_incoming.Count >= MaxQueuedColumns) break;       // a flooding server cannot exhaust memory
                     try
                     {
                         Column col = ColumnCodec.Decode(c.Cx, c.Cz, c.Data);
@@ -275,6 +278,7 @@ namespace BlockRealm.Sim
                 case PacketId.EntitySpawn:
                 {
                     EntitySpawnPacket e = (EntitySpawnPacket)packet;
+                    if (Entities.Count >= MaxEntities && !Entities.ContainsKey(e.EntityId)) break;
                     RemoteEntity r = new RemoteEntity
                     {
                         Id = e.EntityId, Type = e.Type, Variant = e.Variant, Name = e.Name, ItemId = e.Extra,

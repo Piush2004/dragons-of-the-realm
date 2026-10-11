@@ -19,7 +19,13 @@ namespace BlockRealm.Sim
         public bool SynchronousWorldGen;        // tests: generate on the calling thread
         public string SaveDir;                  // null = nothing is saved
         public bool AllowCommands = true;
+        /// <summary>The first player to join (the person hosting) may use commands.</summary>
         public bool HostIsOp = true;
+        /// <summary>Extra operators by name (case-insensitive). Everyone else is a normal player.</summary>
+        public readonly HashSet<string> Operators = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>Tests and private servers only: every player may use commands.</summary>
+        public bool EveryoneIsOp;
+        public int MaxPendingConnections = 32;
     }
 
     /// <summary>
@@ -79,7 +85,12 @@ namespace BlockRealm.Sim
 
         public void AddConnection(IConnection c)
         {
-            lock (_pendingConnections) _pendingConnections.Add(new PendingConnection { Connection = c, Deadline = TickCount + 20 * 15 });
+            lock (_pendingConnections)
+            {
+                // Connections that have not said hello yet are cheap to open and cost a thread each: cap them.
+                if (_pendingConnections.Count >= Options.MaxPendingConnections) { c.Close(); return; }
+                _pendingConnections.Add(new PendingConnection { Connection = c, Deadline = TickCount + 20 * 15 });
+            }
         }
 
         public void Shutdown()
@@ -169,7 +180,7 @@ namespace BlockRealm.Sim
             ServerPlayer p = new ServerPlayer(c, name);
             p.Id = _nextEntityId++;
             p.Mode = Options.DefaultMode;
-            p.Op = Options.HostIsOp || Players.Count == 0;
+            p.Op = Options.EveryoneIsOp || (Options.HostIsOp && Players.Count == 0) || Options.Operators.Contains(name);
             p.LastPacketTick = TickCount;
             Vec3i sp = SpawnPoint;
             int surface = World.GetSurfaceY(sp.X, sp.Z);
@@ -203,8 +214,9 @@ namespace BlockRealm.Sim
         {
             if (!Players.Contains(p)) return;
             try { p.Send(new DisconnectPacket { Reason = reason }); } catch (Exception) { }
+            // Hand back whatever was in the crafting grid or on the cursor before the inventory is saved.
+            try { CloseWindow(p); } catch (Exception) { }
             if (Storage != null) Storage.SavePlayer(p);
-            DropOpenWindowContents(p);
             Players.Remove(p);
             RemoveEntityInternal(p);
             Broadcast(new ChatMessagePacket { Text = p.Name + " left the game" });

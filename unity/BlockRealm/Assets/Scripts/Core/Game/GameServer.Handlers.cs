@@ -58,15 +58,43 @@ namespace BlockRealm.Sim
             if (p.Dead) return;
             Vec3 pos = st.Position;
             if (Math.Abs(pos.X) > 3e7f || Math.Abs(pos.Z) > 3e7f || pos.Y < -100f || pos.Y > 5000f) return;
-            float ticks = Math.Max(1, TickCount - p.LastStateTick);
-            float perTick = p.RidingEntityId != 0 ? 5f : ((st.Flags & PlayerFlags.Flying) != 0 ? 2.5f : 1.6f);
-            float limit = perTick * Math.Min(ticks, 40f) + 4f;
-            if (Vec3.Distance(pos, p.Pos) > limit)
+            PlayerFlags flags = st.Flags;
+            // Flight is a creative-mode privilege; a survival client cannot simply claim it.
+            if (!p.GodMode) flags &= ~PlayerFlags.Flying;
+
+            bool riding = p.RidingEntityId != 0;
+            bool flyingNow = (flags & PlayerFlags.Flying) != 0;
+            // Allowed distance since the last accepted state, per tick. Elapsed time is capped so that going quiet
+            // does not bank up a long free jump.
+            float ticks = Math.Min(Math.Max(1, TickCount - p.LastStateTick), 10);
+            float horizontalPerTick = riding ? 2.2f : (flyingNow ? 1.5f : 0.65f);
+            float upPerTick = riding ? 2.2f : (flyingNow ? 0.9f : 0.7f);
+            float downPerTick = 4.2f;                                  // terminal fall speed is ~3.9 blocks per tick
+            Vec3 delta = pos - p.Pos;
+            float flat = (float)Math.Sqrt(delta.X * delta.X + delta.Z * delta.Z);
+            bool tooFar = flat > horizontalPerTick * ticks + 1.5f ||
+                          delta.Y > upPerTick * ticks + 1.5f || -delta.Y > downPerTick * ticks + 1.5f;
+            // Walking into solid terrain is rejected, unless the player was already inside it (sand landed on them).
+            if (!tooFar && !p.GodMode && !riding)
             {
-                // Too far to be real movement: pull the player back to where the server last had them.
-                p.Send(new PlayerTeleportPacket { Position = p.Pos });
+                Aabb now = new Aabb(new Vec3(pos.X - 0.25f, pos.Y + 0.05f, pos.Z - 0.25f), new Vec3(pos.X + 0.25f, pos.Y + 1.7f, pos.Z + 0.25f));
+                if (VoxelPhysics.BoxIntersectsSolid(World, now))
+                {
+                    Aabb before = new Aabb(new Vec3(p.Pos.X - 0.25f, p.Pos.Y + 0.05f, p.Pos.Z - 0.25f), new Vec3(p.Pos.X + 0.25f, p.Pos.Y + 1.7f, p.Pos.Z + 0.25f));
+                    if (!VoxelPhysics.BoxIntersectsSolid(World, before)) tooFar = true;
+                }
+            }
+            if (tooFar)
+            {
+                // Not real movement: pull the player back to where the server last had them (at most a few times a second).
+                if (TickCount - p.LastCorrectionTick >= 4)
+                {
+                    p.LastCorrectionTick = TickCount;
+                    p.Send(new PlayerTeleportPacket { Position = p.Pos });
+                }
                 return;
             }
+            st.Flags = flags;
             bool wasOnGround = p.ClientOnGround;
             p.Pos = pos;
             p.Yaw = st.Yaw; p.Pitch = st.Pitch;
@@ -129,6 +157,8 @@ namespace BlockRealm.Sim
         private void OnFinishBreak(ServerPlayer p, FinishBreakPacket pk)
         {
             if (p.Dead || !WithinReach(p, pk.X, pk.Y, pk.Z)) { ResyncBlock(p, pk.X, pk.Y, pk.Z); return; }
+            if (p.BreakTokens < 1f) { ResyncBlock(p, pk.X, pk.Y, pk.Z); return; }      // breaking far faster than a hand can
+            p.BreakTokens -= 1f;
             byte id = World.GetBlock(pk.X, pk.Y, pk.Z);
             if (id == B.Air || Blocks.IsLiquid(id) || id == B.Bedrock) { ResyncBlock(p, pk.X, pk.Y, pk.Z); return; }
 
@@ -185,6 +215,8 @@ namespace BlockRealm.Sim
         {
             if (p.Dead) return;
             if (!WithinReach(p, pk.X, pk.Y, pk.Z)) return;
+            if (p.PlaceTokens < 1f) { ResyncBlock(p, pk.X, pk.Y, pk.Z); return; }
+            p.PlaceTokens -= 1f;
             ItemStack held = p.Held;
             if (held.IsEmpty || held.Id >= 256 || !Blocks.IsDefined(held.Id)) return;
             byte block = (byte)held.Id;
@@ -392,7 +424,7 @@ namespace BlockRealm.Sim
             }
             Entity e = GetEntity(pk.EntityId);
             if (e == null || e.Removed || e == p) return;
-            if (Vec3.Distance(p.Eye, e.Center) > ServerPlayer.Reach + e.HalfWidth + 3f) return;
+            if (Vec3.Distance(p.Eye, e.Center) > 6.5f + e.HalfWidth + e.Height * 0.5f) return;
 
             if (pk.Action == EntityAction.Attack)
             {
@@ -436,6 +468,8 @@ namespace BlockRealm.Sim
         {
             string text = CleanChat(raw);
             if (text.Length == 0) return;
+            if (p.ChatTokens < 1f) { Tell(p, "You are sending messages too quickly."); return; }
+            p.ChatTokens -= 1f;
             if (text[0] == '/') { RunCommand(p, text.Substring(1)); return; }
             Broadcast(new ChatMessagePacket { Text = "<" + p.Name + "> " + text });
         }

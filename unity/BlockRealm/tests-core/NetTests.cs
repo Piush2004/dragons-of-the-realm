@@ -19,7 +19,7 @@ namespace BlockRealm.Tests
         {
             ServerOptions o = new ServerOptions();
             o.Seed = 2024; o.ViewDistance = 3; o.SynchronousWorldGen = true;
-            o.SpawnMobs = false; o.SpawnDragons = false;
+            o.SpawnMobs = false; o.SpawnDragons = false; o.EveryoneIsOp = true;
             if (configure != null) configure(o);
             Server = new GameServer(o);
         }
