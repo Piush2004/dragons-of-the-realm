@@ -220,6 +220,38 @@ namespace BlockRealm.Sim
         public int StuckTicks;
         private Vec3 _lastPos;
         public int TargetId;
+        private readonly List<Vec3> _path = new List<Vec3>();
+        private int _pathIndex, _repathTimer;
+        private Vec3 _pathGoal;
+
+        /// <summary>
+        /// Heads for a point along a walkable route (recomputed every second or so, or when the target moves a long way),
+        /// falling back to walking straight at it if no route is known.
+        /// </summary>
+        private void WalkToward(GameServer s, Vec3 goal, ref float dx, ref float dz)
+        {
+            _repathTimer--;
+            bool goalMoved = Vec3.DistanceSq(goal, _pathGoal) > 9f;
+            if (_repathTimer <= 0 || goalMoved || _pathIndex >= _path.Count)
+            {
+                _repathTimer = 14 + s.Random.NextInt(8);
+                _pathGoal = goal;
+                Pathfinder.Find(s.World, MathUtil.FloorInt(Pos.X), MathUtil.FloorInt(Pos.Y + 0.05f), MathUtil.FloorInt(Pos.Z),
+                    MathUtil.FloorInt(goal.X), MathUtil.FloorInt(goal.Y + 0.05f), MathUtil.FloorInt(goal.Z), _path, 400, Height > 1.5f ? 2 : 1);
+                _pathIndex = 0;
+            }
+            while (_pathIndex < _path.Count)
+            {
+                Vec3 w = _path[_pathIndex];
+                float ddx = w.X - Pos.X, ddz = w.Z - Pos.Z;
+                if (ddx * ddx + ddz * ddz < 0.25f && Math.Abs(w.Y - Pos.Y) < 1.3f) _pathIndex++; else break;
+            }
+            Vec3 next = _pathIndex < _path.Count ? _path[_pathIndex] : goal;
+            float vx = next.X - Pos.X, vz = next.Z - Pos.Z;
+            float len = (float)Math.Sqrt(vx * vx + vz * vz);
+            if (len > 0.01f) { dx = vx / len; dz = vz / len; }
+            if (next.Y > Pos.Y + 0.4f && OnGround) Vel.Y = Phys.JumpSpeed;
+        }
 
         public static bool IsHostile(EntityType t) { return t == EntityType.Zombie || t == EntityType.Skeleton || t == EntityType.Creeper; }
         public bool Hostile { get { return IsHostile(Type); } }
@@ -335,7 +367,7 @@ namespace BlockRealm.Sim
             switch (Type)
             {
                 case EntityType.Zombie:
-                    dx = dir.X; dz = dir.Z;
+                    if (dist > 2.2f) WalkToward(s, target.Pos, ref dx, ref dz); else { dx = dir.X; dz = dir.Z; }
                     if (dist < 1.5f && Math.Abs(to.Y) < 2f && Cooldown == 0)
                     {
                         s.Hurt(target, 3f, this, Pos, 5f);
@@ -343,7 +375,7 @@ namespace BlockRealm.Sim
                     }
                     break;
                 case EntityType.Skeleton:
-                    if (dist > 13f) { dx = dir.X; dz = dir.Z; }
+                    if (dist > 13f) WalkToward(s, target.Pos, ref dx, ref dz);
                     else if (dist < 6f) { dx = -dir.X; dz = -dir.Z; }
                     else
                     {
@@ -375,7 +407,7 @@ namespace BlockRealm.Sim
                     else
                     {
                         if (FuseTicks > 0) FuseTicks--;
-                        dx = dir.X; dz = dir.Z;
+                        if (dist > 3.5f) WalkToward(s, target.Pos, ref dx, ref dz); else { dx = dir.X; dz = dir.Z; }
                     }
                     break;
             }

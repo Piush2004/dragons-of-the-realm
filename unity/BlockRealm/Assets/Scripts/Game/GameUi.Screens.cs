@@ -18,6 +18,7 @@ namespace BlockRealm.Game
         private string _joinAddress;
         private string _playerName;
         private string _adminToken;
+        private string _tokenFor = "";                   // the address the token field currently belongs to
         private string _hostPort = "25565";
         private int _paletteTab;
         private string _tooltip = "";
@@ -273,7 +274,8 @@ namespace BlockRealm.Game
                 _menuInit = true;
                 _joinAddress = GameSettings.LastHost;
                 _playerName = GameSettings.PlayerName;
-                _adminToken = GameSettings.AdminTokenFor(_joinAddress);
+                _adminToken = "";
+                _tokenFor = "";
                 _worlds = GameSession.ListWorlds();
                 _newSeed = UnityEngine.Random.Range(1, 999999999).ToString();
             }
@@ -400,7 +402,15 @@ namespace BlockRealm.Game
             Text(new Rect(0f, 58f, _vw, 12f), "Multiplayer", _label, Color.white, TextAnchor.MiddleCenter);
             Text(new Rect(cx - 110f, 76f, 220f, 10f), "Server address (host:port)", _small, Color.white);
             _joinAddress = GUI.TextField(new Rect(cx - 110f, 86f, 220f, 12f), _joinAddress, 64, _field);
-            Text(new Rect(cx - 110f, 104f, 220f, 10f), "Admin token (optional, only for server owners)", _small, new Color(0.8f, 0.8f, 0.8f));
+            // The token field always belongs to the address above it: change the address and the field switches to what
+            // was saved for that address (or empties), so a token typed for one server is never offered to another.
+            string normalised = AuthCrypto.NormaliseAddress(_joinAddress);
+            if (normalised != _tokenFor)
+            {
+                _tokenFor = normalised;
+                _adminToken = GameSettings.AdminTokenFor(_joinAddress);
+            }
+            Text(new Rect(cx - 110f, 104f, 220f, 10f), "Admin token for this server (optional, only for its owner)", _small, new Color(0.8f, 0.8f, 0.8f));
             _adminToken = GUI.PasswordField(new Rect(cx - 110f, 114f, 220f, 12f), _adminToken, '*', 128, _field);
             if (Btn(new Rect(cx - 110f, 134f, 220f, 18f), "Join server"))
             {

@@ -62,20 +62,48 @@ namespace BlockRealm.Game
             o.DefaultMode = Flag(args, "-creative") ? GameMode.Creative : GameMode.Survival;
             o.HostIsOp = false;                                   // nobody is "local" on a dedicated server
 
-            // Verifiers from a previous run are reloaded so the token never has to be stored.
-            string verifierFile = Path.Combine(folder, "admin_verifiers.txt");
-            try
-            {
-                if (File.Exists(verifierFile))
-                    foreach (string line in File.ReadAllLines(verifierFile))
-                    {
-                        int eq = line.LastIndexOf('=');
-                        if (eq > 0) o.AdminVerifiers[AuthCrypto.NormaliseAddress(line.Substring(0, eq))] = line.Substring(eq + 1).Trim();
-                    }
-            }
-            catch (Exception) { }
-
+            // Addresses players dial (comma separated). Only these can carry admin rights, and a stored verifier is
+            // honoured only if it is for one of them and for this world's server id, so stale or rotated credentials
+            // cannot linger.
             string publicAddress = Arg(args, "-public", "");
+            List<string> publicList = new List<string>();
+            foreach (string part in publicAddress.Split(','))
+            {
+                string addr = AuthCrypto.NormaliseAddress(part);
+                if (addr.Length > 0) publicList.Add(addr);
+            }
+            bool rotate = Flag(args, "-rotateadmin");
+
+            string verifierFile = Path.Combine(folder, "admin_verifiers.txt");
+            string idFile = Path.Combine(folder, "server.id");
+            string currentId = "";
+            try { if (File.Exists(idFile)) currentId = File.ReadAllText(idFile).Trim(); } catch (Exception) { }
+            if (!rotate)
+            {
+                try
+                {
+                    if (File.Exists(verifierFile) && currentId.Length > 0)
+                    {
+                        string[] lines = File.ReadAllLines(verifierFile);
+                        if (lines.Length > 0 && lines[0].Trim() == "server-id=" + currentId)
+                        {
+                            for (int i = 1; i < lines.Length; i++)
+                            {
+                                int eq = lines[i].LastIndexOf('=');
+                                if (eq <= 0) continue;
+                                string addr = AuthCrypto.NormaliseAddress(lines[i].Substring(0, eq));
+                                if (publicList.Contains(addr)) o.AdminVerifiers[addr] = lines[i].Substring(eq + 1).Trim();
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+            }
+            else
+            {
+                try { if (File.Exists(verifierFile)) File.Delete(verifierFile); } catch (Exception) { }
+            }
+
             string token = Environment.GetEnvironmentVariable("BLOCKREALM_ADMIN_TOKEN") ?? "";
             string tokenFile = Arg(args, "-admintokenfile", "");
             if (token.Length == 0 && tokenFile.Length > 0)
@@ -83,15 +111,17 @@ namespace BlockRealm.Game
                 try { token = File.ReadAllText(tokenFile).Trim(); } catch (Exception e) { Debug.LogWarning("[server] could not read the admin token file: " + e.Message); }
             }
             bool generated = false;
-            if (publicAddress.Length > 0 && token.Length == 0 && !o.AdminVerifiers.ContainsKey(AuthCrypto.NormaliseAddress(publicAddress)))
+            bool allCovered = publicList.Count > 0;
+            foreach (string addr in publicList) if (!o.AdminVerifiers.ContainsKey(addr)) allCovered = false;
+            if (publicList.Count > 0 && token.Length == 0 && !allCovered)
             {
                 token = AuthCrypto.NewAdminToken();
                 generated = true;
             }
-            if (publicAddress.Length > 0 && token.Length >= GameServer.MinAdminTokenLength)
+            if (publicList.Count > 0 && token.Length >= GameServer.MinAdminTokenLength)
             {
                 o.AdminToken = token;
-                o.PublicAddresses.Add(publicAddress);
+                foreach (string addr in publicList) o.PublicAddresses.Add(addr);
             }
             else if (token.Length > 0)
             {
@@ -106,8 +136,9 @@ namespace BlockRealm.Game
             try
             {
                 List<string> lines = new List<string>();
+                lines.Add("server-id=" + _server.ServerId);
                 foreach (KeyValuePair<string, string> kv in _server.Options.AdminVerifiers) lines.Add(kv.Key + "=" + kv.Value);
-                if (lines.Count > 0) File.WriteAllLines(verifierFile, lines.ToArray());
+                if (lines.Count > 1) File.WriteAllLines(verifierFile, lines.ToArray());
             }
             catch (Exception) { }
 

@@ -136,6 +136,61 @@ namespace BlockRealm.Tests
                 }
             });
 
+            Harness.Group("pathfinding");
+            Harness.Run("a path goes around a wall and up a step", () =>
+            {
+                World w = TestWorlds.Flat(64, 2);
+                // A wall 3 blocks high from z=0, x=-6..6 at y=65..67.
+                for (int x = -6; x <= 6; x++) for (int y = 65; y <= 67; y++) w.SetBlock(x, y, 0, B.Stone);
+                List<Vec3> path = new List<Vec3>();
+                bool found = Pathfinder.Find(w, 0, 65, -4, 0, 65, 4, path, 800);
+                Check.True(found && path.Count > 0, "a route exists");
+                Vec3 last = path[path.Count - 1];
+                Check.True(Math.Abs(last.X - 0.5f) < 1.6f && Math.Abs(last.Z - 4.5f) < 1.6f, "it reaches the goal: " + last);
+                bool wentAround = false;
+                foreach (Vec3 p in path) if (Math.Abs(p.X) > 6f) wentAround = true;
+                Check.True(wentAround, "it went around the end of the wall");
+                // Every step is walkable.
+                foreach (Vec3 p in path) Check.True(Pathfinder.CanStand(w, (int)Math.Floor(p.X), (int)Math.Floor(p.Y), (int)Math.Floor(p.Z)), "step " + p + " is standable");
+
+                // A staircase of one-block steps is climbed.
+                for (int i = 0; i < 4; i++) for (int y = 65; y <= 65 + i; y++) w.SetBlock(10 + i, y, 10, B.Cobble);
+                path.Clear();
+                found = Pathfinder.Find(w, 8, 65, 10, 13, 69, 10, path, 400);
+                Check.True(found, "stairs found");
+                Check.True(path.Count > 0 && path[path.Count - 1].Y >= 68f, "climbed to the top: " + (path.Count > 0 ? path[path.Count - 1].Y : 0));
+            });
+            Harness.Run("a zombie finds its way around a wall to reach the player", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    c.SendChat("/time set night");
+                    rig.Run(5);
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int px = MathUtil.FloorInt(sp.Pos.X), pz = MathUtil.FloorInt(sp.Pos.Z), py = MathUtil.FloorInt(sp.Pos.Y);
+                    // A long tall wall three blocks in front of the player, on level ground that we flatten first.
+                    for (int x = px - 12; x <= px + 12; x++)
+                        for (int z = pz - 3; z <= pz + 14; z++)
+                        {
+                            rig.Server.World.SetBlockRaw(x, py - 1, z, B.Stone);
+                            for (int y = py; y <= py + 6; y++) rig.Server.World.SetBlockRaw(x, y, z, B.Air);
+                        }
+                    for (int x = px - 10; x <= px + 10; x++) for (int y = py; y <= py + 3; y++) rig.Server.World.SetBlockRaw(x, y, pz + 3, B.Stone);
+                    MobEntity zed = new MobEntity(EntityType.Zombie);
+                    zed.Pos = new Vec3(sp.Pos.X, py, pz + 9.5f);
+                    rig.Server.AddEntity(zed);
+                    bool reached = false;
+                    for (int t = 0; t < 20 * 40 && !reached; t++)
+                    {
+                        rig.Tick();
+                        if (Vec3.Distance(zed.Pos, rig.ServerSide(c).Pos) < 2.2f) reached = true;
+                    }
+                    Console.WriteLine("        zombie ended at " + zed.Pos + ", player at " + rig.ServerSide(c).Pos);
+                    Check.True(reached, "zombie got round the wall");
+                }
+            });
+
             Harness.Group("world rules");
             Harness.Run("sand falls, torches pop off, fire burns out", () =>
             {
