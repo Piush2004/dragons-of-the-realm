@@ -112,7 +112,7 @@ namespace BlockRealm.Sim
             bool liquid = VoxelPhysics.BoxInLiquid(world, inner, out lava);
             InLava = liquid && lava;
             InWater = liquid && !lava;
-            HeadInWater = world.GetBlock(MathUtil.FloorInt(Pos.X), MathUtil.FloorInt(Pos.Y + EyeOffset), MathUtil.FloorInt(Pos.Z)) == B.Water;
+            HeadInWater = world.GetBlock(MathUtil.FloorInt(Pos.X), MathUtil.FloorInt(Pos.Y + EyeOffset), MathUtil.FloorInt(Pos.Z)) is var headId && B.IsWater(headId);
 
             float sinY = (float)Math.Sin(input.Yaw), cosY = (float)Math.Cos(input.Yaw);
             // Forward is +Z at yaw 0; right is +X.

@@ -434,6 +434,52 @@ def t_fire(n):
     return c
 
 
+def t_farmland(n):
+    c = noise(n, (96, 62, 38), 0.08)
+    for y in range(1, 16, 4):
+        c.hline(0, 15, y, (70, 44, 26))
+        c.hline(0, 15, y + 1, (112, 74, 46))
+    return c
+
+
+def wheat(stage):
+    def f(n):
+        r = seeded(n, 40)
+        c = Canvas()
+        height = 2 + stage * 1.7
+        ripe = stage >= 6
+        for x in (2, 5, 8, 11, 14):
+            h = int(height + r.randint(-1, 1))
+            h = max(2, min(15, h))
+            top_col = (222, 190, 70) if ripe else (96, 160, 60)
+            stem_col = (176, 168, 70) if ripe else (70, 130, 48)
+            for y in range(15, 15 - h, -1):
+                c.set(x, y, stem_col)
+            c.set(x, 15 - h, top_col)
+            if stage >= 4:
+                c.set(x - 1, 15 - h + 1, top_col)
+                c.set(x + 1, 15 - h + 1, top_col)
+                if stage >= 6:
+                    c.set(x, max(0, 15 - h - 1), (240, 210, 90))
+        return c
+    return f
+
+
+def t_bed_top(n):
+    c = noise(n, (176, 40, 44), 0.05)
+    c.rect(1, 1, 14, 5, (238, 238, 238))
+    c.hline(1, 14, 6, (190, 190, 190))
+    c.border((120, 24, 28))
+    return c
+
+
+def t_bed_side(n):
+    c = t_planks('planks')
+    c.rect(0, 0, 15, 6, (176, 40, 44))
+    c.hline(0, 15, 7, (120, 24, 28))
+    return c
+
+
 def build():
     return {
         'stone': t_stone, 'grass_top': t_grass_top, 'grass_side': t_grass_side, 'dirt': t_dirt,
@@ -460,6 +506,9 @@ def build():
         'flower_red': flower((214, 40, 40), (250, 220, 60)), 'flower_yellow': flower((250, 220, 50), (200, 140, 20)),
         'dead_bush': t_dead_bush, 'obsidian': t_obsidian, 'wool': t_wool, 'scorched_stone': t_scorched,
         'fire': t_fire, 'grass_snow_side': t_grass_snow_side,
+        'farmland_top': t_farmland, 'bed_top': t_bed_top, 'bed_side': t_bed_side,
+        'wheat_0': wheat(0), 'wheat_1': wheat(1), 'wheat_2': wheat(2), 'wheat_3': wheat(3),
+        'wheat_4': wheat(4), 'wheat_5': wheat(5), 'wheat_6': wheat(6), 'wheat_7': wheat(7),
     }
 
 

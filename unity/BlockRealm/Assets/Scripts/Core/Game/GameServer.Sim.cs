@@ -11,6 +11,10 @@ namespace BlockRealm.Sim
         private readonly Queue<Vec3i> _updateQueue = new Queue<Vec3i>();
         private readonly HashSet<Vec3i> _updateSet = new HashSet<Vec3i>();
         private readonly Dictionary<Vec3i, int> _fires = new Dictionary<Vec3i, int>();
+        private struct WaterTask { public Vec3i Pos; public int Due; }
+        private readonly Queue<WaterTask> _waterQueue = new Queue<WaterTask>();
+        private readonly HashSet<Vec3i> _waterScheduled = new HashSet<Vec3i>();
+        private const int WaterDelayTicks = 4;
 
         // ------------------------------------------------------------------ blocks
 
@@ -28,7 +32,130 @@ namespace BlockRealm.Sim
             Vec3i pos = new Vec3i(x, y, z);
             if (newId == B.Fire) _fires[pos] = 0; else if (oldId == B.Fire) _fires.Remove(pos);
             Enqueue(pos);
-            for (int f = 0; f < 6; f++) Enqueue(pos + Vec3i.FaceOffsets[f]);
+            if (B.IsWater(newId)) ScheduleWater(pos);
+            for (int f = 0; f < 6; f++)
+            {
+                Vec3i n = pos + Vec3i.FaceOffsets[f];
+                Enqueue(n);
+                // Water next to a change may need to flow into a new gap or drain away from a removed supply.
+                if (B.IsWater(World.GetBlock(n.X, n.Y, n.Z))) ScheduleWater(n);
+            }
+        }
+
+        private void ScheduleWater(Vec3i p)
+        {
+            if (p.Y < 0 || p.Y >= WorldConst.Height) return;
+            if (_waterScheduled.Add(p)) _waterQueue.Enqueue(new WaterTask { Pos = p, Due = TickCount + WaterDelayTicks });
+        }
+
+        private static bool WaterCanEnter(byte id)
+        {
+            if (id == B.Air) return true;
+            BlockInfo b = Blocks.All[id];
+            return b != null && b.Replaceable && !b.Liquid;
+        }
+
+        /// <summary>
+        /// One step of the water rules. A source is permanent. A flowing cell needs a supply (water above it, or a
+        /// neighbour one level higher) or it drains a level at a time. Water falls straight down when it can, and
+        /// otherwise spreads sideways losing a level per block, up to seven blocks from a source.
+        /// </summary>
+        private void UpdateWater(Vec3i p)
+        {
+            byte cur;
+            if (!World.TryGetBlock(p.X, p.Y, p.Z, out cur) || !B.IsWater(cur)) return;
+            int level = B.WaterLevel(cur);
+
+            if (cur != B.Water)
+            {
+                int supply = 0;
+                if (B.IsWater(World.GetBlock(p.X, p.Y + 1, p.Z))) supply = 7;
+                for (int d = 0; d < 4; d++)
+                {
+                    Vec3i n = p + Vec3i.FaceOffsets[(d < 2 ? d : d + 2)];
+                    int nl = B.WaterLevel(World.GetBlock(n.X, n.Y, n.Z));
+                    // Water only runs sideways off a cell that rests on something; falling water does not feed its sides.
+                    if (nl > 1 && !WaterCanEnter(World.GetBlock(n.X, n.Y - 1, n.Z)) && nl - 1 > supply) supply = nl - 1;
+                }
+                if (supply < level)
+                {
+                    World.SetBlock(p.X, p.Y, p.Z, supply <= 0 ? B.Air : B.FlowingWater(supply));
+                    return;
+                }
+            }
+
+            // Water that can go down does so and only so: a waterfall does not leak sideways along its length.
+            if (p.Y > 0)
+            {
+                byte below = World.GetBlock(p.X, p.Y - 1, p.Z);
+                if (WaterCanEnter(below))
+                {
+                    World.SetBlock(p.X, p.Y - 1, p.Z, B.FlowWater7);
+                    return;
+                }
+                if (B.IsWater(below))
+                {
+                    if (below != B.Water && below != B.FlowWater7) World.SetBlock(p.X, p.Y - 1, p.Z, B.FlowWater7);
+                    return;
+                }
+            }
+            if (level <= 1) return;
+            for (int d = 0; d < 4; d++)
+            {
+                Vec3i n = p + Vec3i.FaceOffsets[(d < 2 ? d : d + 2)];
+                byte nb = World.GetBlock(n.X, n.Y, n.Z);
+                int next = level == 8 ? 7 : level - 1;
+                if (next < 1) continue;
+                if (WaterCanEnter(nb) || (nb != B.Water && B.IsWater(nb) && B.WaterLevel(nb) < next))
+                    World.SetBlock(n.X, n.Y, n.Z, B.FlowingWater(next));
+            }
+        }
+
+        private void TickWater()
+        {
+            int budget = 500;
+            while (_waterQueue.Count > 0 && budget-- > 0)
+            {
+                WaterTask t = _waterQueue.Peek();
+                if (t.Due > TickCount) break;
+                _waterQueue.Dequeue();
+                _waterScheduled.Remove(t.Pos);
+                UpdateWater(t.Pos);
+            }
+        }
+
+        /// <summary>Crops grow on random samples around each player.</summary>
+        private void RandomTicks()
+        {
+            for (int i = 0; i < Players.Count; i++)
+            {
+                ServerPlayer p = Players[i];
+                if (p.Dead) continue;
+                for (int k = 0; k < 24; k++)
+                {
+                    int x = MathUtil.FloorInt(p.Pos.X) + Random.Range(-48, 48);
+                    int z = MathUtil.FloorInt(p.Pos.Z) + Random.Range(-48, 48);
+                    GrowCropAt(x, z);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Advances the crop standing on the surface of this column by one stage if it is on farmland and lit.
+        /// Returns whether it grew.
+        /// </summary>
+        public bool GrowCropAt(int x, int z)
+        {
+            if (!World.HasColumn(x >> 4, z >> 4)) return false;
+            int y = World.GetSurfaceY(x, z) + 1;
+            if (y < 1) return false;
+            byte id = World.GetBlock(x, y, z);
+            if (!B.IsWheat(id) || id == B.Wheat7) return false;
+            if (World.GetBlock(x, y - 1, z) != B.Farmland) return false;
+            int light = Math.Max(World.GetSkyLight(x, y, z) - (IsNight ? 11 : 0), World.GetBlockLightAt(x, y, z));
+            if (light < 9) return false;
+            World.SetBlock(x, y, z, (byte)(id + 1));
+            return true;
         }
 
         private void Enqueue(Vec3i p)
@@ -70,6 +197,9 @@ namespace BlockRealm.Sim
                     }
                 }
             }
+
+            TickWater();
+            if (TickCount % 4 == 0) RandomTicks();
 
             // Fire burns out and spreads to nearby flammable blocks.
             if (_fires.Count > 0 && TickCount % 10 == 0)
@@ -288,7 +418,7 @@ namespace BlockRealm.Sim
             bool lava;
             bool inLiquid = VoxelPhysics.BoxInLiquid(World, box, out lava);
             byte headBlock = World.GetBlock(MathUtil.FloorInt(p.Pos.X), MathUtil.FloorInt(p.Pos.Y + ServerPlayer.EyeHeight), MathUtil.FloorInt(p.Pos.Z));
-            if (headBlock == B.Water)
+            if (B.IsWater(headBlock))
             {
                 p.Air--;
                 if (p.Air <= -20) { p.Air = 0; Hurt(p, 2f, null, p.Pos, 0f); }
@@ -405,7 +535,7 @@ namespace BlockRealm.Sim
             {
                 case EntityType.Pig: drop(ItemIds.RawPork, 1, 3); break;
                 case EntityType.Cow: drop(ItemIds.RawBeef, 1, 3); drop(ItemIds.Leather, 0, 2); break;
-                case EntityType.Sheep: drop(B.Wool, 1, 1); drop(ItemIds.RawMutton, 1, 2); break;
+                case EntityType.Sheep: drop(B.Wool, 1, 2); drop(ItemIds.RawMutton, 1, 2); break;
                 case EntityType.Chicken: drop(ItemIds.RawChicken, 1, 1); drop(ItemIds.Feather, 0, 2); break;
                 case EntityType.Zombie: drop(ItemIds.RottenFlesh, 0, 2); if (Random.Chance(0.04f)) drop(ItemIds.IronIngot, 1, 1); break;
                 case EntityType.Skeleton: drop(ItemIds.Bone, 0, 2); drop(ItemIds.Arrow, 0, 2); break;

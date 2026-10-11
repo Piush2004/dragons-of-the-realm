@@ -112,6 +112,8 @@ namespace BlockRealm.Tests
                 g[0] = S(B.Cobble); g[1] = S(B.Cobble); g[2] = S(B.Cobble); g[4] = S(ItemIds.Stick); g[7] = S(ItemIds.Stick);
                 Check.Equal(ItemIds.StonePickaxe, Recipes.Match(g, 3, 3).Id);
                 g[2] = ItemStack.Empty;
+                Check.Equal(ItemIds.StoneHoe, Recipes.Match(g, 3, 3).Id);
+                g[2] = S(B.Cobble); g[1] = ItemStack.Empty;
                 Check.True(Recipes.Match(g, 3, 3).IsEmpty, "incomplete pickaxe");
                 g = new ItemStack[9];
                 g[3] = S(ItemIds.IronIngot); g[6] = S(ItemIds.IronIngot); g[4] = S(ItemIds.Stick); g[7] = S(ItemIds.Stick);

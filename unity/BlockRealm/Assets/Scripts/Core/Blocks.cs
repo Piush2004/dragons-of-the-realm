@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BlockRealm
 {
-    public enum ToolKind : byte { None = 0, Pickaxe = 1, Axe = 2, Shovel = 3, Sword = 4, Shears = 5 }
+    public enum ToolKind : byte { None = 0, Pickaxe = 1, Axe = 2, Shovel = 3, Sword = 4, Shears = 5, Hoe = 6 }
 
     public enum RenderKind : byte
     {
@@ -23,8 +23,28 @@ namespace BlockRealm
             LogBirch = 19, LeavesBirch = 20, Glass = 21, Sandstone = 22, Snow = 23, Ice = 24,
             Cactus = 25, Clay = 26, Bricks = 27, CraftingTable = 28, Furnace = 29, FurnaceLit = 30,
             Chest = 31, Torch = 32, TallGrass = 33, FlowerRed = 34, FlowerYellow = 35, DeadBush = 36,
-            Obsidian = 37, Wool = 38, ScorchedStone = 39, Fire = 40, SnowGrass = 41;
-        public const int Count = 42;
+            Obsidian = 37, Wool = 38, ScorchedStone = 39, Fire = 40, SnowGrass = 41,
+            FlowWater1 = 42, FlowWater2 = 43, FlowWater3 = 44, FlowWater4 = 45, FlowWater5 = 46, FlowWater6 = 47, FlowWater7 = 48,
+            Farmland = 49,
+            Wheat0 = 50, Wheat1 = 51, Wheat2 = 52, Wheat3 = 53, Wheat4 = 54, Wheat5 = 55, Wheat6 = 56, Wheat7 = 57,
+            Bed = 58;
+        public const int Count = 59;
+
+        /// <summary>True for a water source or any level of flowing water.</summary>
+        public static bool IsWater(byte id) { return id == Water || (id >= FlowWater1 && id <= FlowWater7); }
+
+        /// <summary>Water depth: 8 for a source, 1..7 for flowing water, 0 for anything else.</summary>
+        public static int WaterLevel(byte id)
+        {
+            if (id == Water) return 8;
+            if (id >= FlowWater1 && id <= FlowWater7) return id - FlowWater1 + 1;
+            return 0;
+        }
+
+        public static byte FlowingWater(int level) { return (byte)(FlowWater1 + MathUtilClamp(level, 1, 7) - 1); }
+        private static int MathUtilClamp(int v, int lo, int hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+        public static bool IsWheat(byte id) { return id >= Wheat0 && id <= Wheat7; }
     }
 
     public sealed class BlockInfo
@@ -112,6 +132,14 @@ namespace BlockRealm
             Define(B.ScorchedStone, "Scorched Stone", hardness: 3f, tool: ToolKind.Pickaxe, minTier: 1, tile: "scorched_stone");
             Define(B.Fire, "Fire", RenderKind.Cross, solid: false, opaque: false, replaceable: true, emission: 13, hardness: 0, drop: 0, tile: "fire");
             Define(B.SnowGrass, "Snowy Grass", hardness: 0.6f, tool: ToolKind.Shovel, drop: B.Dirt, top: "snow", side: "grass_snow_side", bottom: "dirt");
+            for (int lvl = 1; lvl <= 7; lvl++)
+                Define((byte)(B.FlowWater1 + lvl - 1), "Flowing Water", RenderKind.Liquid, solid: false, opaque: false, liquid: true,
+                       replaceable: true, absorb: 2, hardness: 100, drop: 0, tile: "water");
+            Define(B.Farmland, "Farmland", hardness: 0.6f, tool: ToolKind.Shovel, drop: B.Dirt, top: "farmland_top", side: "dirt", bottom: "dirt");
+            for (int stage = 0; stage < 8; stage++)
+                Define((byte)(B.Wheat0 + stage), "Wheat", RenderKind.Cross, solid: false, opaque: false, hardness: 0, flammable: true,
+                       drop: 0, tile: "wheat_" + stage);
+            Define(B.Bed, "Bed", hardness: 0.3f, flammable: true, top: "bed_top", side: "bed_side", bottom: "planks");
 
             for (int i = 0; i < 256; i++)
             {

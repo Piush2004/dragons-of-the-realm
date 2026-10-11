@@ -664,8 +664,9 @@ namespace BlockRealm.Sim
                     TryPlace(h, (byte)held.Id);
                     return;
                 }
+                if (pressed && !held.IsEmpty && held.Info.Usable) { Send(new UseItemPacket()); return; }
             }
-            if (pressed && !Held.IsEmpty && (Held.Info.FoodHunger > 0 || Held.Id == ItemIds.Bow)) Send(new UseItemPacket());
+            if (pressed && !Held.IsEmpty && Held.Info.Usable) Send(new UseItemPacket());
         }
 
         private void TryPlace(RayHit h, byte block)

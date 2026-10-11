@@ -26,6 +26,7 @@ AXE_HEAD = [(8, 2), (9, 2), (10, 2), (11, 2), (8, 3), (9, 3), (10, 3), (11, 3), 
             (12, 4), (13, 4), (10, 5), (11, 5), (12, 5), (13, 5), (11, 6), (12, 6)]
 SHOVEL_HEAD = [(11, 2), (12, 2), (10, 3), (11, 3), (12, 3), (13, 3), (10, 4), (11, 4), (12, 4), (13, 4), (11, 5),
                (12, 5), (9, 4), (10, 5)]
+HOE_HEAD = [(7, 3), (8, 3), (9, 3), (10, 3), (11, 3), (12, 3), (12, 4), (7, 4)]
 SWORD_BLADE = [(5, 10), (6, 9), (7, 8), (8, 7), (9, 6), (10, 5), (11, 4), (12, 3), (13, 2),
                (6, 10), (7, 9), (8, 8), (9, 7), (10, 6), (11, 5), (12, 4), (13, 3)]
 SWORD_GUARD = [(3, 9), (4, 10), (5, 11), (6, 12), (4, 9), (5, 10), (6, 11), (3, 10), (4, 11), (5, 12)]
@@ -48,7 +49,7 @@ def draw_tool(kind, material):
     for p in HANDLE:
         c.set(p[0], p[1], STICK)
         c.set(p[0], p[1] + 1, STICK_D) if c.get(p[0], p[1] + 1)[3] == 0 else None
-    head = {'pickaxe': PICK_HEAD, 'axe': AXE_HEAD, 'shovel': SHOVEL_HEAD}[kind]
+    head = {'pickaxe': PICK_HEAD, 'axe': AXE_HEAD, 'shovel': SHOVEL_HEAD, 'hoe': HOE_HEAD}[kind]
     pts = set(head)
     for p in pts:
         edge = (p[0] + 1, p[1]) not in pts or (p[0], p[1] + 1) not in pts
@@ -242,6 +243,88 @@ def icon_shears(n):
     return outlined(c)
 
 
+ARMOR_COLOURS = {
+    'leather': ((168, 108, 58), (116, 72, 36)),
+    'iron': ((226, 226, 230), (150, 150, 158)),
+    'diamond': ((100, 236, 226), (40, 160, 154)),
+}
+
+ARMOR_SHAPES = {
+    'helmet': ['................', '................', '....########....', '...##########...', '..############..',
+               '..############..', '..###......###..', '..###......###..', '..##........##..', '................',
+               '................', '................', '................', '................', '................', '................'],
+    'chestplate': ['................', '..###......###..', '.####......####.', '.#####....#####.', '.##############.',
+                   '.##############.', '..############..', '..############..', '..############..', '..############..',
+                   '..############..', '..############..', '...##########...', '................', '................', '................'],
+    'leggings': ['................', '................', '..############..', '..############..', '..############..',
+                 '..###......###..', '..###......###..', '..###......###..', '..###......###..', '..###......###..',
+                 '..###......###..', '..###......###..', '................', '................', '................', '................'],
+    'boots': ['................', '................', '................', '................', '................',
+              '................', '...###....###...', '...###....###...', '...###....###...', '..####....####..',
+              '.#####....#####.', '.#####....#####.', '................', '................', '................', '................'],
+}
+
+
+def draw_armor(piece, material):
+    light, dark = ARMOR_COLOURS[material]
+    c = Canvas()
+    r = seeded(piece + material)
+    for y, row in enumerate(ARMOR_SHAPES[piece]):
+        for x, ch in enumerate(row):
+            if ch == '#':
+                f = 1.0 + r.uniform(-0.06, 0.06)
+                tone = light if (y + x) % 5 else dark
+                c.set(x, y, (int(tone[0] * f), int(tone[1] * f), int(tone[2] * f), 255))
+    return c
+
+
+def icon_seeds(n):
+    r = seeded(n)
+    c = Canvas()
+    for _ in range(9):
+        x, y = r.randint(4, 11), r.randint(5, 11)
+        c.rect(x, y, x + 1, y, (92, 150, 52))
+        c.set(x, y + 1, (52, 96, 30))
+    return outlined(c)
+
+
+def icon_wheat(n):
+    c = Canvas()
+    for i, x in enumerate((5, 8, 11)):
+        line(c, (x, 14), (x + (i - 1), 4), (186, 168, 70))
+        for k in range(4):
+            c.set(x + (i - 1) - 1, 4 + k, (230, 198, 80))
+            c.set(x + (i - 1) + 1, 5 + k, (230, 198, 80))
+        c.set(x + (i - 1), 2, (240, 214, 96))
+        c.set(x + (i - 1), 3, (240, 214, 96))
+    return outlined(c)
+
+
+def icon_bread(n):
+    c = Canvas()
+    blob(c, 8, 9, 6.0, 3.6, (196, 140, 62))
+    blob(c, 8, 8, 5.0, 2.4, (222, 170, 86))
+    for x in (5, 8, 11):
+        c.set(x, 7, (150, 100, 44))
+        c.set(x + 1, 8, (150, 100, 44))
+    return outlined(c)
+
+
+def icon_bucket(filled):
+    def f(n):
+        rows = ['................', '................', '...##########...', '..#..........#..', '..#..........#..',
+                '...#........#...', '...#........#...', '...#........#...', '....#......#....', '....#......#....',
+                '.....########...', '................', '................', '................', '................', '................']
+        c = ascii_art(rows, {'#': (186, 190, 198)})
+        if filled:
+            for y in range(3, 9):
+                for x in range(3, 13):
+                    if c.get(x, y)[3] == 0:
+                        c.set(x, y, (60, 110, 230))
+        return outlined(c)
+    return f
+
+
 def build_items():
     d = {
         'stick': icon_stick, 'coal': icon_coal, 'charcoal': icon_charcoal,
@@ -259,9 +342,14 @@ def build_items():
         'raw_mutton': meat((200, 80, 80), (236, 140, 130)),
         'cooked_mutton': meat((146, 84, 50), (186, 120, 74)),
         'rotten_flesh': meat((110, 130, 70), (140, 160, 90), bone=False),
+        'seeds': icon_seeds, 'wheat': icon_wheat, 'bread': icon_bread,
+        'bucket': icon_bucket(False), 'water_bucket': icon_bucket(True),
     }
+    for mat in ARMOR_COLOURS:
+        for piece in ('helmet', 'chestplate', 'leggings', 'boots'):
+            d['%s_%s' % (mat, piece)] = (lambda m, pc: (lambda n: outlined(draw_armor(pc, m))))(mat, piece)
     for material in MATERIALS:
-        for kind in ('pickaxe', 'axe', 'shovel', 'sword'):
+        for kind in ('pickaxe', 'axe', 'shovel', 'sword', 'hoe'):
             d['%s_%s' % (material, kind)] = (lambda m, k: (lambda n: outlined(draw_tool(k, m))))(material, kind)
     return d
 

@@ -52,6 +52,16 @@ namespace BlockRealm.Sim
             AddShaped(ItemIds.Arrow, 4, "K", "S", "F", ItemIds.Coal, S, ItemIds.Feather);
             AddShaped(ItemIds.Saddle, 1, "LLL", "LDL", "I.I", ItemIds.Leather, ItemIds.DragonScale, I);
             AddShaped(B.Bricks, 1, "CC", "CC", B.Clay);
+            Armour(ItemIds.LeatherHelmet, ItemIds.LeatherChestplate, ItemIds.LeatherLeggings, ItemIds.LeatherBoots, ItemIds.Leather);
+            Armour(ItemIds.IronHelmet, ItemIds.IronChestplate, ItemIds.IronLeggings, ItemIds.IronBoots, I);
+            Armour(ItemIds.DiamondHelmet, ItemIds.DiamondChestplate, ItemIds.DiamondLeggings, ItemIds.DiamondBoots, D);
+            AddShaped(ItemIds.WoodHoe, 1, "XX", ".S", ".S", P, S);
+            AddShaped(ItemIds.StoneHoe, 1, "XX", ".S", ".S", C, S);
+            AddShaped(ItemIds.IronHoe, 1, "XX", ".S", ".S", I, S);
+            AddShaped(ItemIds.DiamondHoe, 1, "XX", ".S", ".S", D, S);
+            AddShaped(ItemIds.Bucket, 1, "X.X", ".X.", I);
+            AddShaped(ItemIds.Bread, 1, "WWW", ItemIds.Wheat);
+            AddShaped(B.Bed, 1, "WWW", "PPP", B.Wool, P);
 
             Smelt(B.IronOre, ItemIds.IronIngot);
             Smelt(B.GoldOre, ItemIds.GoldIngot);
@@ -65,6 +75,14 @@ namespace BlockRealm.Sim
             Smelt(ItemIds.RawBeef, ItemIds.Steak);
             Smelt(ItemIds.RawChicken, ItemIds.CookedChicken);
             Smelt(ItemIds.RawMutton, ItemIds.CookedMutton);
+        }
+
+        private static void Armour(ushort helmet, ushort chest, ushort legs, ushort boots, ushort material)
+        {
+            AddShaped(helmet, 1, "XXX", "X.X", material);
+            AddShaped(chest, 1, "X.X", "XXX", "XXX", material);
+            AddShaped(legs, 1, "XXX", "X.X", "X.X", material);
+            AddShaped(boots, 1, "X.X", "X.X", material);
         }
 
         private static void Tools(ushort pick, ushort axe, ushort shovel, ushort sword, ushort material)

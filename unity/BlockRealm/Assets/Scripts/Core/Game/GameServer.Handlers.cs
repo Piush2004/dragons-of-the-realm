@@ -193,6 +193,8 @@ namespace BlockRealm.Sim
             ReleaseTileEntity(pos, id);
             SetBlock(x, y, z, B.Air);
             Effect(EffectKind.BlockBreak, new Vec3(x + 0.5f, y + 0.5f, z + 0.5f), id);
+            if (id == B.Wheat7 && !p.GodMode)
+                DropItem(new Vec3(x + 0.5f, y + 0.4f, z + 0.5f), new ItemStack(ItemIds.Seeds, Random.Range(1, 2)), new Vec3(0, 2.5f, 0));
             if (drop != 0)
             {
                 int count = Blocks.Get(id).DropCount;
@@ -269,6 +271,7 @@ namespace BlockRealm.Sim
             ItemStack held = p.Held;
             if (held.IsEmpty) return;
             ItemInfo info = held.Info;
+            if (UseTargetedItem(p, held)) return;
             if (info.FoodHunger > 0 && (p.Hunger < 20 || p.GodMode))
             {
                 p.Hunger = Math.Min(20, p.Hunger + info.FoodHunger);
@@ -288,6 +291,66 @@ namespace BlockRealm.Sim
                 p.AttackCooldown = 12;
                 p.InventoryDirty = true;
             }
+        }
+
+        /// <summary>Items that act on the block the player is looking at: buckets, hoes and seeds.</summary>
+        private bool UseTargetedItem(ServerPlayer p, ItemStack held)
+        {
+            ushort id = held.Id;
+            bool bucket = id == ItemIds.Bucket, water = id == ItemIds.WaterBucket;
+            bool hoe = held.Info.Tool == ToolKind.Hoe, seeds = id == ItemIds.Seeds;
+            if (!bucket && !water && !hoe && !seeds) return false;
+            if (p.AttackCooldown > 0) return true;
+
+            RayHit h = VoxelPhysics.Raycast(World, p.Eye, p.LookDirection, ServerPlayer.Reach, bucket);
+            if (!h.Hit) return true;
+            p.AttackCooldown = 4;
+
+            if (bucket)
+            {
+                if (World.GetBlock(h.X, h.Y, h.Z) != B.Water) return true;          // only a full source can be scooped
+                SetBlock(h.X, h.Y, h.Z, B.Air);
+                SwapHeld(p, ItemIds.WaterBucket);
+                Effect(EffectKind.Splash, new Vec3(h.X + 0.5f, h.Y + 0.5f, h.Z + 0.5f), 0);
+            }
+            else if (water)
+            {
+                int x = h.PlaceX, y = h.PlaceY, z = h.PlaceZ;
+                if (y < 0 || y >= WorldConst.Height || !World.HasColumn(x >> 4, z >> 4)) return true;
+                if (!WaterCanEnter(World.GetBlock(x, y, z))) return true;
+                SetBlock(x, y, z, B.Water);
+                SwapHeld(p, ItemIds.Bucket);
+                Effect(EffectKind.Splash, new Vec3(x + 0.5f, y + 0.5f, z + 0.5f), 0);
+            }
+            else if (hoe)
+            {
+                byte id0 = World.GetBlock(h.X, h.Y, h.Z);
+                if (id0 != B.Grass && id0 != B.Dirt && id0 != B.SnowGrass) return true;
+                if (World.GetBlock(h.X, h.Y + 1, h.Z) != B.Air) return true;
+                SetBlock(h.X, h.Y, h.Z, B.Farmland);
+                if (!p.GodMode) { p.Inventory.WearHeld(); p.InventoryDirty = true; }
+            }
+            else
+            {
+                if (World.GetBlock(h.X, h.Y, h.Z) != B.Farmland) return true;
+                if (World.GetBlock(h.X, h.Y + 1, h.Z) != B.Air) return true;
+                SetBlock(h.X, h.Y + 1, h.Z, B.Wheat0);
+                if (!p.GodMode) { p.Inventory.ConsumeHeld(); p.InventoryDirty = true; }
+            }
+            return true;
+        }
+
+        private void SwapHeld(ServerPlayer p, ushort newItem)
+        {
+            if (p.GodMode) return;
+            p.Inventory.ConsumeHeld();
+            if (p.Inventory.Held.IsEmpty) p.Inventory.Slots[p.Inventory.Selected] = new ItemStack(newItem, 1);
+            else
+            {
+                int left = p.Inventory.Add(new ItemStack(newItem, 1));
+                if (left > 0) DropItem(p.Eye, new ItemStack(newItem, 1), p.LookDirection * 3f);
+            }
+            p.InventoryDirty = true;
         }
 
         public void DropItem(Vec3 pos, ItemStack stack, Vec3 vel)

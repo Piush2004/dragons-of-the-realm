@@ -17,7 +17,12 @@ namespace BlockRealm
             RawChicken = 285, CookedChicken = 286, RawMutton = 287, CookedMutton = 288, RottenFlesh = 289;
         public const ushort Leather = 290, Feather = 291, Bone = 292, Arrow = 293, Bow = 294,
             Gunpowder = 295, DragonScale = 296, Saddle = 297, Charcoal = 298;
-        public const int MaxId = 300;
+        public const ushort LeatherHelmet = 300, LeatherChestplate = 301, LeatherLeggings = 302, LeatherBoots = 303,
+            IronHelmet = 304, IronChestplate = 305, IronLeggings = 306, IronBoots = 307,
+            DiamondHelmet = 308, DiamondChestplate = 309, DiamondLeggings = 310, DiamondBoots = 311;
+        public const ushort Seeds = 312, Wheat = 313, Bread = 314, WoodHoe = 315, StoneHoe = 316, IronHoe = 317, DiamondHoe = 318,
+            Bucket = 319, WaterBucket = 320;
+        public const int MaxId = 330;
     }
 
     public sealed class ItemInfo
@@ -34,6 +39,9 @@ namespace BlockRealm
         public float FoodSaturation;
         public int FuelTicks;            // furnace burn time in ticks (0 = not fuel)
         public string Icon;              // icon texture name (blocks use their side tile)
+        public int ArmorSlot = -1;       // 0 head, 1 chest, 2 legs, 3 feet; -1 = not armour
+        public int ArmorPoints;          // damage protection contributed
+        public bool Usable;              // right-click without a target block does something (food, bucket, hoe, seeds, bow)
     }
 
     public struct ItemStack
@@ -103,11 +111,36 @@ namespace BlockRealm
             Food(ItemIds.CookedMutton, "Cooked Mutton", "cooked_mutton", 6, 9.6f);
             Food(ItemIds.RottenFlesh, "Rotten Flesh", "rotten_flesh", 4, 0.8f);
 
+            Armor(ItemIds.LeatherHelmet, "Leather Cap", "leather_helmet", 0, 1, 55);
+            Armor(ItemIds.LeatherChestplate, "Leather Tunic", "leather_chestplate", 1, 3, 80);
+            Armor(ItemIds.LeatherLeggings, "Leather Pants", "leather_leggings", 2, 2, 75);
+            Armor(ItemIds.LeatherBoots, "Leather Boots", "leather_boots", 3, 1, 65);
+            Armor(ItemIds.IronHelmet, "Iron Helmet", "iron_helmet", 0, 2, 165);
+            Armor(ItemIds.IronChestplate, "Iron Chestplate", "iron_chestplate", 1, 6, 240);
+            Armor(ItemIds.IronLeggings, "Iron Leggings", "iron_leggings", 2, 5, 225);
+            Armor(ItemIds.IronBoots, "Iron Boots", "iron_boots", 3, 2, 195);
+            Armor(ItemIds.DiamondHelmet, "Diamond Helmet", "diamond_helmet", 0, 3, 363);
+            Armor(ItemIds.DiamondChestplate, "Diamond Chestplate", "diamond_chestplate", 1, 8, 528);
+            Armor(ItemIds.DiamondLeggings, "Diamond Leggings", "diamond_leggings", 2, 6, 495);
+            Armor(ItemIds.DiamondBoots, "Diamond Boots", "diamond_boots", 3, 3, 429);
+
+            Plain(ItemIds.Seeds, "Seeds", "seeds").Usable = true;
+            Plain(ItemIds.Wheat, "Wheat", "wheat");
+            Food(ItemIds.Bread, "Bread", "bread", 5, 6.0f);
+            Tool(ItemIds.WoodHoe, "Wooden Hoe", "wood_hoe", ToolKind.Hoe, 1, 59, 1f).Usable = true;
+            Tool(ItemIds.StoneHoe, "Stone Hoe", "stone_hoe", ToolKind.Hoe, 2, 131, 1f).Usable = true;
+            Tool(ItemIds.IronHoe, "Iron Hoe", "iron_hoe", ToolKind.Hoe, 3, 250, 1f).Usable = true;
+            Tool(ItemIds.DiamondHoe, "Diamond Hoe", "diamond_hoe", ToolKind.Hoe, 4, 1561, 1f).Usable = true;
+            Plain(ItemIds.Bucket, "Bucket", "bucket").Usable = true;
+            Plain(ItemIds.WaterBucket, "Water Bucket", "water_bucket").Usable = true;
+            All[ItemIds.Bucket].MaxStack = 16;
+            All[ItemIds.WaterBucket].MaxStack = 1;
+
             Plain(ItemIds.Leather, "Leather", "leather");
             Plain(ItemIds.Feather, "Feather", "feather");
             Plain(ItemIds.Bone, "Bone", "bone");
             Plain(ItemIds.Arrow, "Arrow", "arrow");
-            Tool(ItemIds.Bow, "Bow", "bow", ToolKind.None, 0, 384, 1f);
+            Tool(ItemIds.Bow, "Bow", "bow", ToolKind.None, 0, 384, 1f).Usable = true;
             Plain(ItemIds.Gunpowder, "Gunpowder", "gunpowder");
             Plain(ItemIds.DragonScale, "Dragon Scale", "dragon_scale");
             Plain(ItemIds.Saddle, "Dragon Saddle", "saddle").MaxStack = 1;
@@ -121,16 +154,23 @@ namespace BlockRealm
             return i;
         }
 
-        private static void Tool(ushort id, string name, string icon, ToolKind kind, int tier, int durability, float attack)
+        private static ItemInfo Tool(ushort id, string name, string icon, ToolKind kind, int tier, int durability, float attack)
         {
             ItemInfo i = Plain(id, name, icon);
             i.MaxStack = 1; i.Tool = kind; i.Tier = tier; i.Durability = durability; i.Attack = attack;
+            return i;
+        }
+
+        private static void Armor(ushort id, string name, string icon, int slot, int points, int durability)
+        {
+            ItemInfo i = Plain(id, name, icon);
+            i.MaxStack = 1; i.ArmorSlot = slot; i.ArmorPoints = points; i.Durability = durability;
         }
 
         private static void Food(ushort id, string name, string icon, int hunger, float saturation)
         {
             ItemInfo i = Plain(id, name, icon);
-            i.FoodHunger = hunger; i.FoodSaturation = saturation;
+            i.FoodHunger = hunger; i.FoodSaturation = saturation; i.Usable = true;
         }
 
         public static ItemInfo Get(ushort id)
@@ -156,6 +196,9 @@ namespace BlockRealm
                 return 0;
             }
             if (blockId == B.Wool) return blockId;
+            if (B.IsWheat(blockId)) return blockId == B.Wheat7 ? ItemIds.Wheat : ItemIds.Seeds;
+            if (blockId == B.TallGrass) return rng != null && rng.Chance(0.14f) ? ItemIds.Seeds : (ushort)0;
+            if (blockId == B.Farmland) return B.Dirt;
             if (b.DropItem == 0) return 0;
             if (b.DropItem < 0) return blockId == B.FurnaceLit ? B.Furnace : blockId;
             return (ushort)b.DropItem;

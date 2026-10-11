@@ -125,7 +125,11 @@ namespace BlockRealm.Game
             }
             else if (token.Length > 0)
             {
-                Debug.LogWarning("[server] the admin token is shorter than " + GameServer.MinAdminTokenLength + " characters and was ignored");
+                // A token was supplied but is unusable. Failing open would leave the previous credential working after the
+                // owner believed they had replaced it, so remote administration is switched off entirely instead.
+                o.AdminVerifiers.Clear();
+                Debug.LogError("[server] the admin token is shorter than " + GameServer.MinAdminTokenLength +
+                               " characters (or no -public address was given): remote administration is DISABLED, and any stored credential is discarded");
             }
 
             _server = new GameServer(o);

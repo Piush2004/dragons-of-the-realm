@@ -218,16 +218,27 @@ namespace BlockRealm
         {
             const int N = PaddedSection.N;
             int px = lx + 1, py = ly + 1, pz = lz + 1;
+            bool lava = id == B.Lava;
             byte above = p.Blocks[((py + 1) * N + pz) * N + px];
-            bool topExposed = above != id;
-            float topY = topExposed ? 0.875f : 1f;
+            bool topExposed = lava ? above != B.Lava : !B.IsWater(above);
+            float topY = topExposed ? SurfaceHeight(id) : 1f;
             for (int f = 0; f < 6; f++)
             {
                 int nx = px + FaceNormal[f, 0], ny = py + FaceNormal[f, 1], nz = pz + FaceNormal[f, 2];
                 byte nid = p.Blocks[(ny * N + nz) * N + nx];
-                if (nid == id) continue;
+                bool sameFluid = lava ? nid == B.Lava : B.IsWater(nid);
+                float lowFrom = 0f;
+                if (sameFluid)
+                {
+                    // Between two cells of the same fluid only the part of this cell above its neighbour's surface shows.
+                    if (f == (int)Face.Up || f == (int)Face.Down) continue;
+                    byte nAbove = p.Blocks[((ny + 1) * N + nz) * N + nx];
+                    float nTop = (lava ? nAbove == B.Lava : B.IsWater(nAbove)) ? 1f : SurfaceHeight(nid);
+                    if (nTop >= topY - 0.001f) continue;
+                    lowFrom = nTop;
+                }
                 BlockInfo n = Blocks.All[nid];
-                if (n != null && n.Opaque && n.Render == RenderKind.Cube) continue;
+                if (!sameFluid && n != null && n.Opaque && n.Render == RenderKind.Cube) continue;
                 if (f == (int)Face.Down && n != null && n.Solid && n.Opaque) continue;
 
                 int baseV = nv;
@@ -239,7 +250,7 @@ namespace BlockRealm
                     MeshVertex v;
                     float cy = FaceCorners[f, c, 1];
                     v.PX = lx + FaceCorners[f, c, 0];
-                    v.PY = ly + (cy > 0.5f ? topY : 0f);
+                    v.PY = ly + (cy > 0.5f ? topY : lowFrom);
                     v.PZ = lz + FaceCorners[f, c, 2];
                     v.NX = (sbyte)(FaceNormal[f, 0] * 127); v.NY = (sbyte)(FaceNormal[f, 1] * 127); v.NZ = (sbyte)(FaceNormal[f, 2] * 127); v.NW = 0;
                     v.U = CornerUv[c, 0]; v.V = CornerUv[c, 1]; v.Layer = layer;
@@ -260,6 +271,15 @@ namespace BlockRealm
                     idx[nwWater++] = (ushort)baseV; idx[nwWater++] = (ushort)(baseV + 2); idx[nwWater++] = (ushort)(baseV + 3);
                 }
             }
+        }
+
+        /// <summary>Height of a liquid's surface within its cell: sources sit a little below the top, flowing water by level.</summary>
+        public static float SurfaceHeight(byte id)
+        {
+            if (id == B.Lava) return 0.875f;
+            int level = B.WaterLevel(id);
+            if (level >= 8) return 0.875f;
+            return 0.12f + 0.095f * level;              // levels 1..7 -> 0.215 .. 0.785
         }
 
         private static void EmitCross(PaddedSection p, int lx, int ly, int lz, int layer, ref int nv, ushort[] idx, ref int ni)

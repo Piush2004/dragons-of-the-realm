@@ -151,7 +151,7 @@ namespace BlockRealm
                     for (int x = x0; x <= x1; x++)
                     {
                         byte id = w.GetBlock(x, y, z);
-                        if (id == B.Water) any = true;
+                        if (B.IsWater(id)) any = true;
                         else if (id == B.Lava) { any = true; lava = true; }
                     }
                 }

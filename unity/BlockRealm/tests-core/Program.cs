@@ -28,6 +28,7 @@ static class Program
         GameTests.RunAll();
         NetTests.RunAll();
         SimTests.RunAll();
+        FeatureTests.RunAll();
         AbuseTests.RunAll();
 
         Console.WriteLine();
