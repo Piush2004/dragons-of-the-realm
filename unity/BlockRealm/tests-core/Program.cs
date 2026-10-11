@@ -20,6 +20,7 @@ static class Program
         }
         WorldTests.RunAll();
         PhysicsTests.RunAll();
+        SecurityTests.RunAll();
 
         Console.WriteLine();
         Console.WriteLine("passed " + Harness.Passed + ", failed " + Harness.Failed);

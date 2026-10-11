@@ -312,31 +312,69 @@ namespace BlockRealm
             }
         }
 
+        /// <summary>Upper bound on a decoded column: 24 sections at the worst-case 4/3 bytes per block, plus slack.</summary>
+        public const int MaxDecodedBytes = 200000;
+        public const int MaxEncodedBytes = 400000;
+
+        /// <summary>
+        /// Decodes a column from untrusted bytes (network or save file). Throws InvalidDataException for anything
+        /// malformed: oversized input, a decompression bomb, bad section counts or runs, truncated data.
+        /// Block ids that this build does not know are replaced with air.
+        /// </summary>
         public static Column Decode(int cx, int cz, byte[] data)
         {
-            Column c = new Column(cx, cz);
-            using (MemoryStream packed = new MemoryStream(data))
-            using (DeflateStream d = new DeflateStream(packed, CompressionMode.Decompress))
-            using (MemoryStream raw = new MemoryStream())
+            if (data == null || data.Length == 0 || data.Length > MaxEncodedBytes)
+                throw new InvalidDataException("column data has an invalid size");
+
+            byte[] buf = new byte[MaxDecodedBytes];
+            int length = 0;
+            try
             {
-                d.CopyTo(raw);
-                byte[] buf = raw.ToArray();
-                int pos = 0;
-                int sections = buf[pos++];
-                for (int sy = 0; sy < sections; sy++)
+                using (MemoryStream packed = new MemoryStream(data))
+                using (DeflateStream d = new DeflateStream(packed, CompressionMode.Decompress))
                 {
-                    Section s = c.EnsureSection(sy);
-                    int i = 0;
-                    while (i < Section.Volume)
+                    while (true)
                     {
-                        byte v = buf[pos++];
-                        if (v == 0xFE)
+                        int read = d.Read(buf, length, buf.Length - length);
+                        if (read <= 0) break;
+                        length += read;
+                        if (length >= buf.Length)
                         {
-                            byte value = buf[pos++];
-                            int run = buf[pos] | (buf[pos + 1] << 8); pos += 2;
-                            for (int k = 0; k < run; k++) s.Blocks[i++] = value;
+                            // Buffer full: only valid if the stream is exactly at its end.
+                            if (d.ReadByte() >= 0) throw new InvalidDataException("column expands beyond the allowed size");
+                            break;
                         }
-                        else s.Blocks[i++] = v;
+                    }
+                }
+            }
+            catch (InvalidDataException) { throw; }
+            catch (Exception e) { throw new InvalidDataException("column data is corrupt: " + e.Message); }
+
+            if (length < 1) throw new InvalidDataException("column data is empty");
+            Column c = new Column(cx, cz);
+            int pos = 0;
+            int sections = buf[pos++];
+            if (sections > WorldConst.SectionsPerColumn) throw new InvalidDataException("too many sections: " + sections);
+            for (int sy = 0; sy < sections; sy++)
+            {
+                Section s = c.EnsureSection(sy);
+                int i = 0;
+                while (i < Section.Volume)
+                {
+                    if (pos >= length) throw new InvalidDataException("column data is truncated");
+                    byte v = buf[pos++];
+                    if (v == 0xFE)
+                    {
+                        if (pos + 3 > length) throw new InvalidDataException("column run is truncated");
+                        byte value = buf[pos++];
+                        int run = buf[pos] | (buf[pos + 1] << 8); pos += 2;
+                        if (run <= 0 || i + run > Section.Volume) throw new InvalidDataException("column run overflows its section");
+                        if (!Blocks.IsDefined(value)) value = B.Air;
+                        for (int k = 0; k < run; k++) s.Blocks[i++] = value;
+                    }
+                    else
+                    {
+                        s.Blocks[i++] = Blocks.IsDefined(v) ? v : B.Air;
                     }
                 }
             }
