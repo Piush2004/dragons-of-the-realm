@@ -100,12 +100,12 @@ namespace BlockRealm.Net
         // client -> server
         Hello = 1, PlayerState = 2, StartBreak = 3, FinishBreak = 4, CancelBreak = 5, PlaceBlock = 6,
         SelectSlot = 7, UseItem = 8, Interact = 9, InteractEntity = 10, InventoryClick = 11, CloseWindow = 12,
-        Chat = 13, Respawn = 14, KeepAlive = 15,
+        Chat = 13, Respawn = 14, KeepAlive = 15, Auth = 16,
         // server -> client
         Welcome = 40, ColumnData = 41, ColumnUnload = 42, BlockUpdate = 43, EntitySpawn = 44, EntityDespawn = 45,
         EntityStates = 46, PlayerTeleport = 47, HealthUpdate = 48, WindowItems = 49, SetSlot = 50, OpenWindow = 51,
         WindowProperty = 52, TimeUpdate = 53, ChatMessage = 54, EntityEvent = 55, Effect = 56, BreakProgress = 57,
-        Disconnect = 58, SetCursor = 59, Knockback = 60, Mount = 61,
+        Disconnect = 58, SetCursor = 59, Knockback = 60, Mount = 61, Challenge = 62,
     }
 
     public abstract class Packet
@@ -186,6 +186,8 @@ namespace BlockRealm.Net
                 case PacketId.SetCursor: return new SetCursorPacket();
                 case PacketId.Knockback: return new KnockbackPacket();
                 case PacketId.Mount: return new MountPacket();
+                case PacketId.Challenge: return new ChallengePacket();
+                case PacketId.Auth: return new AuthPacket();
             }
             return null;
         }
@@ -195,20 +197,12 @@ namespace BlockRealm.Net
 
     public sealed class HelloPacket : Packet
     {
-        public const int ProtocolVersion = 2;
+        public const int ProtocolVersion = 3;
         public int Protocol = ProtocolVersion;
         public string Name = "Player";
-        /// <summary>A random secret the player's machine keeps. It proves the name is theirs on later visits.</summary>
-        public string IdentityKey = "";
-        /// <summary>Optional server admin token; grants operator rights when it matches the server's.</summary>
-        public string AdminToken = "";
         public override PacketId Id { get { return PacketId.Hello; } }
-        public override void Write(PacketWriter w) { w.I32(Protocol); w.Str(Name); w.Str(IdentityKey); w.Str(AdminToken); }
-        public override void Read(PacketReader r)
-        {
-            Protocol = r.I32(); Name = r.Str(); IdentityKey = r.Str(); AdminToken = r.Str();
-            if (IdentityKey.Length > 128 || AdminToken.Length > 128) throw new InvalidDataException("credential too long");
-        }
+        public override void Write(PacketWriter w) { w.I32(Protocol); w.Str(Name); }
+        public override void Read(PacketReader r) { Protocol = r.I32(); Name = r.Str(); }
     }
 
     [Flags]
@@ -604,5 +598,37 @@ namespace BlockRealm.Net
         public override PacketId Id { get { return PacketId.Mount; } }
         public override void Write(PacketWriter w) { w.I32(EntityId); w.U8(Kind); w.Bool(Mounted); }
         public override void Read(PacketReader r) { EntityId = r.I32(); Kind = r.U8(); Mounted = r.Bool(); }
+    }
+
+    /// <summary>Server's reply to Hello: a fresh random nonce the client must answer, and whether the name is already reserved.</summary>
+    public sealed class ChallengePacket : Packet
+    {
+        public string Nonce = "";
+        public bool NameKnown;
+        public override PacketId Id { get { return PacketId.Challenge; } }
+        public override void Write(PacketWriter w) { w.Str(Nonce); w.Bool(NameKnown); }
+        public override void Read(PacketReader r)
+        {
+            Nonce = r.Str(); NameKnown = r.Bool();
+            if (Nonce.Length > 64) throw new InvalidDataException("nonce too long");
+        }
+    }
+
+    /// <summary>
+    /// The client's answer. A returning name sends only a proof; the first claim of a name sends the verifier to be remembered.
+    /// The admin proof (if any) answers the same challenge with the admin token.
+    /// </summary>
+    public sealed class AuthPacket : Packet
+    {
+        public string Verifier = "";     // first claim only
+        public string Proof = "";        // returning player
+        public string AdminProof = "";   // optional
+        public override PacketId Id { get { return PacketId.Auth; } }
+        public override void Write(PacketWriter w) { w.Str(Verifier); w.Str(Proof); w.Str(AdminProof); }
+        public override void Read(PacketReader r)
+        {
+            Verifier = r.Str(); Proof = r.Str(); AdminProof = r.Str();
+            if (Verifier.Length > 128 || Proof.Length > 128 || AdminProof.Length > 128) throw new InvalidDataException("credential too long");
+        }
     }
 }

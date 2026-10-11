@@ -61,7 +61,17 @@ namespace BlockRealm.Sim
         private readonly List<Packet> _chatScratch = new List<Packet>();
         private TcpGameListener _listener;
 
-        private struct PendingConnection { public IConnection Connection; public int Deadline; }
+        private sealed class PendingConnection
+        {
+            public IConnection Connection;
+            public int Deadline;
+            public int Stage;            // 0 = waiting for Hello, 1 = challenged, waiting for Auth
+            public string Name;
+            public string Nonce;
+            public string KnownVerifier; // what we remember for this name, if anything
+        }
+
+        private readonly Queue<int> _adminFailureTicks = new Queue<int>();
 
         public GameServer(ServerOptions options)
         {
@@ -125,29 +135,41 @@ namespace BlockRealm.Sim
             List<PendingConnection> keep = new List<PendingConnection>();
             foreach (PendingConnection pc in snapshot)
             {
-                byte[] data;
-                bool handled = false;
                 if (!pc.Connection.IsOpen) continue;
+                byte[] data;
+                bool done = false;
                 if (pc.Connection.TryReceive(out data))
                 {
                     Packet p;
-                    HelloPacket hello;
-                    if (Packet.TryDeserialize(data, out p) && (hello = p as HelloPacket) != null)
+                    if (!Packet.TryDeserialize(data, out p)) { pc.Connection.Close(); continue; }
+                    if (pc.Stage == 0)
                     {
-                        handled = true;
-                        AcceptPlayer(pc.Connection, hello);
+                        HelloPacket hello = p as HelloPacket;
+                        if (hello == null) { pc.Connection.Close(); continue; }
+                        if (hello.Protocol != HelloPacket.ProtocolVersion)
+                        {
+                            pc.Connection.Send(new DisconnectPacket { Reason = "Protocol version mismatch (server " + HelloPacket.ProtocolVersion + ")" }.Serialize());
+                            pc.Connection.Close();
+                            continue;
+                        }
+                        pc.Name = CleanName(hello.Name);
+                        pc.KnownVerifier = LookupVerifier(pc.Name);
+                        pc.Nonce = AuthCrypto.RandomNonce();
+                        pc.Stage = 1;
+                        pc.Deadline = TickCount + 20 * 15;
+                        pc.Connection.Send(new ChallengePacket { Nonce = pc.Nonce, NameKnown = pc.KnownVerifier != null }.Serialize());
                     }
                     else
                     {
-                        pc.Connection.Close();
-                        handled = true;
+                        AuthPacket auth = p as AuthPacket;
+                        if (auth == null) { pc.Connection.Close(); continue; }
+                        AcceptPlayer(pc, auth);
+                        done = true;
                     }
                 }
-                if (!handled)
-                {
-                    if (TickCount > pc.Deadline) pc.Connection.Close();
-                    else keep.Add(pc);
-                }
+                if (done) continue;
+                if (TickCount > pc.Deadline) pc.Connection.Close();
+                else keep.Add(pc);
             }
             if (keep.Count > 0) lock (_pendingConnections) _pendingConnections.AddRange(keep);
         }
@@ -164,33 +186,68 @@ namespace BlockRealm.Sim
             return sb.Length == 0 ? "Player" : sb.ToString();
         }
 
-        private void AcceptPlayer(IConnection c, HelloPacket hello)
+        private void AcceptPlayer(PendingConnection pc, AuthPacket auth)
         {
-            if (hello.Protocol != HelloPacket.ProtocolVersion)
-            {
-                c.Send(new DisconnectPacket { Reason = "Protocol version mismatch (server " + HelloPacket.ProtocolVersion + ")" }.Serialize());
-                c.Close();
-                return;
-            }
+            IConnection c = pc.Connection;
             if (Players.Count >= Options.MaxPlayers)
             {
                 c.Send(new DisconnectPacket { Reason = "Server is full" }.Serialize());
                 c.Close();
                 return;
             }
-            string name = CleanName(hello.Name);
-            // A saved player belongs to whoever first used that name: later visits must present the same identity key.
-            if (!IdentityAllowed(name, hello.IdentityKey))
+            string name = pc.Name;
+
+            // Identity: a returning name must answer the challenge with the key it was reserved with.
+            string verifier = pc.KnownVerifier;
+            if (verifier != null)
             {
-                c.Send(new DisconnectPacket { Reason = "The name \"" + name + "\" belongs to another player." }.Serialize());
-                c.Close();
-                return;
+                string expected = AuthCrypto.Proof(verifier, pc.Nonce);
+                if (!AuthCrypto.ConstantTimeEquals(expected, auth.Proof))
+                {
+                    c.Send(new DisconnectPacket { Reason = "The name \"" + name + "\" belongs to another player." }.Serialize());
+                    c.Close();
+                    return;
+                }
             }
-            // Names must be unique among connected players.
+            else
+            {
+                if (auth.Verifier.Length != 64) { c.Close(); return; }
+                verifier = auth.Verifier.ToLowerInvariant();
+                ReserveName(name, verifier);
+            }
+
+            // Names must be unique among connected players. A suffixed variant is taken only if nobody is using it and
+            // it is either unreserved or reserved to this same identity.
             string baseName = name; int n = 2;
-            while (FindPlayer(name) != null || !IdentityAllowed(name, hello.IdentityKey)) name = baseName + n++;
+            while (true)
+            {
+                bool inUse = FindPlayer(name) != null;
+                string reserved = LookupVerifier(name);
+                if (!inUse && (reserved == null || AuthCrypto.ConstantTimeEquals(reserved, verifier)))
+                {
+                    if (reserved == null) ReserveName(name, verifier);
+                    break;
+                }
+                name = baseName + n++;
+            }
+
+            // Operator rights: the local host, or a remote that answered the challenge with the admin token.
             bool isLocal = c is LoopbackConnection;
-            bool tokenOk = !string.IsNullOrEmpty(Options.AdminToken) && ConstantTimeEquals(Options.AdminToken, hello.AdminToken);
+            bool tokenOk = false;
+            if (!string.IsNullOrEmpty(Options.AdminToken) && !string.IsNullOrEmpty(auth.AdminProof))
+            {
+                while (_adminFailureTicks.Count > 0 && TickCount - _adminFailureTicks.Peek() > 20 * 60) _adminFailureTicks.Dequeue();
+                if (_adminFailureTicks.Count >= 5)
+                {
+                    // Too many wrong guesses lately: refuse admin logins for a minute whatever is sent.
+                }
+                else
+                {
+                    string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken), pc.Nonce);
+                    tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
+                    if (!tokenOk) _adminFailureTicks.Enqueue(TickCount);
+                }
+            }
 
             ServerPlayer p = new ServerPlayer(c, name);
             p.Id = _nextEntityId++;
@@ -220,43 +277,23 @@ namespace BlockRealm.Sim
 
         private readonly Dictionary<string, string> _identityHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        private static string HashKey(string key)
+        /// <summary>The verifier reserved for a name (from this session or the saved world), or null if the name is free.</summary>
+        private string LookupVerifier(string name)
         {
-            using (System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create())
-            {
-                byte[] h = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes("blockrealm:" + (key ?? "")));
-                System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                for (int i = 0; i < h.Length; i++) sb.Append(h[i].ToString("x2"));
-                return sb.ToString();
-            }
-        }
-
-        private static bool ConstantTimeEquals(string a, string b)
-        {
-            if (a == null || b == null) return false;
-            int diff = a.Length ^ b.Length;
-            int n = Math.Min(a.Length, b.Length);
-            for (int i = 0; i < n; i++) diff |= a[i] ^ b[i];
-            return diff == 0;
-        }
-
-        /// <summary>
-        /// First use of a name reserves it for that identity key (remembered across restarts when the world is saved).
-        /// A different key is refused, so nobody can walk off with an offline player's inventory.
-        /// </summary>
-        private bool IdentityAllowed(string name, string key)
-        {
-            string hash = HashKey(key);
             string known;
-            if (!_identityHashes.TryGetValue(name, out known) && Storage != null) known = Storage.LoadIdentity(name);
-            if (known == null)
+            if (_identityHashes.TryGetValue(name, out known)) return known;
+            if (Storage != null)
             {
-                _identityHashes[name] = hash;
-                if (Storage != null) Storage.SaveIdentity(name, hash);
-                return true;
+                known = Storage.LoadIdentity(name);
+                if (known != null) { _identityHashes[name] = known; return known; }
             }
-            _identityHashes[name] = known;
-            return ConstantTimeEquals(known, hash);
+            return null;
+        }
+
+        private void ReserveName(string name, string verifier)
+        {
+            _identityHashes[name] = verifier;
+            if (Storage != null) Storage.SaveIdentity(name, verifier);
         }
 
         public ServerPlayer FindPlayer(string name)

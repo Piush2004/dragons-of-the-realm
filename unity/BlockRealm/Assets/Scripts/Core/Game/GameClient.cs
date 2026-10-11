@@ -155,7 +155,7 @@ namespace BlockRealm.Sim
         {
             if (_sentHello) return;
             _sentHello = true;
-            Send(new HelloPacket { Name = PlayerName, IdentityKey = _identityKey, AdminToken = _adminToken });
+            Send(new HelloPacket { Name = PlayerName });
         }
 
         public void Send(Packet p) { if (Connection.IsOpen) Connection.Send(p.Serialize()); }
@@ -405,6 +405,18 @@ namespace BlockRealm.Sim
                     MountPacket m = (MountPacket)packet;
                     if (m.Mounted) { RideEntityId = m.EntityId; Player.Mount(m.Kind, Player.RideYaw); }
                     else { RideEntityId = 0; Player.Dismount(); }
+                    break;
+                }
+                case PacketId.Challenge:
+                {
+                    // Answer with proofs derived from the secrets; the secrets themselves never leave this machine.
+                    ChallengePacket ch = (ChallengePacket)packet;
+                    AuthPacket auth = new AuthPacket();
+                    string verifier = AuthCrypto.Verifier(_identityKey);
+                    if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce);
+                    else auth.Verifier = verifier;
+                    if (_adminToken.Length > 0) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_adminToken), ch.Nonce);
+                    Send(auth);
                     break;
                 }
                 case PacketId.Disconnect:

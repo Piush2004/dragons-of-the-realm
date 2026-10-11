@@ -337,13 +337,10 @@ namespace BlockRealm.Tests
                     rig.Run(5);
                     Check.True(!b.IsOpen || rig.Server.FindPlayer("Evil") == null, "bad hello refused");
                     // A joined player sending a malformed packet is disconnected, not the whole server.
-                    LoopbackConnection c, d;
-                    LoopbackConnection.CreatePair(out c, out d);
-                    rig.Server.AddConnection(d);
-                    c.Send(new HelloPacket { Name = "Mallory" }.Serialize());
-                    rig.Run(3);
+                    RawClient mallory = new RawClient(rig.Server, "Mallory");
+                    for (int i = 0; i < 6; i++) { rig.Tick(); mallory.Pump(); }
                     Check.True(rig.Server.FindPlayer("Mallory") != null, "joined");
-                    c.Send(new byte[] { (byte)PacketId.PlayerState, 1, 2 });
+                    mallory.Conn.Send(new byte[] { (byte)PacketId.PlayerState, 1, 2 });
                     rig.Run(3);
                     Check.True(rig.Server.FindPlayer("Mallory") == null, "disconnected for malformed packet");
                     rig.Run(20);

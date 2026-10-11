@@ -11,6 +11,8 @@ namespace BlockRealm.Tests
         public readonly LoopbackConnection Conn;
         public readonly List<Packet> Received = new List<Packet>();
         public int PlayerId;
+        public byte[] LastAuth;
+        private readonly string _identity, _token;
 
         public RawClient(GameServer server, string name, bool remote = false, string identity = "", string token = "")
         {
@@ -19,7 +21,8 @@ namespace BlockRealm.Tests
             // A wrapped connection stands in for a TCP peer: the server must not treat it as the local host.
             server.AddConnection(remote ? (IConnection)new RemoteLike(b) : b);
             Conn = a;
-            Send(new HelloPacket { Name = name, IdentityKey = identity, AdminToken = token });
+            _identity = identity; _token = token;
+            Send(new HelloPacket { Name = name });
         }
 
         public void Send(Packet p) { Conn.Send(p.Serialize()); }
@@ -33,6 +36,16 @@ namespace BlockRealm.Tests
                 Received.Add(p);
                 WelcomePacket w = p as WelcomePacket;
                 if (w != null) PlayerId = w.PlayerId;
+                ChallengePacket ch = p as ChallengePacket;
+                if (ch != null)
+                {
+                    AuthPacket auth = new AuthPacket();
+                    string verifier = AuthCrypto.Verifier(_identity);
+                    if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce); else auth.Verifier = verifier;
+                    if (!string.IsNullOrEmpty(_token)) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_token), ch.Nonce);
+                    LastAuth = auth.Serialize();
+                    Send(auth);
+                }
             }
         }
 
@@ -246,6 +259,57 @@ namespace BlockRealm.Tests
                     int open = 0;
                     foreach (LoopbackConnection c in peers) if (c.IsOpen) open++;
                     Check.Equal(8, open, "only the cap stays open");
+                }
+                finally { s.Shutdown(); }
+            });
+            Harness.Run("a recorded login cannot be replayed and secrets never appear on the wire", () =>
+            {
+                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brreplay_" + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    GameServer s = NewServer(o => { o.SaveDir = dir; o.AdminToken = "top-secret-admin"; });
+                    RawClient first = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin");
+                    Run(s, new[] { first }, 5);
+                    first.Conn.Close();
+                    Run(s, new[] { first }, 5);
+                    // The second visit is the one an eavesdropper would record.
+                    RawClient visit = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin");
+                    Run(s, new[] { visit }, 5);
+                    Check.True(s.FindPlayer("Ada") != null && s.FindPlayer("Ada").Op, "legitimate return is welcome and keeps admin");
+                    byte[] recording = visit.LastAuth;
+                    string wire = System.Text.Encoding.UTF8.GetString(recording);
+                    Check.True(!wire.Contains("ada-secret-key") && !wire.Contains("top-secret-admin"), "the secrets are not in the auth packet");
+                    visit.Conn.Close();
+                    Run(s, new[] { visit }, 5);
+
+                    // An eavesdropper replays the recorded answer on a fresh connection (new nonce).
+                    LoopbackConnection a, b;
+                    LoopbackConnection.CreatePair(out a, out b);
+                    s.AddConnection(new RemoteLike(b));
+                    a.Send(new HelloPacket { Name = "Ada" }.Serialize());
+                    Run(s, new RawClient[0], 3);
+                    a.Send(recording);
+                    Run(s, new RawClient[0], 3);
+                    Check.True(s.FindPlayer("Ada") == null, "replayed login refused");
+                    s.Shutdown();
+                }
+                finally { try { System.IO.Directory.Delete(dir, true); } catch (Exception) { } }
+            });
+            Harness.Run("guessing the admin token is locked out", () =>
+            {
+                GameServer s = NewServer(o => { o.AdminToken = "right-token"; });
+                try
+                {
+                    for (int i = 0; i < 6; i++)
+                    {
+                        RawClient guess = new RawClient(s, "G" + i, true, "", "wrong-" + i);
+                        Run(s, new[] { guess }, 3);
+                        Check.True(!s.FindPlayer("G" + i).Op, "guess " + i + " fails");
+                    }
+                    // Even the right token is refused for a while after repeated failures.
+                    RawClient real = new RawClient(s, "Real", true, "", "right-token");
+                    Run(s, new[] { real }, 3);
+                    Check.True(s.FindPlayer("Real") != null && !s.FindPlayer("Real").Op, "locked out after repeated failures");
                 }
                 finally { s.Shutdown(); }
             });

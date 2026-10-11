@@ -157,7 +157,7 @@ namespace BlockRealm.Sim
 
         private string PlayerPath(string name)
         {
-            string safe = Path.GetFileName(name);
+            string safe = Path.GetFileName(name).ToLowerInvariant();
             return Path.Combine(Directory, "players", safe + ".dat");
         }
 
@@ -208,7 +208,7 @@ namespace BlockRealm.Sim
 
         // ------------------------------------------------------------------ identities
 
-        private string IdentityPath(string name) { return Path.Combine(Directory, "players", Path.GetFileName(name) + ".id"); }
+        private string IdentityPath(string name) { return Path.Combine(Directory, "players", Path.GetFileName(name).ToLowerInvariant() + ".id"); }
 
         public string LoadIdentity(string name)
         {
