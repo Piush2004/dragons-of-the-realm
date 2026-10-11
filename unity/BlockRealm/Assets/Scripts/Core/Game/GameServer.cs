@@ -29,6 +29,12 @@ namespace BlockRealm.Sim
         /// operators entirely; a name is never enough, because anyone can type any name.
         /// </summary>
         public string AdminToken;
+        /// <summary>
+        /// The addresses players dial to reach this server ("play.example.com:25565"). Admin proofs are bound to the
+        /// address the client dialled, so an impostor host cannot relay a proof to this server. With no addresses
+        /// listed, remote administration is disabled.
+        /// </summary>
+        public readonly List<string> PublicAddresses = new List<string>();
         /// <summary>Tests and private servers only: every player may use commands.</summary>
         public bool EveryoneIsOp;
         public int MaxPendingConnections = 32;
@@ -291,8 +297,11 @@ namespace BlockRealm.Sim
                 }
                 else
                 {
-                    string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken, ServerId), pc.Nonce);
-                    tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
+                    for (int ai = 0; ai < Options.PublicAddresses.Count && !tokenOk; ai++)
+                    {
+                        string expectedAdmin = AuthCrypto.Proof(AuthCrypto.AdminVerifier(Options.AdminToken, ServerId, Options.PublicAddresses[ai]), pc.Nonce);
+                        tokenOk = AuthCrypto.ConstantTimeEquals(expectedAdmin, auth.AdminProof);
+                    }
                     if (!tokenOk) _adminFailures.Add(source, TickCount);
                 }
             }

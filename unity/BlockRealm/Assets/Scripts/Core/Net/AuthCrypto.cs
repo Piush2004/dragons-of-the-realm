@@ -31,19 +31,28 @@ namespace BlockRealm.Net
         public static string NewAdminToken() { return RandomNonce() + RandomNonce(); }
 
         /// <summary>
-        /// What a server remembers for a player: a hash of their secret key bound to that server's id. A different
-        /// server derives a different value, so a leaked or malicious server's copy is useless anywhere else.
+        /// What a server remembers for a player: a hash of their secret key bound to that server's id AND the address the
+        /// player dialled. A different server (or the same id announced by an impostor at another address) derives a
+        /// different value, so a leaked or malicious server's copy, or a relayed proof, is useless anywhere else.
         /// </summary>
-        public static string Verifier(string identityKey, string serverId)
+        public static string Verifier(string identityKey, string serverId, string dialAddress)
         {
             using (SHA256 sha = SHA256.Create())
-                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:identity:v3:" + (serverId ?? "") + ":" + (identityKey ?? ""))));
+                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:identity:v4:" + (serverId ?? "") + "@" +
+                    NormaliseAddress(dialAddress) + ":" + (identityKey ?? ""))));
         }
 
-        public static string AdminVerifier(string token, string serverId)
+        public static string AdminVerifier(string token, string serverId, string dialAddress)
         {
             using (SHA256 sha = SHA256.Create())
-                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:admin:v3:" + (serverId ?? "") + ":" + (token ?? ""))));
+                return Hex(sha.ComputeHash(Encoding.UTF8.GetBytes("blockrealm:admin:v4:" + (serverId ?? "") + "@" +
+                    NormaliseAddress(dialAddress) + ":" + (token ?? ""))));
+        }
+
+        /// <summary>Lower-cases and trims an address so the same server typed twice derives the same credentials.</summary>
+        public static string NormaliseAddress(string address)
+        {
+            return (address ?? "").Trim().ToLowerInvariant();
         }
 
         /// <summary>HMAC of the challenge keyed by a verifier; only someone who knows the key can produce it.</summary>

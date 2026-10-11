@@ -140,14 +140,20 @@ namespace BlockRealm.Sim
         private const int MaxEntities = 4096;
         private const int MaxQueuedColumns = 1024;
 
-        private readonly string _identityKey, _adminToken, _expectedServerId;
+        private readonly string _identityKey, _adminToken, _expectedServerId, _dialAddress;
         /// <summary>Raised with the server's id the first time it is learned, so the caller can remember (pin) it.</summary>
         public Action<string> ServerIdLearned;
 
         /// <param name="identityKey">A random secret kept by this machine; proves the name is yours on later visits.</param>
         /// <param name="expectedServerId">The id this server had on a previous visit; a different one is refused.</param>
-        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "", string expectedServerId = "")
+        /// <param name="dialAddress">
+        /// The address the player connected to ("localhost:25565"); credentials are bound to it, so a proof given to one
+        /// host cannot be relayed to another. In-process games use "local".
+        /// </param>
+        public GameClient(IConnection connection, string name, string identityKey = "", string adminToken = "",
+            string expectedServerId = "", string dialAddress = "local")
         {
+            _dialAddress = dialAddress ?? "local";
             Connection = connection;
             PlayerName = name;
             _identityKey = identityKey ?? "";
@@ -425,10 +431,10 @@ namespace BlockRealm.Sim
                     }
                     if (ServerIdLearned != null && ch.ServerId.Length > 0) ServerIdLearned(ch.ServerId);
                     AuthPacket auth = new AuthPacket();
-                    string verifier = AuthCrypto.Verifier(_identityKey, ch.ServerId);
+                    string verifier = AuthCrypto.Verifier(_identityKey, ch.ServerId, _dialAddress);
                     if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce);
                     else auth.Verifier = verifier;
-                    if (_adminToken.Length > 0) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_adminToken, ch.ServerId), ch.Nonce);
+                    if (_adminToken.Length > 0) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_adminToken, ch.ServerId, _dialAddress), ch.Nonce);
                     Send(auth);
                     break;
                 }

@@ -40,9 +40,9 @@ namespace BlockRealm.Tests
                 if (ch != null)
                 {
                     AuthPacket auth = new AuthPacket();
-                    string verifier = AuthCrypto.Verifier(_identity, ch.ServerId);
+                    string verifier = AuthCrypto.Verifier(_identity, ch.ServerId, "test-address");
                     if (ch.NameKnown) auth.Proof = AuthCrypto.Proof(verifier, ch.Nonce); else auth.Verifier = verifier;
-                    if (!string.IsNullOrEmpty(_token)) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_token, ch.ServerId), ch.Nonce);
+                    if (!string.IsNullOrEmpty(_token)) auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(_token, ch.ServerId, "test-address"), ch.Nonce);
                     LastAuth = auth.Serialize();
                     Send(auth);
                 }
@@ -94,7 +94,7 @@ namespace BlockRealm.Tests
             Harness.Group("abuse resistance");
             Harness.Run("operator rights come from being local or presenting the admin token, never from a name", () =>
             {
-                GameServer s = NewServer(o => { o.HostIsOp = true; o.AdminToken = "s3cret-token-0123456789-abcdefghijabcdefghij"; });
+                GameServer s = NewServer(o => { o.HostIsOp = true; o.AdminToken = "s3cret-token-0123456789-abcdefghijabcdefghij"; o.PublicAddresses.Add("test-address"); });
                 try
                 {
                     // A remote peer (anything that is not an in-process connection), however early it connects and whatever it is called.
@@ -259,10 +259,14 @@ namespace BlockRealm.Tests
             {
                 // The same player secret gives unrelated verifiers on different servers.
                 string key = "player-secret-key-value-0123456789abcdef";
-                string v1 = AuthCrypto.Verifier(key, "server-one-id-000000000000");
-                string v2 = AuthCrypto.Verifier(key, "server-two-id-111111111111");
+                string v1 = AuthCrypto.Verifier(key, "server-one-id-000000000000", "a.example:25565");
+                string v2 = AuthCrypto.Verifier(key, "server-two-id-111111111111", "a.example:25565");
+                string v3 = AuthCrypto.Verifier(key, "server-one-id-000000000000", "evil.example:25565");
                 Check.True(v1 != v2, "verifiers differ per server");
-                Check.True(AuthCrypto.AdminVerifier("tok", "a") != AuthCrypto.AdminVerifier("tok", "b"), "admin verifiers differ per server");
+                Check.True(v1 != v3, "the same announced id at another address derives different credentials (relay is useless)");
+                Check.Equal(v1, AuthCrypto.Verifier(key, "server-one-id-000000000000", "  A.Example:25565 "), "address normalised");
+                Check.True(AuthCrypto.AdminVerifier("tok", "a", "x") != AuthCrypto.AdminVerifier("tok", "b", "x"), "admin verifiers differ per server");
+                Check.True(AuthCrypto.AdminVerifier("tok", "a", "x") != AuthCrypto.AdminVerifier("tok", "a", "y"), "admin verifiers differ per address");
 
                 GameServer s = NewServer();
                 try
@@ -291,12 +295,50 @@ namespace BlockRealm.Tests
                 }
                 finally { s.Shutdown(); }
             });
+            Harness.Run("an admin proof made for another address is useless here (no relaying)", () =>
+            {
+                string token = AuthCrypto.NewAdminToken();
+                GameServer s = NewServer(o => { o.AdminToken = token; o.PublicAddresses.Add("play.real.example:25565"); });
+                try
+                {
+                    // Computes the proof as a client that dialled an impostor would, then relays it.
+                    LoopbackConnection a, b;
+                    LoopbackConnection.CreatePair(out a, out b);
+                    s.AddConnection(new RemoteLike(b, "9.9.9.9:1"));
+                    a.Send(new HelloPacket { Name = "Relay" }.Serialize());
+                    byte[] data = null;
+                    for (int i = 0; i < 5 && data == null; i++) { s.Tick(); a.TryReceive(out data); }
+                    ChallengePacket ch = (ChallengePacket)Packet.Deserialize(data);
+                    AuthPacket auth = new AuthPacket();
+                    auth.Verifier = AuthCrypto.Verifier("k", ch.ServerId, "impostor.example:25565");
+                    auth.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(token, ch.ServerId, "impostor.example:25565"), ch.Nonce);
+                    a.Send(auth.Serialize());
+                    for (int i = 0; i < 5; i++) s.Tick();
+                    Check.True(s.FindPlayer("Relay") != null && !s.FindPlayer("Relay").Op, "joined as a normal player only");
+
+                    // The proof for the real address works.
+                    LoopbackConnection c, d;
+                    LoopbackConnection.CreatePair(out c, out d);
+                    s.AddConnection(new RemoteLike(d, "9.9.9.8:1"));
+                    c.Send(new HelloPacket { Name = "Real" }.Serialize());
+                    data = null;
+                    for (int i = 0; i < 5 && data == null; i++) { s.Tick(); c.TryReceive(out data); }
+                    ChallengePacket ch2 = (ChallengePacket)Packet.Deserialize(data);
+                    AuthPacket auth2 = new AuthPacket();
+                    auth2.Verifier = AuthCrypto.Verifier("k2", ch2.ServerId, "play.real.example:25565");
+                    auth2.AdminProof = AuthCrypto.Proof(AuthCrypto.AdminVerifier(token, ch2.ServerId, "PLAY.real.example:25565 "), ch2.Nonce);
+                    c.Send(auth2.Serialize());
+                    for (int i = 0; i < 5; i++) s.Tick();
+                    Check.True(s.FindPlayer("Real") != null && s.FindPlayer("Real").Op, "dialling the real address grants admin");
+                }
+                finally { s.Shutdown(); }
+            });
             Harness.Run("a generated admin token is accepted and is strong", () =>
             {
                 string token = AuthCrypto.NewAdminToken();
                 Check.True(token.Length >= GameServer.MinAdminTokenLength, "generated token is long enough");
                 Check.True(token != AuthCrypto.NewAdminToken(), "tokens are random");
-                GameServer s = NewServer(o => { o.AdminToken = token; });
+                GameServer s = NewServer(o => { o.AdminToken = token; o.PublicAddresses.Add("test-address"); });
                 try
                 {
                     RawClient admin = new RawClient(s, "Boss", true, "", token, "4.4.4.4:100");
@@ -329,7 +371,7 @@ namespace BlockRealm.Tests
                 string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brreplay_" + Guid.NewGuid().ToString("N"));
                 try
                 {
-                    GameServer s = NewServer(o => { o.SaveDir = dir; o.AdminToken = "top-secret-admin-0123456789-abcdefghijabcdefghij"; });
+                    GameServer s = NewServer(o => { o.SaveDir = dir; o.AdminToken = "top-secret-admin-0123456789-abcdefghijabcdefghij"; o.PublicAddresses.Add("test-address"); });
                     RawClient first = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin-0123456789-abcdefghijabcdefghij");
                     Run(s, new[] { first }, 5);
                     first.Conn.Close();
@@ -425,7 +467,7 @@ namespace BlockRealm.Tests
             });
             Harness.Run("guessing the admin token locks out the guesser, not the real admin", () =>
             {
-                GameServer s = NewServer(o => { o.AdminToken = "right-token-0123456789-abcdefghijabcdefghij"; o.MaxPlayers = 50; });
+                GameServer s = NewServer(o => { o.AdminToken = "right-token-0123456789-abcdefghijabcdefghij"; o.MaxPlayers = 50; o.PublicAddresses.Add("test-address"); });
                 try
                 {
                     // One address guesses six times.
