@@ -27,6 +27,9 @@ namespace BlockRealm.Net
 
         public static string NewIdentityKey() { return RandomNonce() + RandomNonce(); }
 
+        /// <summary>A strong random admin token (64 hex characters = 256 bits), suitable for GameServer's AdminToken.</summary>
+        public static string NewAdminToken() { return RandomNonce() + RandomNonce(); }
+
         /// <summary>What the server remembers for a player: a hash of their secret key.</summary>
         public static string Verifier(string identityKey)
         {

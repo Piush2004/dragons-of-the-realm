@@ -94,13 +94,13 @@ namespace BlockRealm.Tests
             Harness.Group("abuse resistance");
             Harness.Run("operator rights come from being local or presenting the admin token, never from a name", () =>
             {
-                GameServer s = NewServer(o => { o.HostIsOp = true; o.AdminToken = "s3cret-token-0123456789"; });
+                GameServer s = NewServer(o => { o.HostIsOp = true; o.AdminToken = "s3cret-token-0123456789-abcdefghijabcdefghij"; });
                 try
                 {
                     // A remote peer (anything that is not an in-process connection), however early it connects and whatever it is called.
                     RawClient remoteFirst = new RawClient(s, "Admin", true);
                     RawClient host = new RawClient(s, "Host");
-                    RawClient token = new RawClient(s, "Trusted", true, "", "s3cret-token-0123456789");
+                    RawClient token = new RawClient(s, "Trusted", true, "", "s3cret-token-0123456789-abcdefghijabcdefghij");
                     RawClient wrong = new RawClient(s, "Wrong", true, "", "guess");
                     RawClient[] all = { remoteFirst, host, token, wrong };
                     Run(s, all, 5);
@@ -255,6 +255,20 @@ namespace BlockRealm.Tests
                 }
                 finally { s.Shutdown(); }
             });
+            Harness.Run("a generated admin token is accepted and is strong", () =>
+            {
+                string token = AuthCrypto.NewAdminToken();
+                Check.True(token.Length >= GameServer.MinAdminTokenLength, "generated token is long enough");
+                Check.True(token != AuthCrypto.NewAdminToken(), "tokens are random");
+                GameServer s = NewServer(o => { o.AdminToken = token; });
+                try
+                {
+                    RawClient admin = new RawClient(s, "Boss", true, "", token, "4.4.4.4:100");
+                    Run(s, new[] { admin }, 4);
+                    Check.True(s.FindPlayer("Boss") != null && s.FindPlayer("Boss").Op, "valid generated token grants operator rights");
+                }
+                finally { s.Shutdown(); }
+            });
             Harness.Run("a flood of half-open connections is capped", () =>
             {
                 GameServer s = NewServer(o => o.MaxPendingConnections = 8);
@@ -279,18 +293,18 @@ namespace BlockRealm.Tests
                 string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brreplay_" + Guid.NewGuid().ToString("N"));
                 try
                 {
-                    GameServer s = NewServer(o => { o.SaveDir = dir; o.AdminToken = "top-secret-admin-0123456789"; });
-                    RawClient first = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin-0123456789");
+                    GameServer s = NewServer(o => { o.SaveDir = dir; o.AdminToken = "top-secret-admin-0123456789-abcdefghijabcdefghij"; });
+                    RawClient first = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin-0123456789-abcdefghijabcdefghij");
                     Run(s, new[] { first }, 5);
                     first.Conn.Close();
                     Run(s, new[] { first }, 5);
                     // The second visit is the one an eavesdropper would record.
-                    RawClient visit = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin-0123456789");
+                    RawClient visit = new RawClient(s, "Ada", true, "ada-secret-key", "top-secret-admin-0123456789-abcdefghijabcdefghij");
                     Run(s, new[] { visit }, 5);
                     Check.True(s.FindPlayer("Ada") != null && s.FindPlayer("Ada").Op, "legitimate return is welcome and keeps admin");
                     byte[] recording = visit.LastAuth;
                     string wire = System.Text.Encoding.UTF8.GetString(recording);
-                    Check.True(!wire.Contains("ada-secret-key") && !wire.Contains("top-secret-admin-0123456789"), "the secrets are not in the auth packet");
+                    Check.True(!wire.Contains("ada-secret-key") && !wire.Contains("top-secret-admin-0123456789-abcdefghijabcdefghij"), "the secrets are not in the auth packet");
                     visit.Conn.Close();
                     Run(s, new[] { visit }, 5);
 
@@ -375,7 +389,7 @@ namespace BlockRealm.Tests
             });
             Harness.Run("guessing the admin token locks out the guesser, not the real admin", () =>
             {
-                GameServer s = NewServer(o => { o.AdminToken = "right-token-0123456789"; o.MaxPlayers = 50; });
+                GameServer s = NewServer(o => { o.AdminToken = "right-token-0123456789-abcdefghijabcdefghij"; o.MaxPlayers = 50; });
                 try
                 {
                     // One address guesses six times.
@@ -387,11 +401,11 @@ namespace BlockRealm.Tests
                         Run(s, new[] { guess }, 2);
                     }
                     // Even the right token from that address is refused for a while.
-                    RawClient attackerRight = new RawClient(s, "Mallet", true, "", "right-token-0123456789", "6.6.6.6:4999");
+                    RawClient attackerRight = new RawClient(s, "Mallet", true, "", "right-token-0123456789-abcdefghijabcdefghij", "6.6.6.6:4999");
                     Run(s, new[] { attackerRight }, 3);
                     Check.True(s.FindPlayer("Mallet") != null && !s.FindPlayer("Mallet").Op, "the guessing address is locked out");
                     // The real admin from elsewhere is unaffected.
-                    RawClient real = new RawClient(s, "Real", true, "", "right-token-0123456789", "7.7.7.7:4000");
+                    RawClient real = new RawClient(s, "Real", true, "", "right-token-0123456789-abcdefghijabcdefghij", "7.7.7.7:4000");
                     Run(s, new[] { real }, 3);
                     Check.True(s.FindPlayer("Real") != null && s.FindPlayer("Real").Op, "other addresses are not locked out");
                 }

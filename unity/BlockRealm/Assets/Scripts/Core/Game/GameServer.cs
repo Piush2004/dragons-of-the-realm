@@ -78,8 +78,12 @@ namespace BlockRealm.Sim
         private const string AllSources = "*";
         private const int GlobalNewNamesPerMinute = 120;
 
-        /// <summary>Admin tokens shorter than this are ignored: a long random token cannot be guessed, so no global lockout is needed.</summary>
-        public const int MinAdminTokenLength = 16;
+        /// <summary>
+        /// Admin tokens shorter than this are ignored. A token of 32 or more random characters (see
+        /// AuthCrypto.NewAdminToken) cannot be guessed, so no global lockout is needed, and none is used: a global
+        /// lockout would only let an attacker keep the real admin out.
+        /// </summary>
+        public const int MinAdminTokenLength = 32;
 
         public GameServer(ServerOptions options)
         {
