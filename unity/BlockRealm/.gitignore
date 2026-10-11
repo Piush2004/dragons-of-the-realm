@@ -1,0 +1,20 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.pidb
+*.suo
+*.user
+*.userprefs
+.vs/
+.idea/
+# tools
+tools/core/out/
+screenshots/
+TestResults/
