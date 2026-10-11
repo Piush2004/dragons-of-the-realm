@@ -33,6 +33,11 @@ namespace BlockRealm.Sim
 
         public bool Op;
 
+        // Bed: the respawn point and whether the player is lying in one right now.
+        public bool HasBed;
+        public Vec3i BedPos;
+        public bool Sleeping;
+
         // Abuse limits (token buckets, refilled every tick).
         public float BreakTokens = 6f, PlaceTokens = 8f, ChatTokens = 4f;
         public int LastCorrectionTick = -100;

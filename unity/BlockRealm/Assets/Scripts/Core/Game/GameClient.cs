@@ -92,6 +92,8 @@ namespace BlockRealm.Sim
         // Stats
         public float Health = 20f, MaxHealth = 20f;
         public int Hunger = 20;
+        public int ArmorPoints;
+        public bool Sleeping;
         public float Saturation;
         public bool Dead;
         public int Air = 300;
@@ -211,7 +213,10 @@ namespace BlockRealm.Sim
             {
                 Player.CanFly = Mode == GameMode.Creative;
                 if (Mode != GameMode.Creative) Player.Flying = false;
-                Player.Step(World, input, dt);
+                // In bed the body does not move; the look direction still turns.
+                PlayerInput stepInput = input;
+                if (Sleeping) { stepInput.MoveX = 0f; stepInput.MoveZ = 0f; stepInput.Jump = false; stepInput.Sneak = false; stepInput.Sprint = false; }
+                Player.Step(World, stepInput, dt);
             }
             UpdateEntities(dt);
             _attackCooldown -= dt; _useCooldown -= dt; _breakCooldown -= dt;
@@ -354,6 +359,8 @@ namespace BlockRealm.Sim
                     bool wasDead = Dead;
                     if (h.Health < Health && Hurt != null) Hurt();
                     Health = h.Health; Hunger = h.Hunger; Saturation = h.Saturation; Dead = h.Dead;
+                    ArmorPoints = Math.Min((int)h.Armor, 20);
+                    Sleeping = h.Sleeping;
                     if (wasDead && !Dead && Respawned != null) Respawned();
                     break;
                 }
@@ -652,7 +659,7 @@ namespace BlockRealm.Sim
             {
                 RayHit h = TargetBlock;
                 byte id = World.GetBlock(h.X, h.Y, h.Z);
-                bool interactable = id == B.CraftingTable || id == B.Furnace || id == B.FurnaceLit || id == B.Chest;
+                bool interactable = id == B.CraftingTable || id == B.Furnace || id == B.FurnaceLit || id == B.Chest || id == B.Bed;
                 if (interactable && !Player.Sneaking)
                 {
                     if (pressed) Send(new InteractPacket { X = h.X, Y = h.Y, Z = h.Z });
@@ -720,6 +727,7 @@ namespace BlockRealm.Sim
         public void CloseWindow() { Send(new CloseWindowPacket { Window = WindowId }); WindowOpen = false; WindowId = 0; OpenWindowKind = WindowKind.Inventory; }
         public void SendChat(string text) { Send(new ChatPacket { Text = text }); }
         public void RequestRespawn() { Send(new RespawnPacket()); }
+        public void RequestWake() { Send(new WakeUpPacket()); }
         public void ToggleFlight()
         {
             if (Mode != GameMode.Creative || Player.Riding) return;

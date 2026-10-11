@@ -199,6 +199,7 @@ namespace BlockRealm.Game
         private void HandleInGameCommands(GameClient c, InputProvider input)
         {
             if (c.Dead) return;
+            if (c.Sleeping && (input.JumpPressed || input.Actions.DismountPressed)) c.RequestWake();
             if (_screen == UiScreen.None)
             {
                 if (input.PausePressed) _screen = UiScreen.Pause;
@@ -246,6 +247,7 @@ namespace BlockRealm.Game
 
             DrawWorldOverlays(c);
             DrawHud(c);
+            if (c.Sleeping) DrawSleeping();
             DrawChat(c);
             DrawLabels(c);
             if (_debug) DrawDebug(c);
@@ -327,6 +329,15 @@ namespace BlockRealm.Game
                     float jitter = c.Health <= 4f ? Mathf.Sin(Time.unscaledTime * 30f + i) * 0.6f : 0f;
                     Tex(new Rect(hx + i * 8f + 1f, by + jitter, 9f, 9f), GameAssets.Ui("heart_empty"));
                     if (state != "empty") Tex(new Rect(hx + i * 8f + 1f, by + jitter, 9f, 9f), GameAssets.Ui("heart_" + state));
+                }
+                if (c.ArmorPoints > 0)
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        int ap = c.ArmorPoints - i * 2;
+                        string state = ap >= 2 ? "full" : (ap >= 1 ? "half" : "empty");
+                        Tex(new Rect(hx + i * 8f + 1f, by - 10f, 9f, 9f), GameAssets.Ui("armor_" + state));
+                    }
                 }
                 for (int i = 0; i < 10; i++)
                 {
@@ -449,6 +460,13 @@ namespace BlockRealm.Game
                 Fill(new Rect(3f, 12f + i * 9f, 4f + lines[i].Length * 3.9f, 9f), new Color(0f, 0f, 0f, 0.4f));
                 Text(new Rect(4f, 12f + i * 9f, 400f, 9f), lines[i], _small, Color.white);
             }
+        }
+
+        private void DrawSleeping()
+        {
+            Fill(new Rect(0, 0, _vw, _vh), new Color(0f, 0f, 0.04f, 0.78f));
+            Text(new Rect(0f, _vh * 0.4f, _vw, 24f), "Sleeping...", _title, new Color(0.85f, 0.88f, 1f), TextAnchor.MiddleCenter);
+            Text(new Rect(0f, _vh * 0.4f + 28f, _vw, 12f), "Press Space to get up", _label, new Color(0.7f, 0.74f, 0.9f), TextAnchor.MiddleCenter);
         }
 
         private void DrawDeath(GameClient c)

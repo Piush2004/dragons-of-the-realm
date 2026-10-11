@@ -566,6 +566,7 @@ namespace BlockRealm.Sim
             if (TickCount % 100 == 0) Broadcast(new TimeUpdatePacket { DayTick = DayTick });
 
             for (int i = 0; i < Players.Count; i++) TickPlayer(Players[i]);
+            TickSleep();
             TickTileEntities();
             TickBlockUpdates();
 
@@ -824,7 +825,7 @@ namespace BlockRealm.Sim
 
         public void SendStats(ServerPlayer p)
         {
-            p.Send(new HealthUpdatePacket { Health = p.Health, Hunger = p.Hunger, Saturation = p.Saturation, Dead = p.Dead });
+            p.Send(new HealthUpdatePacket { Health = p.Health, Hunger = p.Hunger, Saturation = p.Saturation, Dead = p.Dead, Armor = (byte)p.Inventory.ArmorPoints(), Sleeping = p.Sleeping });
         }
 
         public void SendFullInventory(ServerPlayer p)

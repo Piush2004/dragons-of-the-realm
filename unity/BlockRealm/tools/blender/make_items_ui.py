@@ -412,6 +412,28 @@ def ui_heart(state):
     return c
 
 
+ARMOR_ICON = ['.##...##.', '#SS###SS#', '#SAAAAAS#', '.#AAAAA#.', '.#AAAAA#.', '.#AAAAA#.', '.#AAAAA#.', '.#AAAAA#.', '..#####..']
+
+
+def ui_armor(state):
+    pal = {'#': (24, 24, 30), 'A': (206, 210, 220), 'S': (150, 154, 168)}
+    c = ascii_art(ARMOR_ICON, pal)
+    dim = (66, 66, 74)
+    if state == 'empty':
+        for y in range(9):
+            for x in range(9):
+                p = c.get(x, y)
+                if p[3] and p != (24, 24, 30, 255):
+                    c.set(x, y, dim)
+    elif state == 'half':
+        for y in range(9):
+            for x in range(5, 9):
+                p = c.get(x, y)
+                if p[3] and p != (24, 24, 30, 255):
+                    c.set(x, y, dim)
+    return c
+
+
 DRUM = ['..#####..', '.#BBBBB#.', '#BBBBBBB#', '#BBBBBBB#', '#BBBBBBB#', '.#BBBBB#.', '..#BBB#..', '...#W#...', '..#WWW#..']
 
 
@@ -570,6 +592,7 @@ def main():
     for s in ('full', 'half', 'empty'):
         save_png(ui_heart(s), os.path.join(ui, 'heart_%s.png' % s))
         save_png(ui_food(s), os.path.join(ui, 'food_%s.png' % s))
+        save_png(ui_armor(s), os.path.join(ui, 'armor_%s.png' % s))
     save_png(ui_bubble(), os.path.join(ui, 'bubble.png'))
     save_png(ui_crosshair(), os.path.join(ui, 'crosshair.png'))
     for i in range(10):

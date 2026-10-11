@@ -172,6 +172,8 @@ namespace BlockRealm.Sim
                 w.Write(p.Dead ? p.MaxHealth : p.Health); w.Write(p.Hunger); w.Write(p.Saturation);
                 w.Write((byte)p.Mode); w.Write((byte)p.Inventory.Selected);
                 for (int i = 0; i < PlayerInventory.Size; i++) WriteStack(w, p.Inventory.Slots[i]);
+                for (int i = 0; i < p.Inventory.Armor.Length; i++) WriteStack(w, p.Inventory.Armor[i]);
+                w.Write(p.HasBed); w.Write(p.BedPos.X); w.Write(p.BedPos.Y); w.Write(p.BedPos.Z);
                 w.Flush();
                 AtomicWrite(PlayerPath(p.Name), ms.ToArray());
             }
@@ -192,6 +194,15 @@ namespace BlockRealm.Sim
                     byte mode = r.ReadByte(); byte selected = r.ReadByte();
                     ItemStack[] slots = new ItemStack[PlayerInventory.Size];
                     for (int i = 0; i < slots.Length; i++) slots[i] = ReadStack(r);
+                    ItemStack[] worn = new ItemStack[4];
+                    // Saves written before armour existed simply end here.
+                    if (r.BaseStream.Position < r.BaseStream.Length)
+                        for (int i = 0; i < worn.Length; i++) worn[i] = ReadStack(r);
+                    bool hasBed = false; int bedX = 0, bedY = 0, bedZ = 0;
+                    if (r.BaseStream.Position < r.BaseStream.Length)
+                    {
+                        hasBed = r.ReadBoolean(); bedX = r.ReadInt32(); bedY = r.ReadInt32(); bedZ = r.ReadInt32();
+                    }
 
                     if (float.IsNaN(pos.X) || float.IsNaN(pos.Y) || float.IsNaN(pos.Z) || Math.Abs(pos.X) > 3e7f || Math.Abs(pos.Z) > 3e7f || pos.Y < -50f || pos.Y > 1000f) return;
                     p.Pos = pos; p.Yaw = yaw; p.Pitch = pitch;
@@ -201,6 +212,12 @@ namespace BlockRealm.Sim
                     p.Mode = mode == 1 ? GameMode.Creative : GameMode.Survival;
                     p.Inventory.Selected = Math.Min((int)selected, PlayerInventory.HotbarSize - 1);
                     Array.Copy(slots, p.Inventory.Slots, slots.Length);
+                    for (int i = 0; i < worn.Length; i++)
+                        p.Inventory.Armor[i] = !worn[i].IsEmpty && worn[i].Info.ArmorSlot == i ? worn[i] : ItemStack.Empty;
+                    if (hasBed && Math.Abs(bedX) < 30000000 && Math.Abs(bedZ) < 30000000 && bedY >= 0 && bedY < WorldConst.Height)
+                    {
+                        p.HasBed = true; p.BedPos = new Vec3i(bedX, bedY, bedZ);
+                    }
                 }
             }
             catch (Exception) { /* unreadable file: start fresh */ }

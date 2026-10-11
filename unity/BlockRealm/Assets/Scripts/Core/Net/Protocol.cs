@@ -100,7 +100,7 @@ namespace BlockRealm.Net
         // client -> server
         Hello = 1, PlayerState = 2, StartBreak = 3, FinishBreak = 4, CancelBreak = 5, PlaceBlock = 6,
         SelectSlot = 7, UseItem = 8, Interact = 9, InteractEntity = 10, InventoryClick = 11, CloseWindow = 12,
-        Chat = 13, Respawn = 14, KeepAlive = 15, Auth = 16,
+        Chat = 13, Respawn = 14, KeepAlive = 15, Auth = 16, Wake = 17,
         // server -> client
         Welcome = 40, ColumnData = 41, ColumnUnload = 42, BlockUpdate = 43, EntitySpawn = 44, EntityDespawn = 45,
         EntityStates = 46, PlayerTeleport = 47, HealthUpdate = 48, WindowItems = 49, SetSlot = 50, OpenWindow = 51,
@@ -163,6 +163,7 @@ namespace BlockRealm.Net
                 case PacketId.CloseWindow: return new CloseWindowPacket();
                 case PacketId.Chat: return new ChatPacket();
                 case PacketId.Respawn: return new RespawnPacket();
+                case PacketId.Wake: return new WakeUpPacket();
                 case PacketId.KeepAlive: return new KeepAlivePacket();
                 case PacketId.Welcome: return new WelcomePacket();
                 case PacketId.ColumnData: return new ColumnDataPacket();
@@ -197,7 +198,7 @@ namespace BlockRealm.Net
 
     public sealed class HelloPacket : Packet
     {
-        public const int ProtocolVersion = 4;
+        public const int ProtocolVersion = 5;
         public int Protocol = ProtocolVersion;
         public string Name = "Player";
         public override PacketId Id { get { return PacketId.Hello; } }
@@ -309,6 +310,14 @@ namespace BlockRealm.Net
         public override PacketId Id { get { return PacketId.Chat; } }
         public override void Write(PacketWriter w) { w.Str(Text); }
         public override void Read(PacketReader r) { Text = r.Str(); }
+    }
+
+    /// <summary>Get out of bed.</summary>
+    public sealed class WakeUpPacket : Packet
+    {
+        public override PacketId Id { get { return PacketId.Wake; } }
+        public override void Write(PacketWriter w) { }
+        public override void Read(PacketReader r) { }
     }
 
     public sealed class RespawnPacket : Packet
@@ -457,9 +466,11 @@ namespace BlockRealm.Net
         public int Hunger;
         public float Saturation;
         public bool Dead;
+        public byte Armor;
+        public bool Sleeping;
         public override PacketId Id { get { return PacketId.HealthUpdate; } }
-        public override void Write(PacketWriter w) { w.F32(Health); w.I32(Hunger); w.F32(Saturation); w.Bool(Dead); }
-        public override void Read(PacketReader r) { Health = r.F32(); Hunger = r.I32(); Saturation = r.F32(); Dead = r.Bool(); }
+        public override void Write(PacketWriter w) { w.F32(Health); w.I32(Hunger); w.F32(Saturation); w.Bool(Dead); w.U8(Armor); w.Bool(Sleeping); }
+        public override void Read(PacketReader r) { Health = r.F32(); Hunger = r.I32(); Saturation = r.F32(); Dead = r.Bool(); Armor = r.U8(); Sleeping = r.Bool(); }
     }
 
     public sealed class WindowItemsPacket : Packet

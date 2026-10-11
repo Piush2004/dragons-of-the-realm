@@ -92,11 +92,14 @@ namespace BlockRealm.Game
             DrawPanel(panel);
 
             string title = kind == WindowKind.Inventory ? "Crafting" : (kind == WindowKind.CraftingTable ? "Crafting Table" : (kind == WindowKind.Furnace ? "Furnace" : "Chest"));
-            Text(new Rect(ox + 8f, oy + 5f, 150f, 10f), title, _label, new Color(0.25f, 0.25f, 0.25f), TextAnchor.UpperLeft, false);
+            // The personal window carries the armour column on its left, so its title moves over.
+            float titleX = kind == WindowKind.Inventory ? 98f : 8f;
+            Text(new Rect(ox + titleX, oy + 5f, 150f, 10f), title, _label, new Color(0.25f, 0.25f, 0.25f), TextAnchor.UpperLeft, false);
 
             float invY = kind == WindowKind.Chest ? 86f : 84f;
             float barY = invY + 58f;
-            Text(new Rect(ox + 8f, oy + invY - 11f, 150f, 10f), "Inventory", _label, new Color(0.25f, 0.25f, 0.25f), TextAnchor.UpperLeft, false);
+            if (kind != WindowKind.Inventory)
+                Text(new Rect(ox + 8f, oy + invY - 11f, 150f, 10f), "Inventory", _label, new Color(0.25f, 0.25f, 0.25f), TextAnchor.UpperLeft, false);
             for (int row = 0; row < 3; row++)
                 for (int col = 0; col < 9; col++)
                     DrawSlot(c, new Rect(ox + 8f + col * 18f, oy + invY + row * 18f, 18f, 18f), 9 + row * 9 + col);
@@ -111,6 +114,8 @@ namespace BlockRealm.Game
                         DrawSlot(c, new Rect(ox + 98f + (i % 2) * 18f, oy + 18f + (i / 2) * 18f, 18f, 18f), extra + i);
                     DrawArrow(ox + 125f, oy + 31f);
                     DrawSlot(c, new Rect(ox + 154f, oy + 28f, 18f, 18f), extra + 4);
+                    for (int i = 0; i < 4; i++)                     // head, chest, legs, feet
+                        DrawSlot(c, new Rect(ox + 8f, oy + 8f + i * 18f, 18f, 18f), extra + 5 + i);
                     DrawPlayerPreview(ox + 52f, oy + 14f);
                     break;
                 case WindowKind.CraftingTable:

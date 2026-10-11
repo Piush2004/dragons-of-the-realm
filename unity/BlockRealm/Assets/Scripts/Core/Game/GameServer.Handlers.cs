@@ -45,6 +45,7 @@ namespace BlockRealm.Sim
                 case PacketId.CloseWindow: CloseWindow(p); break;
                 case PacketId.Chat: OnChat(p, ((ChatPacket)packet).Text); break;
                 case PacketId.Respawn: if (p.Dead) RespawnPlayer(p); break;
+                case PacketId.Wake: WakePlayer(p); break;
                 case PacketId.KeepAlive: break;
                 case PacketId.Hello: break;   // duplicate hello is ignored
                 default: break;               // server -> client ids are never valid here
@@ -381,6 +382,7 @@ namespace BlockRealm.Sim
                 case B.Furnace:
                 case B.FurnaceLit: OpenContainer(p, WindowKind.Furnace, pos, "Furnace"); break;
                 case B.Chest: OpenContainer(p, WindowKind.Chest, pos, "Chest"); break;
+                case B.Bed: UseBed(p, pos); break;
             }
         }
 
@@ -451,6 +453,7 @@ namespace BlockRealm.Sim
                 p.InventoryDirty = true;
                 return;
             }
+            int armorBefore = p.Inventory.ArmorPoints();
             Window w = null;
             if (p.OpenWindow != null && p.OpenWindow.Id == pk.Window) w = p.OpenWindow;
             else if (pk.Window == 0 && p.OpenWindow == null) w = p.Personal;
@@ -482,8 +485,8 @@ namespace BlockRealm.Sim
             else
             {
                 w.Click(pk.Slot, pk.Button, pk.Shift);
-                if (p.GodMode) { }
             }
+            if (p.Inventory.ArmorPoints() != armorBefore) p.StatsDirty = true;
             p.InventoryDirty = true;
         }
 
@@ -686,11 +689,102 @@ namespace BlockRealm.Sim
             p.Dead = false; p.DeadTicks = 0;
             p.Health = p.MaxHealth; p.Hunger = 20; p.Saturation = 5f; p.Air = 300;
             p.BurnTicks = 0; p.Invulnerable = 60;
-            int surface = World.GetSurfaceY(SpawnPoint.X, SpawnPoint.Z);
-            Vec3 pos = new Vec3(SpawnPoint.X + 0.5f, (surface >= 0 ? surface + 1 : SpawnPoint.Y) + 0.2f, SpawnPoint.Z + 0.5f);
+            p.Sleeping = false;
+            Vec3 pos;
+            if (!TryBedRespawn(p, out pos))
+            {
+                int surface = World.GetSurfaceY(SpawnPoint.X, SpawnPoint.Z);
+                pos = new Vec3(SpawnPoint.X + 0.5f, (surface >= 0 ? surface + 1 : SpawnPoint.Y) + 0.2f, SpawnPoint.Z + 0.5f);
+            }
             TeleportPlayer(p, pos);
             p.StatsDirty = true;
             p.InventoryDirty = true;
+        }
+
+        // ------------------------------------------------------------------ beds
+
+        /// <summary>Using a bed always sets the respawn point; at night, with no monsters near, it also puts you to sleep.</summary>
+        private void UseBed(ServerPlayer p, Vec3i pos)
+        {
+            if (p.Sleeping) { WakePlayer(p); return; }
+            bool changed = !p.HasBed || !p.BedPos.Equals(pos);
+            p.HasBed = true; p.BedPos = pos;
+            if (changed) Tell(p, "Respawn point set");
+            if (!IsNight) { Tell(p, "You can only sleep at night"); return; }
+            if (Vec3.Distance(p.Pos, new Vec3(pos.X + 0.5f, pos.Y, pos.Z + 0.5f)) > 3f) { Tell(p, "You are too far away to sleep"); return; }
+            foreach (Entity e in EntitiesNear(new Vec3(pos.X + 0.5f, pos.Y + 0.5f, pos.Z + 0.5f), 8f))
+            {
+                MobEntity m = e as MobEntity;
+                if (m != null && m.Hostile && !m.Dead) { Tell(p, "You cannot sleep with monsters nearby"); return; }
+            }
+            p.Sleeping = true;
+            p.StatsDirty = true;
+            Broadcast(new ChatMessagePacket { Text = p.Name + " is sleeping" });
+        }
+
+        public void WakePlayer(ServerPlayer p)
+        {
+            if (!p.Sleeping) return;
+            p.Sleeping = false;
+            p.StatsDirty = true;
+        }
+
+        /// <summary>When every living player is in bed the night is skipped; sleepers wake if they leave the bed or day breaks.</summary>
+        private void TickSleep()
+        {
+            int living = 0, asleep = 0;
+            for (int i = 0; i < Players.Count; i++)
+            {
+                ServerPlayer p = Players[i];
+                if (p.Dead) continue;
+                if (p.Sleeping)
+                {
+                    bool bedGone = World.GetBlock(p.BedPos.X, p.BedPos.Y, p.BedPos.Z) != B.Bed;
+                    Vec3 bed = new Vec3(p.BedPos.X + 0.5f, p.BedPos.Y, p.BedPos.Z + 0.5f);
+                    if (bedGone || Vec3.Distance(p.Pos, bed) > 3.5f || IsDaylight) { WakePlayer(p); }
+                }
+                living++;
+                if (p.Sleeping) asleep++;
+            }
+            if (asleep > 0 && asleep == living) _sleepTicks++; else _sleepTicks = 0;
+            if (_sleepTicks >= 60)
+            {
+                _sleepTicks = 0;
+                DayTick = 1000;
+                Broadcast(new TimeUpdatePacket { DayTick = DayTick });
+                for (int i = 0; i < Players.Count; i++) WakePlayer(Players[i]);
+            }
+        }
+
+        private int _sleepTicks;
+
+        /// <summary>The spot beside the player's bed, if the bed is still there and has room to stand.</summary>
+        private bool TryBedRespawn(ServerPlayer p, out Vec3 pos)
+        {
+            pos = default(Vec3);
+            if (!p.HasBed) return false;
+            Vec3i b = p.BedPos;
+            if (!World.HasColumn(b.X >> 4, b.Z >> 4)) return false;
+            if (World.GetBlock(b.X, b.Y, b.Z) != B.Bed)
+            {
+                p.HasBed = false;
+                Tell(p, "Your bed was missing or obstructed");
+                return false;
+            }
+            int[] dx = { 0, 1, -1, 0, 0 }, dz = { 0, 0, 0, 1, -1 };
+            for (int k = 0; k < 5; k++)
+            {
+                int x = b.X + dx[k], z = b.Z + dz[k];
+                bool ground = k == 0 || Blocks.IsSolid(World.GetBlock(x, b.Y, z));
+                int y = k == 0 ? b.Y + 1 : b.Y + 1;
+                if (!ground) continue;
+                if (Blocks.IsSolid(World.GetBlock(x, y, z)) || Blocks.IsSolid(World.GetBlock(x, y + 1, z))) continue;
+                pos = new Vec3(x + 0.5f, y + 0.05f, z + 0.5f);
+                return true;
+            }
+            p.HasBed = false;
+            Tell(p, "Your bed was missing or obstructed");
+            return false;
         }
 
         // ------------------------------------------------------------------ small broadcast helpers

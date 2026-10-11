@@ -16,7 +16,7 @@ namespace BlockRealm.Game
 
         // One-shot commands, true for exactly one frame.
         public bool InventoryPressed, ChatPressed, CommandPressed, PausePressed, DebugPressed, CameraPressed;
-        public bool DropPressed, DropStackPressed, JumpDoubleTapped, ClosePressed;
+        public bool DropPressed, DropStackPressed, JumpDoubleTapped, ClosePressed, JumpPressed;
         public int HotbarDirect = -1;
         public int HotbarDelta;
 
@@ -48,7 +48,7 @@ namespace BlockRealm.Game
         public void Update(float dt, bool uiOpen)
         {
             InventoryPressed = ChatPressed = CommandPressed = PausePressed = DebugPressed = CameraPressed = false;
-            DropPressed = DropStackPressed = JumpDoubleTapped = ClosePressed = false;
+            DropPressed = DropStackPressed = JumpDoubleTapped = ClosePressed = JumpPressed = false;
             HotbarDirect = -1; HotbarDelta = 0;
             PadClick = PadRightClick = PadShiftClick = false;
             PadCursorDelta = Vector2.zero;
@@ -135,6 +135,7 @@ namespace BlockRealm.Game
                 _lastForwardTap = Time.unscaledTime;
             }
             if (mz <= 0.1f) _sprintLatched = false;
+            JumpPressed = jumpDown;
             if (jumpDown)
             {
                 if (Time.unscaledTime - _lastJumpTap < 0.3f) JumpDoubleTapped = true;

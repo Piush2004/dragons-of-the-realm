@@ -34,10 +34,21 @@ namespace BlockRealm.Sim
         public const int Size = 36;
         public const int HotbarSize = 9;
         public readonly ItemStack[] Slots = new ItemStack[Size];
+        /// <summary>Worn pieces: 0 head, 1 chest, 2 legs, 3 feet.</summary>
+        public readonly ItemStack[] Armor = new ItemStack[4];
         public ItemStack Cursor;
         public int Selected;
 
         public ItemStack Held { get { return Slots[Selected]; } }
+
+        /// <summary>Total protection of everything worn (each point removes 4% of an incoming blow, up to 20).</summary>
+        public int ArmorPoints()
+        {
+            int points = 0;
+            for (int i = 0; i < Armor.Length; i++)
+                if (!Armor[i].IsEmpty && Armor[i].Info.ArmorSlot == i) points += Armor[i].Info.ArmorPoints;
+            return Math.Min(points, 20);
+        }
 
         /// <summary>Adds a stack, preferring existing stacks and the hotbar. Returns how many items did not fit.</summary>
         public int Add(ItemStack stack)
@@ -337,12 +348,34 @@ namespace BlockRealm.Sim
             Dim = dim; Grid = new ItemStack[dim * dim];
         }
 
-        public override int ExtraCount { get { return Grid.Length + 1; } }
-        protected override ItemStack GetExtra(int i) { return i < Grid.Length ? Grid[i] : _result; }
-        protected override void SetExtra(int i, ItemStack s) { if (i < Grid.Length) Grid[i] = s; else _result = s; }
+        /// <summary>The player's own window also carries the four armour slots, after the grid and result.</summary>
+        private bool HasArmor { get { return Dim == 2; } }
+
+        public override int ExtraCount { get { return Grid.Length + 1 + (HasArmor ? 4 : 0); } }
+        protected override ItemStack GetExtra(int i)
+        {
+            if (i < Grid.Length) return Grid[i];
+            if (i == Grid.Length) return _result;
+            return Inv.Armor[i - Grid.Length - 1];
+        }
+        protected override void SetExtra(int i, ItemStack s)
+        {
+            if (i < Grid.Length) Grid[i] = s;
+            else if (i == Grid.Length) _result = s;
+            else Inv.Armor[i - Grid.Length - 1] = s;
+        }
         protected override bool IsResult(int i) { return i == Grid.Length; }
+        protected override bool ExtraAccepts(int i, ItemStack s)
+        {
+            if (i <= Grid.Length) return true;
+            return !s.IsEmpty && s.Info.ArmorSlot == i - Grid.Length - 1;
+        }
         protected override void OnExtraChanged(int i) { Recompute(); }
-        protected override void QuickTargetFor(ItemStack s, out int start, out int end) { start = 0; end = Grid.Length; }
+        protected override void QuickTargetFor(ItemStack s, out int start, out int end)
+        {
+            if (HasArmor && s.Info.ArmorSlot >= 0) { start = Grid.Length + 1; end = start + 4; }
+            else { start = 0; end = Grid.Length; }
+        }
 
         public void Recompute() { _result = Recipes.Match(Grid, Dim, Dim); }
 

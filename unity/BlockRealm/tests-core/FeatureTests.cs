@@ -15,6 +15,12 @@ namespace BlockRealm.Tests
             return n;
         }
 
+        private static int SlotOf(GameClient c, ushort id)
+        {
+            for (int i = 0; i < c.Slots.Length; i++) if (c.Slots[i].Id == id) return i;
+            return -1;
+        }
+
         private static ItemStack S(ushort id) { return new ItemStack(id, 1); }
 
         /// <summary>
@@ -321,6 +327,244 @@ namespace BlockRealm.Tests
                     diamond += Items.Get(id).ArmorPoints;
                 Check.True(leather > 0 && leather < iron && iron < diamond, "tiers: " + leather + " < " + iron + " < " + diamond);
                 Check.True(diamond <= 20, "a full set never makes you immune");
+            });
+
+            Harness.Group("armour");
+            Harness.Run("armour goes only in its own slot, by click and by shift-click", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    c.SendChat("/give " + ItemIds.IronHelmet);
+                    c.SendChat("/give " + ItemIds.IronBoots);
+                    rig.Run(5);
+                    int head = PlayerInventory.Size + 5, chest = head + 1;
+
+                    c.ClickSlot(SlotOf(c, ItemIds.IronHelmet), 0, false);
+                    rig.Run(3);
+                    Check.Equal(ItemIds.IronHelmet, c.Cursor.Id, "helmet on the cursor");
+                    c.ClickSlot(chest, 0, false);
+                    rig.Run(3);
+                    Check.True(sp.Inventory.Armor[1].IsEmpty, "a helmet does not fit the chest slot");
+                    Check.Equal(ItemIds.IronHelmet, c.Cursor.Id, "still held");
+                    c.ClickSlot(head, 0, false);
+                    rig.Run(3);
+                    Check.Equal(ItemIds.IronHelmet, sp.Inventory.Armor[0].Id, "helmet worn");
+                    Check.True(c.Cursor.IsEmpty, "cursor empty");
+
+                    c.ClickSlot(SlotOf(c, ItemIds.IronBoots), 0, true);
+                    rig.Run(3);
+                    Check.Equal(ItemIds.IronBoots, sp.Inventory.Armor[3].Id, "shift-click finds the boots slot");
+                    rig.Run(5);
+                    Check.Equal(4, c.ArmorPoints, "the client is told its protection");
+
+                    c.ClickSlot(head, 0, true);                      // shift-click it off again
+                    rig.Run(3);
+                    Check.True(sp.Inventory.Armor[0].IsEmpty, "helmet taken off");
+                    Check.Equal(1, CountOf(c, ItemIds.IronHelmet), "and back in the bag");
+                }
+            });
+            Harness.Run("armour cuts blows from attackers, wears, and ignores falls and the like", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    ushort[] set = { ItemIds.DiamondHelmet, ItemIds.DiamondChestplate, ItemIds.DiamondLeggings, ItemIds.DiamondBoots };
+                    for (int i = 0; i < 4; i++) sp.Inventory.Armor[i] = new ItemStack(set[i], 1);
+                    Check.Equal(20, sp.Inventory.ArmorPoints());
+                    ArrowEntity attacker = new ArrowEntity();
+
+                    float before = sp.Health;
+                    rig.Server.Hurt(sp, 10f, attacker, sp.Pos + new Vec3(1, 0, 0), 0f);
+                    Check.Near(before - 2f, sp.Health, 0.01f, "a full diamond set lets 20% through");
+                    Check.Equal(2, sp.Inventory.Armor[0].Wear, "each piece took wear");
+
+                    rig.Run(15);
+                    before = sp.Health;
+                    rig.Server.Hurt(sp, 3f, null, sp.Pos, 0f);
+                    Check.Near(before - 3f, sp.Health, 0.01f, "environmental damage ignores armour");
+                    Check.Equal(2, sp.Inventory.Armor[0].Wear, "and does not wear it");
+                }
+            });
+            Harness.Run("armour breaks when its durability runs out", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    ItemStack worn = new ItemStack(ItemIds.IronHelmet, 1);
+                    worn.Wear = (short)(worn.Info.Durability - 1);
+                    sp.Inventory.Armor[0] = worn;
+                    rig.Server.Hurt(sp, 4f, new ArrowEntity(), sp.Pos, 0f);
+                    Check.True(sp.Inventory.Armor[0].IsEmpty, "helmet broke");
+                    rig.Run(5);
+                    Check.Equal(0, c.ArmorPoints, "client sees it gone");
+                }
+            });
+            Harness.Run("worn armour is saved with the player and dropped on death", () =>
+            {
+                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brtest_" + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    using (Rig rig = new Rig(o => o.SaveDir = dir))
+                    {
+                        GameClient c = rig.JoinAndSettle("Ada");
+                        rig.ServerSide(c).Inventory.Armor[1] = new ItemStack(ItemIds.DiamondChestplate, 1);
+                        rig.Run(2);
+                    }
+                    using (Rig rig = new Rig(o => o.SaveDir = dir))
+                    {
+                        GameClient c = rig.Join("Ada");
+                        rig.RunUntil(() => c.State == ClientState.Joined && c.PendingColumns == 0 && c.World != null && c.World.ColumnCount >= 9, 300);
+                        rig.Run(20);
+                        ServerPlayer sp = rig.ServerSide(c);
+                        Check.Equal(ItemIds.DiamondChestplate, sp.Inventory.Armor[1].Id, "restored after restart");
+                        Check.Equal(8, c.ArmorPoints);
+                        c.SendChat("/kill");
+                        rig.Run(5);
+                        Check.True(sp.Inventory.Armor[1].IsEmpty, "taken off the body");
+                        bool dropped = false;
+                        foreach (KeyValuePair<int, Entity> kv in rig.Server.Entities)
+                        {
+                            ItemEntity ie = kv.Value as ItemEntity;
+                            if (ie != null && ie.Stack.Id == ItemIds.DiamondChestplate) dropped = true;
+                        }
+                        Check.True(dropped, "lying on the ground where the player fell");
+                    }
+                }
+                finally
+                {
+                    try { System.IO.Directory.Delete(dir, true); } catch (Exception) { }
+                }
+            });
+
+            Harness.Group("beds");
+            Harness.Run("a bed sets the respawn point even by day, and death returns you to it", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int ox, y0, oz;
+                    Platform(rig, c, 6, out ox, out y0, out oz);
+                    rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Bed);
+                    c.SendChat("/time set noon");
+                    rig.Run(3);
+                    StandOn(rig, c, ox, y0, oz);
+                    c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                    rig.Run(3);
+                    Check.True(sp.HasBed && sp.BedPos.Equals(new Vec3i(ox + 2, y0 + 1, oz)), "respawn point recorded");
+                    Check.True(!sp.Sleeping, "no sleeping in daylight");
+
+                    c.SendChat("/kill");
+                    rig.Run(5);
+                    Check.True(c.Dead, "died");
+                    c.RequestRespawn();
+                    rig.Run(10);
+                    Check.True(sp.Pos.Y > y0, "back on the platform, not at the world spawn: y " + sp.Pos.Y);
+                    Check.True(Vec3.Distance(sp.Pos, new Vec3(ox + 2.5f, y0 + 2f, oz + 0.5f)) < 3f, "next to the bed");
+                }
+            });
+            Harness.Run("everyone in bed at night skips to morning", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int ox, y0, oz;
+                    Platform(rig, c, 6, out ox, out y0, out oz);
+                    rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Bed);
+                    StandOn(rig, c, ox, y0, oz);
+                    c.SendChat("/time set night");
+                    rig.Run(3);
+                    Check.True(rig.Server.IsNight);
+                    c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                    rig.Run(3);
+                    Check.True(sp.Sleeping, "in bed");
+                    rig.Run(5);
+                    Check.True(c.Sleeping, "the client knows");
+                    bool morning = rig.RunUntil(() => rig.Server.IsDaylight && !sp.Sleeping, 200);
+                    Check.True(morning, "the night was skipped");
+                    Check.InRange(rig.Server.DayTick, 1000, 1100, "early morning");
+                    rig.Run(5);
+                    Check.True(!c.Sleeping, "awake again");
+                }
+            });
+            Harness.Run("monsters nearby, damage and walking away all keep you out of bed", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int ox, y0, oz;
+                    Platform(rig, c, 6, out ox, out y0, out oz);
+                    rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Bed);
+                    StandOn(rig, c, ox, y0, oz);
+                    c.SendChat("/time set night");
+                    c.SendChat("/summon zombie");
+                    rig.Run(5);
+                    c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                    rig.Run(3);
+                    Check.True(!sp.Sleeping, "zombie within eight blocks");
+
+                    foreach (KeyValuePair<int, Entity> kv in rig.Server.Entities)
+                        if (kv.Value is MobEntity) kv.Value.Removed = true;
+                    rig.Run(5);
+                    c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                    rig.Run(3);
+                    Check.True(sp.Sleeping, "now it is quiet");
+                    rig.Server.Hurt(sp, 1f, null, sp.Pos, 0f);
+                    Check.True(!sp.Sleeping, "a blow wakes you");
+
+                    sp.Invulnerable = 0;
+                    c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                    rig.Run(3);
+                    Check.True(sp.Sleeping, "back in bed");
+                    c.Send(new WakeUpPacket());
+                    rig.Run(3);
+                    Check.True(!sp.Sleeping, "got up on request");
+                }
+            });
+            Harness.Run("the bed survives a restart, and a destroyed bed falls back to the world spawn", () =>
+            {
+                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brtest_" + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    int ox, y0, oz;
+                    using (Rig rig = new Rig(o => o.SaveDir = dir))
+                    {
+                        GameClient c = rig.JoinAndSettle("Ada");
+                        Platform(rig, c, 6, out ox, out y0, out oz);
+                        rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Bed);
+                        StandOn(rig, c, ox, y0, oz);
+                        c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                        rig.Run(5);
+                        Check.True(rig.ServerSide(c).HasBed);
+                    }
+                    using (Rig rig = new Rig(o => o.SaveDir = dir))
+                    {
+                        GameClient c = rig.Join("Ada");
+                        rig.RunUntil(() => c.State == ClientState.Joined && c.PendingColumns == 0 && c.World != null && c.World.ColumnCount >= 9, 300);
+                        rig.Run(20);
+                        ServerPlayer sp = rig.ServerSide(c);
+                        Check.True(sp.HasBed && sp.BedPos.Equals(new Vec3i(ox + 2, y0 + 1, oz)), "bed remembered");
+
+                        rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Air);
+                        rig.Run(3);
+                        c.SendChat("/kill");
+                        rig.Run(5);
+                        c.RequestRespawn();
+                        rig.Run(10);
+                        Check.True(!sp.HasBed, "the missing bed is forgotten");
+                        Check.True(!c.Dead && !sp.Dead, "and the player is back in the world anyway");
+                    }
+                }
+                finally
+                {
+                    try { System.IO.Directory.Delete(dir, true); } catch (Exception) { }
+                }
             });
         }
 

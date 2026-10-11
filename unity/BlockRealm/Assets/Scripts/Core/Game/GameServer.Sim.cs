@@ -462,10 +462,13 @@ namespace BlockRealm.Sim
             {
                 if (tp.GodMode || tp.Invulnerable > 0) return;
                 if (attacker is ServerPlayer && !Options.Pvp) return;
+                // Armour turns aside blows struck by something (mobs, players, arrows, blasts) but not falls,
+                // drowning, hunger or the void, which have no attacker.
+                if (attacker != null) amount = ApplyArmor(tp, amount);
             }
             target.Health -= amount;
             target.HurtTicks = 10;
-            if (tp != null) { tp.Invulnerable = 10; tp.StatsDirty = true; }
+            if (tp != null) { tp.Invulnerable = 10; tp.StatsDirty = true; tp.Sleeping = false; }
 
             Vec3 away = target.Pos - from;
             away.Y = 0;
@@ -491,6 +494,23 @@ namespace BlockRealm.Sim
             if (target.Health <= 0f) Kill(target, attacker);
         }
 
+        /// <summary>Reduces a blow by the armour worn and wears each piece. Returns the damage that gets through.</summary>
+        private float ApplyArmor(ServerPlayer p, float amount)
+        {
+            int points = p.Inventory.ArmorPoints();
+            if (points <= 0) return amount;
+            int wear = Math.Max(1, (int)(amount / 4f));
+            for (int i = 0; i < p.Inventory.Armor.Length; i++)
+            {
+                ItemStack s = p.Inventory.Armor[i];
+                if (s.IsEmpty) continue;
+                s.Wear = (short)(s.Wear + wear);
+                p.Inventory.Armor[i] = s.Wear >= s.Info.Durability ? ItemStack.Empty : s;
+            }
+            p.InventoryDirty = true; p.StatsDirty = true;
+            return amount * (1f - points * 0.04f);
+        }
+
         public void Kill(Entity target, Entity attacker)
         {
             if (target.Dead) return;
@@ -512,6 +532,12 @@ namespace BlockRealm.Sim
                     if (p.Inventory.Slots[i].IsEmpty) continue;
                     DropItem(p.Center, p.Inventory.Slots[i], new Vec3(Random.Range(-3f, 3f), Random.Range(2f, 5f), Random.Range(-3f, 3f)));
                     p.Inventory.Slots[i] = ItemStack.Empty;
+                }
+                for (int i = 0; i < p.Inventory.Armor.Length; i++)
+                {
+                    if (p.Inventory.Armor[i].IsEmpty) continue;
+                    DropItem(p.Center, p.Inventory.Armor[i], new Vec3(Random.Range(-3f, 3f), Random.Range(2f, 5f), Random.Range(-3f, 3f)));
+                    p.Inventory.Armor[i] = ItemStack.Empty;
                 }
                 p.StatsDirty = true; p.InventoryDirty = true;
                 return;
