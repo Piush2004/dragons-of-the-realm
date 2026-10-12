@@ -80,6 +80,12 @@ namespace BlockRealm.Game
             GameUi ui = root.AddComponent<GameUi>();
             ui.Session = session;
             session.OnPlayerHurt = ui.NotifyHurt;
+            if (SmokeTest.Wanted(args))
+            {
+                SmokeTest smoke = root.AddComponent<SmokeTest>();
+                smoke.Session = session;
+                smoke.Begin(args);
+            }
         }
     }
 }
