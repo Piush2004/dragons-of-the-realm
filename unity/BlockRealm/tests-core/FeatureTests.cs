@@ -45,7 +45,8 @@ namespace BlockRealm.Tests
 
         private static void StandOn(Rig rig, GameClient c, int x, int y0, int z)
         {
-            c.SendChat("/tp " + x + ".5 " + (y0 + 1) + ".1 " + z + ".5");
+            System.Globalization.CultureInfo inv = System.Globalization.CultureInfo.InvariantCulture;
+            c.SendChat("/tp " + (x + 0.5).ToString(inv) + " " + (y0 + 1.1).ToString(inv) + " " + (z + 0.5).ToString(inv));
             bool ok = rig.RunUntil(() => c.Player.OnGround && MathUtil.FloorInt(c.Player.Pos.Y) == y0 + 1, 120);
             Check.True(ok, "player standing on the platform: y " + c.Player.Pos.Y);
         }
@@ -506,7 +507,7 @@ namespace BlockRealm.Tests
                     c.SendChat("/summon zombie");
                     rig.Run(5);
                     c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
-                    rig.Run(3);
+                    rig.Run(45);
                     Check.True(!sp.Sleeping, "zombie within eight blocks");
 
                     foreach (KeyValuePair<int, Entity> kv in rig.Server.Entities)
@@ -519,6 +520,7 @@ namespace BlockRealm.Tests
                     Check.True(!sp.Sleeping, "a blow wakes you");
 
                     sp.Invulnerable = 0;
+                    rig.Run(45);
                     c.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
                     rig.Run(3);
                     Check.True(sp.Sleeping, "back in bed");
@@ -564,6 +566,123 @@ namespace BlockRealm.Tests
                 finally
                 {
                     try { System.IO.Directory.Delete(dir, true); } catch (Exception) { }
+                }
+            });
+
+            Harness.Group("lava");
+            Harness.Run("lava creeps three blocks and takes its time", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    int ox, y0, oz;
+                    Platform(rig, c, 12, out ox, out y0, out oz);
+                    World w = rig.Server.World;
+                    rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Lava);
+                    rig.Run(40);
+                    Check.True(B.IsLava(w.GetBlock(ox + 3, y0 + 1, oz)), "first block reached");
+                    Check.True(!B.IsLava(w.GetBlock(ox + 5, y0 + 1, oz)), "far end not yet reached");
+                    rig.Run(300);
+                    Check.Equal(3, B.LavaLevel(w.GetBlock(ox + 3, y0 + 1, oz)), "one block out");
+                    Check.Equal(1, B.LavaLevel(w.GetBlock(ox + 5, y0 + 1, oz)), "last cell");
+                    Check.Equal(B.Air, w.GetBlock(ox + 6, y0 + 1, oz), "stops after three blocks");
+                    Check.Equal(B.Lava, w.GetBlock(ox + 2, y0 + 1, oz), "source stays");
+                }
+            });
+            Harness.Run("water turns a lava source into obsidian and flowing lava into cobblestone", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    int ox, y0, oz;
+                    Platform(rig, c, 12, out ox, out y0, out oz);
+                    World w = rig.Server.World;
+
+                    // A lava source with water poured beside it.
+                    rig.Server.SetBlock(ox + 6, y0 + 1, oz + 8, B.Lava);
+                    rig.Run(5);
+                    rig.Server.SetBlock(ox + 7, y0 + 1, oz + 8, B.Water);
+                    rig.Run(120);
+                    Check.Equal(B.Obsidian, w.GetBlock(ox + 6, y0 + 1, oz + 8), "source became obsidian");
+
+                    // Flowing lava reaching water.
+                    rig.Server.SetBlock(ox - 2, y0 + 1, oz, B.Lava);
+                    rig.Run(300);
+                    Check.True(B.IsLava(w.GetBlock(ox - 5, y0 + 1, oz)), "lava has run out to the end");
+                    rig.Server.SetBlock(ox - 6, y0 + 1, oz, B.Water);
+                    rig.Run(150);
+                    Check.Equal(B.Cobble, w.GetBlock(ox - 5, y0 + 1, oz), "flowing lava became cobblestone");
+                    Check.True(B.IsLava(w.GetBlock(ox - 2, y0 + 1, oz)) || w.GetBlock(ox - 2, y0 + 1, oz) == B.Obsidian, "the source is lava or obsidian");
+                }
+            });
+            Harness.Run("standing in lava burns the player", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int ox, y0, oz;
+                    Platform(rig, c, 6, out ox, out y0, out oz);
+                    StandOn(rig, c, ox, y0, oz);
+                    float before = sp.Health;
+                    rig.Server.SetBlock(ox, y0 + 1, oz, B.Lava);
+                    rig.Run(30);
+                    Check.True(sp.Health < before, "hurt by lava: " + sp.Health);
+                }
+            });
+            Harness.Run("internal block states are hidden from palettes but sources are not", () =>
+            {
+                Check.True(Blocks.Get(B.FlowWater3).Hidden && Blocks.Get(B.FlowLava2).Hidden && Blocks.Get(B.Wheat5).Hidden);
+                Check.True(!Blocks.Get(B.Water).Hidden && !Blocks.Get(B.Lava).Hidden && !Blocks.Get(B.Stone).Hidden && !Blocks.Get(B.Bed).Hidden);
+                for (int id = 1; id < B.Count; id++)
+                    Check.True(Blocks.IsDefined(id), "block " + id + " is defined");
+            });
+
+            Harness.Group("abuse limits on the new actions");
+            Harness.Run("bed use is rate limited and the announcement stays local", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient a = rig.JoinAndSettle("Ada");
+                    GameClient b = rig.JoinAndSettle("Bob");
+                    ServerPlayer sa = rig.ServerSide(a);
+                    int ox, y0, oz;
+                    Platform(rig, a, 6, out ox, out y0, out oz);
+                    rig.Server.SetBlock(ox + 2, y0 + 1, oz, B.Bed);
+                    StandOn(rig, a, ox, y0, oz);
+                    a.SendChat("/time set night");
+                    rig.Run(3);
+                    int before = b.Chat.Count;
+                    for (int i = 0; i < 30; i++)
+                    {
+                        a.Send(new InteractPacket { X = ox + 2, Y = y0 + 1, Z = oz });
+                        a.Send(new WakeUpPacket());
+                        rig.Run(1);
+                    }
+                    rig.Run(5);
+                    int heard = 0;
+                    for (int i = before; i < b.Chat.Count; i++) if (b.Chat[i].Contains("is sleeping")) heard++;
+                    Check.True(heard <= 1, "Bob heard the announcement " + heard + " times");
+                }
+            });
+            Harness.Run("buckets and hoes draw on the placement budget", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    ServerPlayer sp = rig.ServerSide(c);
+                    int ox, y0, oz;
+                    Platform(rig, c, 6, out ox, out y0, out oz);
+                    StandOn(rig, c, ox, y0, oz);
+                    c.SendChat("/give " + ItemIds.WaterBucket);
+                    rig.Run(5);
+                    rig.SetInput(c, new PlayerInput { Pitch = 1.5f });
+                    rig.Tick();
+                    c.SelectSlot(0);
+                    sp.PlaceTokens = 0f;
+                    c.Send(new UseItemPacket());
+                    rig.Tick();
+                    Check.Equal(1, CountOf(c, ItemIds.WaterBucket), "no tokens, no water");
                 }
             });
         }

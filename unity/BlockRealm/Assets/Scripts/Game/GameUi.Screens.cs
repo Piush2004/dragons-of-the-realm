@@ -213,7 +213,7 @@ namespace BlockRealm.Game
             for (int i = 1; i < 256; i++)
             {
                 BlockInfo b = Blocks.All[i];
-                if (b != null && b.Render != RenderKind.None) _palette.Add((ushort)i);
+                if (b != null && b.Render != RenderKind.None && !b.Hidden) _palette.Add((ushort)i);
             }
             for (int i = 256; i <= ItemIds.MaxId; i++) if (Items.IsDefined((ushort)i)) _palette.Add((ushort)i);
         }

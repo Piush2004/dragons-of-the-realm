@@ -112,7 +112,7 @@ namespace BlockRealm
                                 }
                                 break;
                             case RenderKind.Liquid:
-                                EmitLiquid(p, lx, ly, lz, id, info, ref nv, id == B.Lava ? _opaque : _water, ref no, ref nw, id == B.Lava);
+                                EmitLiquid(p, lx, ly, lz, id, info, ref nv, B.IsLava(id) ? _opaque : _water, ref no, ref nw, B.IsLava(id));
                                 break;
                             case RenderKind.Cross:
                                 EmitCross(p, lx, ly, lz, info.LayerSide, ref nv, _cutout, ref nc);
@@ -218,22 +218,22 @@ namespace BlockRealm
         {
             const int N = PaddedSection.N;
             int px = lx + 1, py = ly + 1, pz = lz + 1;
-            bool lava = id == B.Lava;
+            bool lava = B.IsLava(id);
             byte above = p.Blocks[((py + 1) * N + pz) * N + px];
-            bool topExposed = lava ? above != B.Lava : !B.IsWater(above);
+            bool topExposed = lava ? !B.IsLava(above) : !B.IsWater(above);
             float topY = topExposed ? SurfaceHeight(id) : 1f;
             for (int f = 0; f < 6; f++)
             {
                 int nx = px + FaceNormal[f, 0], ny = py + FaceNormal[f, 1], nz = pz + FaceNormal[f, 2];
                 byte nid = p.Blocks[(ny * N + nz) * N + nx];
-                bool sameFluid = lava ? nid == B.Lava : B.IsWater(nid);
+                bool sameFluid = lava ? B.IsLava(nid) : B.IsWater(nid);
                 float lowFrom = 0f;
                 if (sameFluid)
                 {
                     // Between two cells of the same fluid only the part of this cell above its neighbour's surface shows.
                     if (f == (int)Face.Up || f == (int)Face.Down) continue;
                     byte nAbove = p.Blocks[((ny + 1) * N + nz) * N + nx];
-                    float nTop = (lava ? nAbove == B.Lava : B.IsWater(nAbove)) ? 1f : SurfaceHeight(nid);
+                    float nTop = (lava ? B.IsLava(nAbove) : B.IsWater(nAbove)) ? 1f : SurfaceHeight(nid);
                     if (nTop >= topY - 0.001f) continue;
                     lowFrom = nTop;
                 }
@@ -277,6 +277,7 @@ namespace BlockRealm
         public static float SurfaceHeight(byte id)
         {
             if (id == B.Lava) return 0.875f;
+            if (B.IsLava(id)) return 0.12f + 0.2f * B.LavaLevel(id);       // levels 1..3 -> 0.32 .. 0.72
             int level = B.WaterLevel(id);
             if (level >= 8) return 0.875f;
             return 0.12f + 0.095f * level;              // levels 1..7 -> 0.215 .. 0.785

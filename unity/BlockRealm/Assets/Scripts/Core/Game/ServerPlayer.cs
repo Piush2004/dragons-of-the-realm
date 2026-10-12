@@ -37,6 +37,7 @@ namespace BlockRealm.Sim
         public bool HasBed;
         public Vec3i BedPos;
         public bool Sleeping;
+        public int NextBedTick;            // bed use is rate limited: it changes state and talks to other players
 
         // Abuse limits (token buckets, refilled every tick).
         public float BreakTokens = 6f, PlaceTokens = 8f, ChatTokens = 4f;

@@ -302,6 +302,9 @@ namespace BlockRealm.Sim
             bool hoe = held.Info.Tool == ToolKind.Hoe, seeds = id == ItemIds.Seeds;
             if (!bucket && !water && !hoe && !seeds) return false;
             if (p.AttackCooldown > 0) return true;
+            // Water and tilled earth are block edits like any other, so they draw on the same placement budget.
+            if (p.PlaceTokens < 1f) return true;
+            p.PlaceTokens -= 1f;
 
             RayHit h = VoxelPhysics.Raycast(World, p.Eye, p.LookDirection, ServerPlayer.Reach, bucket);
             if (!h.Hit) return true;
@@ -706,6 +709,10 @@ namespace BlockRealm.Sim
         /// <summary>Using a bed always sets the respawn point; at night, with no monsters near, it also puts you to sleep.</summary>
         private void UseBed(ServerPlayer p, Vec3i pos)
         {
+            // Climbing in and out of bed changes world state and is announced, so it cannot be spammed.
+            if (TickCount < p.NextBedTick) return;
+            p.NextBedTick = TickCount + 40;
+            if (p.RidingEntityId != 0) return;
             if (p.Sleeping) { WakePlayer(p); return; }
             bool changed = !p.HasBed || !p.BedPos.Equals(pos);
             p.HasBed = true; p.BedPos = pos;
@@ -719,7 +726,7 @@ namespace BlockRealm.Sim
             }
             p.Sleeping = true;
             p.StatsDirty = true;
-            Broadcast(new ChatMessagePacket { Text = p.Name + " is sleeping" });
+            BroadcastNear(p.Pos, 48f, new ChatMessagePacket { Text = p.Name + " is sleeping" });
         }
 
         public void WakePlayer(ServerPlayer p)

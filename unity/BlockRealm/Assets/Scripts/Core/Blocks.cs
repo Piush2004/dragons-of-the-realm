@@ -27,8 +27,25 @@ namespace BlockRealm
             FlowWater1 = 42, FlowWater2 = 43, FlowWater3 = 44, FlowWater4 = 45, FlowWater5 = 46, FlowWater6 = 47, FlowWater7 = 48,
             Farmland = 49,
             Wheat0 = 50, Wheat1 = 51, Wheat2 = 52, Wheat3 = 53, Wheat4 = 54, Wheat5 = 55, Wheat6 = 56, Wheat7 = 57,
-            Bed = 58;
-        public const int Count = 59;
+            Bed = 58,
+            FlowLava1 = 59, FlowLava2 = 60, FlowLava3 = 61;
+        public const int Count = 62;
+
+        /// <summary>True for a lava source or any level of flowing lava.</summary>
+        public static bool IsLava(byte id) { return id == Lava || (id >= FlowLava1 && id <= FlowLava3); }
+
+        /// <summary>Lava depth: 4 for a source, 1..3 for flowing lava, 0 for anything else.</summary>
+        public static int LavaLevel(byte id)
+        {
+            if (id == Lava) return 4;
+            if (id >= FlowLava1 && id <= FlowLava3) return id - FlowLava1 + 1;
+            return 0;
+        }
+
+        public static byte FlowingLava(int level) { return (byte)(FlowLava1 + MathUtilClamp(level, 1, 3) - 1); }
+
+        /// <summary>True for any liquid, source or flowing.</summary>
+        public static bool IsFluid(byte id) { return IsWater(id) || IsLava(id); }
 
         /// <summary>True for a water source or any level of flowing water.</summary>
         public static bool IsWater(byte id) { return id == Water || (id >= FlowWater1 && id <= FlowWater7); }
@@ -56,6 +73,7 @@ namespace BlockRealm
         public bool Opaque = true;         // hides neighbouring faces and blocks sky light
         public bool Liquid;
         public bool Replaceable;           // can be built over (air, water, plants)
+        public bool Hidden;                // internal state of another block (flowing water, crop stages): not offered in palettes
         public bool Gravity;               // falls when unsupported (sand, gravel)
         public bool Flammable;             // dragon fire and lava can burn it away
         public byte Emission;              // block light 0..15
@@ -140,6 +158,14 @@ namespace BlockRealm
                 Define((byte)(B.Wheat0 + stage), "Wheat", RenderKind.Cross, solid: false, opaque: false, hardness: 0, flammable: true,
                        drop: 0, tile: "wheat_" + stage);
             Define(B.Bed, "Bed", hardness: 0.3f, flammable: true, top: "bed_top", side: "bed_side", bottom: "planks");
+            for (int lvl = 1; lvl <= 3; lvl++)
+                Define((byte)(B.FlowLava1 + lvl - 1), "Flowing Lava", RenderKind.Liquid, solid: false, opaque: false, liquid: true,
+                       replaceable: true, absorb: 0, emission: 15, hardness: 100, drop: 0, tile: "lava");
+            for (int lvl = 1; lvl <= 7; lvl++) All[B.FlowWater1 + lvl - 1].Hidden = true;
+            for (int lvl = 1; lvl <= 3; lvl++) All[B.FlowLava1 + lvl - 1].Hidden = true;
+            for (int stage = 0; stage < 8; stage++) All[B.Wheat0 + stage].Hidden = true;
+            All[B.FurnaceLit].Hidden = true;
+            All[B.Fire].Hidden = true;
 
             for (int i = 0; i < 256; i++)
             {

@@ -15,6 +15,9 @@ namespace BlockRealm.Sim
         private readonly Queue<WaterTask> _waterQueue = new Queue<WaterTask>();
         private readonly HashSet<Vec3i> _waterScheduled = new HashSet<Vec3i>();
         private const int WaterDelayTicks = 4;
+        private readonly Queue<WaterTask> _lavaQueue = new Queue<WaterTask>();
+        private readonly HashSet<Vec3i> _lavaScheduled = new HashSet<Vec3i>();
+        private const int LavaDelayTicks = 30;
 
         // ------------------------------------------------------------------ blocks
 
@@ -33,12 +36,15 @@ namespace BlockRealm.Sim
             if (newId == B.Fire) _fires[pos] = 0; else if (oldId == B.Fire) _fires.Remove(pos);
             Enqueue(pos);
             if (B.IsWater(newId)) ScheduleWater(pos);
+            if (B.IsLava(newId)) ScheduleLava(pos);
             for (int f = 0; f < 6; f++)
             {
                 Vec3i n = pos + Vec3i.FaceOffsets[f];
                 Enqueue(n);
-                // Water next to a change may need to flow into a new gap or drain away from a removed supply.
-                if (B.IsWater(World.GetBlock(n.X, n.Y, n.Z))) ScheduleWater(n);
+                // Fluid next to a change may need to flow into a new gap or drain away from a removed supply.
+                byte nb = World.GetBlock(n.X, n.Y, n.Z);
+                if (B.IsWater(nb)) ScheduleWater(n);
+                else if (B.IsLava(nb)) ScheduleLava(n);
             }
         }
 
@@ -108,6 +114,88 @@ namespace BlockRealm.Sim
                 if (next < 1) continue;
                 if (WaterCanEnter(nb) || (nb != B.Water && B.IsWater(nb) && B.WaterLevel(nb) < next))
                     World.SetBlock(n.X, n.Y, n.Z, B.FlowingWater(next));
+            }
+        }
+
+        private void ScheduleLava(Vec3i p)
+        {
+            if (p.Y < 0 || p.Y >= WorldConst.Height) return;
+            if (_lavaScheduled.Add(p)) _lavaQueue.Enqueue(new WaterTask { Pos = p, Due = TickCount + LavaDelayTicks });
+        }
+
+        /// <summary>
+        /// Lava follows the water rules more slowly and over a shorter distance (three blocks). Touching water turns
+        /// a source to obsidian and flowing lava to cobblestone.
+        /// </summary>
+        private void UpdateLava(Vec3i p)
+        {
+            byte cur;
+            if (!World.TryGetBlock(p.X, p.Y, p.Z, out cur) || !B.IsLava(cur)) return;
+
+            for (int f = 0; f < 6; f++)
+            {
+                Vec3i n = p + Vec3i.FaceOffsets[f];
+                if (B.IsWater(World.GetBlock(n.X, n.Y, n.Z)))
+                {
+                    World.SetBlock(p.X, p.Y, p.Z, cur == B.Lava ? B.Obsidian : B.Cobble);
+                    Effect(EffectKind.Splash, new Vec3(p.X + 0.5f, p.Y + 0.8f, p.Z + 0.5f), 0);
+                    return;
+                }
+            }
+
+            int level = B.LavaLevel(cur);
+            if (cur != B.Lava)
+            {
+                int supply = 0;
+                if (B.IsLava(World.GetBlock(p.X, p.Y + 1, p.Z))) supply = 3;
+                for (int d = 0; d < 4; d++)
+                {
+                    Vec3i n = p + Vec3i.FaceOffsets[(d < 2 ? d : d + 2)];
+                    int nl = B.LavaLevel(World.GetBlock(n.X, n.Y, n.Z));
+                    if (nl > 1 && !WaterCanEnter(World.GetBlock(n.X, n.Y - 1, n.Z)) && nl - 1 > supply) supply = nl - 1;
+                }
+                if (supply < level)
+                {
+                    World.SetBlock(p.X, p.Y, p.Z, supply <= 0 ? B.Air : B.FlowingLava(supply));
+                    return;
+                }
+            }
+
+            if (p.Y > 0)
+            {
+                byte below = World.GetBlock(p.X, p.Y - 1, p.Z);
+                if (WaterCanEnter(below))
+                {
+                    World.SetBlock(p.X, p.Y - 1, p.Z, B.FlowLava3);
+                    return;
+                }
+                if (B.IsLava(below))
+                {
+                    if (below != B.Lava && below != B.FlowLava3) World.SetBlock(p.X, p.Y - 1, p.Z, B.FlowLava3);
+                    return;
+                }
+            }
+            if (level <= 1) return;
+            int next = level == 4 ? 3 : level - 1;
+            for (int d = 0; d < 4; d++)
+            {
+                Vec3i n = p + Vec3i.FaceOffsets[(d < 2 ? d : d + 2)];
+                byte nb = World.GetBlock(n.X, n.Y, n.Z);
+                if (WaterCanEnter(nb) || (nb != B.Lava && B.IsLava(nb) && B.LavaLevel(nb) < next))
+                    World.SetBlock(n.X, n.Y, n.Z, B.FlowingLava(next));
+            }
+        }
+
+        private void TickLava()
+        {
+            int budget = 100;
+            while (_lavaQueue.Count > 0 && budget-- > 0)
+            {
+                WaterTask t = _lavaQueue.Peek();
+                if (t.Due > TickCount) break;
+                _lavaQueue.Dequeue();
+                _lavaScheduled.Remove(t.Pos);
+                UpdateLava(t.Pos);
             }
         }
 
@@ -199,6 +287,7 @@ namespace BlockRealm.Sim
             }
 
             TickWater();
+            TickLava();
             if (TickCount % 4 == 0) RandomTicks();
 
             // Fire burns out and spreads to nearby flammable blocks.

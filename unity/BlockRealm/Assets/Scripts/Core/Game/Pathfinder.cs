@@ -30,7 +30,7 @@ namespace BlockRealm.Sim
                 byte id;
                 if (!w.TryGetBlock(x, y + i, z, out id)) return false;
                 if (Blocks.IsSolid(id)) return false;
-                if (id == B.Lava || id == B.Fire || id == B.Cactus) return false;
+                if (B.IsLava(id) || id == B.Fire || id == B.Cactus) return false;
             }
             return true;
         }
