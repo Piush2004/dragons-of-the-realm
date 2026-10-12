@@ -4,7 +4,7 @@ A multiplayer, open-world, survival block game built in **Unity 6** with every t
 by **Blender** scripts. Dig, build, craft, smelt, fight at night, find a dragon's nest on a mountain peak,
 tame the dragon and ride it. One world, up to eight friends over a network.
 
-> **Status.** The game logic, networking and world generation are complete and covered by 130 automated tests
+> **Status.** The game logic, networking and world generation are complete and covered by 132 automated tests
 > that run without Unity. The Unity presentation layer (rendering, interface, audio) is written and type-checks
 > against the real Unity 6.3 assemblies, but **has not been run yet**, because Unity needs a licence activated
 > by signing in to Unity Hub, which only the account owner can do. See *What has been verified* below.
@@ -48,6 +48,8 @@ In inventories a gamepad uses a cursor moved by the left stick: A clicks, X righ
 * **Farming.** Hoe grass or dirt into farmland, plant seeds, and wheat ripens in daylight; bake bread.
 * **Armour.** Leather, iron and diamond sets go in the four slots beside the inventory; each point
   cuts 4% of damage from attackers and the pieces wear out.
+* **Villages.** Abandoned clusters of small houses stand in plains, forests, deserts and cold lands, each
+  with a bed and torch and often a chest of supplies (given once).
 * **Beds.** Using a bed sets your respawn point; at night, with no monsters near, it puts you to sleep and the
   night is skipped once every living player is in bed.
 * **Mining.** Break times depend on the block and tool. Stone needs a pickaxe, iron ore a stone pickaxe, gold
@@ -112,7 +114,7 @@ Assets/Resources/BlockRealm   shaders, plus the art that Blender generated (tile
 Assets/Editor            project setup, import rules, build script
 tools/blender            Blender scripts that make every texture and model
 tools/core               build and test tooling (runs without a Unity licence)
-tests-core               130 automated tests, console server and bot
+tests-core               132 automated tests, console server and bot
 docs/specs               design documents
 ```
 
@@ -133,7 +135,7 @@ project, re-exported to FBX.
 ## Building and testing without Unity
 
 ```
-bash unity/BlockRealm/tools/core/core.sh test        # build the core and run all 130 tests
+bash unity/BlockRealm/tools/core/core.sh test        # build the core and run all 132 tests
 bash unity/BlockRealm/tools/core/unitycheck.sh       # type-check the Unity layer against the Editor's own assemblies
 ```
 
@@ -143,7 +145,7 @@ Both use the compiler and .NET runtime bundled inside the Unity Editor install; 
 
 | Area | How | Result |
 | --- | --- | --- |
-| Terrain, caves, ores, trees, lairs, lighting, meshing, collision | automated tests | 130 pass |
+| Terrain, caves, ores, trees, lairs, lighting, meshing, collision | automated tests | 132 pass |
 | Mining, building, crafting, smelting, inventory rules | automated tests over the real protocol | pass |
 | Mobs, explosions, fire, day and night, dragons, taming, riding | automated tests | pass |
 | Two players, TCP, persistence, hostile and abusive input | automated tests, plus separate server and bot processes | pass |
@@ -156,6 +158,6 @@ Things most likely to need a first-run adjustment: shader compilation details, m
 
 ## Known limitations
 
-* Doors and villages are not implemented; worn armour is not drawn on the player model.
+* Village houses have open doorways (no doors); worn armour is not drawn on the player model.
 * Dragon animation is a simplified procedural rig, not the full animator of the earlier version.
 * No transport encryption (see above); no voice or text-chat moderation tools beyond operator commands.

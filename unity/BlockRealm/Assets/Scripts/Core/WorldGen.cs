@@ -213,6 +213,7 @@ namespace BlockRealm
             PlaceLairs(col, heights);
             PlaceTrees(col);
             PlacePlants(col, heights, biomes);
+            PlaceVillages(col);
             col.Modified = false;
             return col;
         }
@@ -378,6 +379,141 @@ namespace BlockRealm
             }
         }
 
+        // ------------------------------------------------------------------ villages
+
+        /// <summary>One small abandoned house. Pure function of the seed, so every column agrees where it stands.</summary>
+        public struct VillageHouse
+        {
+            public int X, Z;         // centre of the 7x7 footprint
+            public int Y;            // floor level (the ground height at the centre)
+            public int Facing;       // which wall holds the doorway: 0 +X, 1 -X, 2 +Z, 3 -Z
+            public bool Chest;       // holds a loot chest
+            public bool Desert;      // sandstone instead of planks
+        }
+
+        private const int VillageRegion = 384;
+        public const int HouseHalf = 3;
+
+        public List<VillageHouse> HousesNear(int minX, int minZ, int maxX, int maxZ)
+        {
+            List<VillageHouse> list = new List<VillageHouse>();
+            int r0x = MathUtil.FloorDiv(minX - 40, VillageRegion), r1x = MathUtil.FloorDiv(maxX + 40, VillageRegion);
+            int r0z = MathUtil.FloorDiv(minZ - 40, VillageRegion), r1z = MathUtil.FloorDiv(maxZ + 40, VillageRegion);
+            for (int rz = r0z; rz <= r1z; rz++)
+            {
+                for (int rx = r0x; rx <= r1x; rx++)
+                {
+                    if (Rng.Hash01(Seed ^ 0x7111, rx, rz) > 0.45f) continue;
+                    int cx = rx * VillageRegion + 60 + (int)(Rng.Hash01(Seed ^ 0x7112, rx, rz) * (VillageRegion - 120));
+                    int cz = rz * VillageRegion + 60 + (int)(Rng.Hash01(Seed ^ 0x7113, rx, rz) * (VillageRegion - 120));
+                    TerrainSample centre = Sample(cx, cz);
+                    Biome b = centre.Biome;
+                    if (b != Biome.Plains && b != Biome.Forest && b != Biome.Desert && b != Biome.Taiga && b != Biome.Tundra) continue;
+                    if (centre.Height < WorldConst.SeaLevel + 2) continue;
+                    for (int sz = -1; sz <= 1; sz++)
+                    {
+                        for (int sx = -1; sx <= 1; sx++)
+                        {
+                            long k = (long)(sz + 1) * 3 + (sx + 1);
+                            if (Rng.Hash01(Seed ^ (0x7120 + k), rx, rz) > 0.65f && !(sx == 0 && sz == 0)) continue;
+                            int hx = cx + sx * 12, hz = cz + sz * 12;
+                            if (hx < minX - 4 || hx > maxX + 4 || hz < minZ - 4 || hz > maxZ + 4) continue;
+                            TerrainSample s = Sample(hx, hz);
+                            if (s.Height < WorldConst.SeaLevel + 2 || Math.Abs(s.Height - centre.Height) > 4) continue;
+                            VillageHouse h = new VillageHouse();
+                            h.X = hx; h.Z = hz; h.Y = s.Height;
+                            h.Facing = (int)(Rng.Hash01(Seed ^ (0x7140 + k), rx, rz) * 4f) & 3;
+                            h.Chest = Rng.Hash01(Seed ^ (0x7160 + k), rx, rz) < 0.55f;
+                            h.Desert = b == Biome.Desert;
+                            list.Add(h);
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+
+        private static bool NearHouse(List<VillageHouse> houses, int x, int z, int margin)
+        {
+            for (int i = 0; i < houses.Count; i++)
+                if (Math.Abs(houses[i].X - x) <= HouseHalf + margin && Math.Abs(houses[i].Z - z) <= HouseHalf + margin) return true;
+            return false;
+        }
+
+        private void PlaceVillages(Column col)
+        {
+            int baseX = col.X * 16, baseZ = col.Z * 16;
+            List<VillageHouse> houses = HousesNear(baseX - 4, baseZ - 4, baseX + 20, baseZ + 20);
+            for (int i = 0; i < houses.Count; i++)
+            {
+                VillageHouse h = houses[i];
+                byte wall = h.Desert ? B.Sandstone : B.Planks;
+                byte post = h.Desert ? B.Sandstone : B.LogOak;
+                int fx = h.Facing == 0 ? HouseHalf : (h.Facing == 1 ? -HouseHalf : 0);
+                int fz = h.Facing == 2 ? HouseHalf : (h.Facing == 3 ? -HouseHalf : 0);
+                for (int dz = -HouseHalf; dz <= HouseHalf; dz++)
+                {
+                    for (int dx = -HouseHalf; dx <= HouseHalf; dx++)
+                    {
+                        int wx = h.X + dx, wz = h.Z + dz;
+                        int lx = wx - baseX, lz = wz - baseZ;
+                        if (lx < 0 || lx > 15 || lz < 0 || lz > 15) continue;
+                        bool edgeX = Math.Abs(dx) == HouseHalf, edgeZ = Math.Abs(dz) == HouseHalf;
+                        bool edge = edgeX || edgeZ, corner = edgeX && edgeZ;
+
+                        // Level the site: clear above the floor, then build the foundation down to solid ground.
+                        for (int y = h.Y + 1; y <= h.Y + 8 && y < WorldConst.Height; y++) col.SetBlock(lx, y, lz, B.Air);
+                        for (int y = h.Y - 1; y > 0 && y >= h.Y - 12; y--)
+                        {
+                            byte cur = col.GetBlock(lx, y, lz);
+                            if (cur != B.Air && !B.IsFluid(cur) && cur != B.TallGrass && cur != B.Snow) break;
+                            col.SetBlock(lx, y, lz, B.Cobble);
+                        }
+                        col.SetBlock(lx, h.Y, lz, h.Desert ? B.Sandstone : B.Planks);
+
+                        if (edge)
+                        {
+                            bool door = dx == fx && dz == fz;
+                            bool window = !corner && !door && (dx == 0 || dz == 0);
+                            for (int y = h.Y + 1; y <= h.Y + 3; y++)
+                            {
+                                byte id = corner ? post : wall;
+                                if (door && y <= h.Y + 2) id = B.Air;
+                                else if (window && y == h.Y + 2) id = B.Glass;
+                                col.SetBlock(lx, y, lz, id);
+                            }
+                        }
+                        col.SetBlock(lx, h.Y + 4, lz, wall);
+                    }
+                }
+
+                // Furnishing: a bed in one corner, a torch in another, and sometimes a chest on a marker block.
+                SetLocal(col, baseX, baseZ, h.X - 2, h.Y + 1, h.Z - 2, B.Bed);
+                SetLocal(col, baseX, baseZ, h.X - 2, h.Y + 1, h.Z + 2, B.Torch);
+                if (h.Chest)
+                {
+                    SetLocal(col, baseX, baseZ, h.X + 2, h.Y, h.Z + 2, B.Bedrock);
+                    SetLocal(col, baseX, baseZ, h.X + 2, h.Y + 1, h.Z + 2, B.Chest);
+                }
+            }
+        }
+
+        private static void SetLocal(Column col, int baseX, int baseZ, int wx, int y, int wz, byte id)
+        {
+            int lx = wx - baseX, lz = wz - baseZ;
+            if (lx < 0 || lx > 15 || lz < 0 || lz > 15) return;
+            col.SetBlock(lx, y, lz, id);
+        }
+
+        /// <summary>True if a loot chest of a village house stands at this position.</summary>
+        public bool IsVillageChest(int x, int y, int z)
+        {
+            List<VillageHouse> houses = HousesNear(x - 4, z - 4, x + 4, z + 4);
+            for (int i = 0; i < houses.Count; i++)
+                if (houses[i].Chest && houses[i].X + 2 == x && houses[i].Z + 2 == z && houses[i].Y + 1 == y) return true;
+            return false;
+        }
+
         // ------------------------------------------------------------------ trees and plants
 
         private enum TreeKind { None, Oak, Birch, Spruce, Cactus }
@@ -403,6 +539,7 @@ namespace BlockRealm
             int baseX = col.X * 16, baseZ = col.Z * 16;
             int gx0 = MathUtil.FloorDiv(baseX - 4, cell), gx1 = MathUtil.FloorDiv(baseX + 19, cell);
             int gz0 = MathUtil.FloorDiv(baseZ - 4, cell), gz1 = MathUtil.FloorDiv(baseZ + 19, cell);
+            List<VillageHouse> houses = HousesNear(baseX - 12, baseZ - 12, baseX + 28, baseZ + 28);
             for (int gz = gz0; gz <= gz1; gz++)
             {
                 for (int gx = gx0; gx <= gx1; gx++)
@@ -416,6 +553,7 @@ namespace BlockRealm
                     TerrainSample s = Sample(tx, tz);
                     TreeKind kind = TreeFor(s, roll);
                     if (kind == TreeKind.None) continue;
+                    if (houses.Count > 0 && NearHouse(houses, tx, tz, 5)) continue;     // keep canopies off the houses
                     PlaceTree(col, tx, tz, s.Height, kind, new Rng((long)(hash & 0x7FFFFFFFFFFFUL)));
                 }
             }

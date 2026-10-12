@@ -685,6 +685,71 @@ namespace BlockRealm.Tests
                     Check.Equal(1, CountOf(c, ItemIds.WaterBucket), "no tokens, no water");
                 }
             });
+
+            Harness.Group("villages");
+            Harness.Run("abandoned villages are generated with walls, a doorway, a bed and sometimes a chest", () =>
+            {
+                WorldGenerator gen = new WorldGenerator(2024);
+                List<WorldGenerator.VillageHouse> houses = gen.HousesNear(-2500, -2500, 2500, 2500);
+                Check.True(houses.Count >= 6, "houses within 2.5 km: " + houses.Count);
+                Dictionary<long, Column> cache = new Dictionary<long, Column>();
+                Func<int, int, int, byte> at = (x, y, z) =>
+                {
+                    int cx = MathUtil.FloorDiv(x, 16), cz = MathUtil.FloorDiv(z, 16);
+                    long key = ((long)cx << 32) ^ (uint)cz;
+                    Column col;
+                    if (!cache.TryGetValue(key, out col)) { col = gen.GenerateColumn(cx, cz); cache[key] = col; }
+                    return col.GetBlock(x - cx * 16, y, z - cz * 16);
+                };
+                int chests = 0, checkedHouses = 0;
+                foreach (WorldGenerator.VillageHouse h in houses)
+                {
+                    if (checkedHouses >= 6) break;
+                    checkedHouses++;
+                    byte floor = at(h.X, h.Y, h.Z);
+                    Check.True(floor == B.Planks || floor == B.Sandstone, "floor is built: " + floor);
+                    for (int y = h.Y + 1; y <= h.Y + 3; y++) Check.Equal(B.Air, at(h.X, y, h.Z), "room is empty");
+                    byte roof = at(h.X, h.Y + 4, h.Z);
+                    Check.True(roof == B.Planks || roof == B.Sandstone, "roof");
+                    Check.Equal(B.Bed, at(h.X - 2, h.Y + 1, h.Z - 2), "bed");
+                    int fx = h.Facing == 0 ? 3 : (h.Facing == 1 ? -3 : 0), fz = h.Facing == 2 ? 3 : (h.Facing == 3 ? -3 : 0);
+                    Check.Equal(B.Air, at(h.X + fx, h.Y + 1, h.Z + fz), "doorway low");
+                    Check.Equal(B.Air, at(h.X + fx, h.Y + 2, h.Z + fz), "doorway high");
+                    if (h.Chest)
+                    {
+                        chests++;
+                        Check.Equal(B.Chest, at(h.X + 2, h.Y + 1, h.Z + 2), "chest");
+                        Check.Equal(B.Bedrock, at(h.X + 2, h.Y, h.Z + 2), "marker under the chest");
+                        Check.True(gen.IsVillageChest(h.X + 2, h.Y + 1, h.Z + 2));
+                    }
+                }
+                Check.True(!gen.IsVillageChest(0, 200, 0), "random places are not village chests");
+                List<WorldGenerator.VillageHouse> again = new WorldGenerator(2024).HousesNear(-2500, -2500, 2500, 2500);
+                Check.Equal(houses.Count, again.Count, "same seed, same villages");
+            });
+            Harness.Run("a village chest gives its loot once and the marker is spent", () =>
+            {
+                using (Rig rig = new Rig())
+                {
+                    GameClient c = rig.JoinAndSettle("Ada");
+                    WorldGenerator.VillageHouse target = default(WorldGenerator.VillageHouse);
+                    bool found = false;
+                    foreach (WorldGenerator.VillageHouse h in rig.Server.Generator.HousesNear(-2500, -2500, 2500, 2500))
+                        if (h.Chest) { target = h; found = true; break; }
+                    Check.True(found, "a house with a chest exists");
+                    c.SendChat("/tp " + target.X + " " + (target.Y + 3) + " " + target.Z);
+                    bool loaded = rig.RunUntil(() => rig.Server.World.HasColumn(target.X >> 4, target.Z >> 4), 300);
+                    Check.True(loaded, "village column loaded");
+                    rig.Run(10);
+                    Vec3i pos = new Vec3i(target.X + 2, target.Y + 1, target.Z + 2);
+                    Check.Equal(B.Chest, rig.Server.World.GetBlock(pos.X, pos.Y, pos.Z));
+                    ChestState chest = rig.Server.EnsureChest(pos);
+                    int items = 0;
+                    for (int i = 0; i < ChestState.Size; i++) if (!chest.Slots[i].IsEmpty) items++;
+                    Check.True(items >= 1, "has loot");
+                    Check.Equal(B.Planks, rig.Server.World.GetBlock(pos.X, pos.Y - 1, pos.Z), "marker replaced");
+                }
+            });
         }
 
         private static float Mesher_Height(byte id) { return SectionMesher.SurfaceHeight(id); }

@@ -337,8 +337,36 @@ namespace BlockRealm.Sim
                 _chests[pos] = c;
                 // Chests in a dragon's nest hold its hoard.
                 if (World.GetBlock(pos.X, pos.Y - 1, pos.Z) == B.ScorchedStone) FillLairLoot(c, pos);
+                // A village chest stands on a bedrock marker; claiming its loot removes the marker so it is given once.
+                else if (World.GetBlock(pos.X, pos.Y - 1, pos.Z) == B.Bedrock && Generator.IsVillageChest(pos.X, pos.Y, pos.Z))
+                {
+                    FillVillageLoot(c, pos);
+                    World.SetBlock(pos.X, pos.Y - 1, pos.Z, B.Planks);
+                }
             }
             return c;
+        }
+
+        private void FillVillageLoot(ChestState c, Vec3i pos)
+        {
+            Rng r = new Rng((long)(Rng.Hash(Options.Seed ^ 0x51, pos.X, pos.Z) & 0x7FFFFFFFFFFFUL));
+            int slot = 0;
+            Action<ushort, int, int, float> put = (id, min, max, chance) =>
+            {
+                if (!r.Chance(chance) || slot >= ChestState.Size) return;
+                c.Slots[slot++] = new ItemStack(id, r.Range(min, max));
+            };
+            put(ItemIds.Bread, 1, 4, 0.7f);
+            put(ItemIds.Seeds, 2, 7, 0.6f);
+            put(ItemIds.Wheat, 2, 7, 0.5f);
+            put(ItemIds.Coal, 2, 6, 0.6f);
+            put(B.Torch, 4, 13, 0.5f);
+            put(ItemIds.IronIngot, 1, 4, 0.4f);
+            put(ItemIds.Bucket, 1, 2, 0.25f);
+            put(ItemIds.LeatherHelmet, 1, 2, 0.2f);
+            put(ItemIds.LeatherBoots, 1, 2, 0.2f);
+            put(ItemIds.Diamond, 1, 2, 0.06f);
+            if (slot == 0) c.Slots[0] = new ItemStack(ItemIds.Bread, 1);     // never an empty chest
         }
 
         private void FillLairLoot(ChestState c, Vec3i pos)
