@@ -204,9 +204,9 @@ namespace Emberbond.EditorTools
                 Vector3 p = c + new Vector3(Mathf.Sin(a * Mathf.Deg2Rad), 0f, Mathf.Cos(a * Mathf.Deg2Rad)) * wallR;
                 p.y = Ground(terrain, p);
                 bool isGate = Mathf.Abs(Mathf.DeltaAngle(a, seaYaw)) < 360f / segs * 0.6f;
-                if (isGate) { Put(gate, root.transform, p, a + 90f); continue; }
+                if (isGate) { Put(gate, root.transform, p, a); continue; }
                 if (i % 6 == 0) Put(tower, root.transform, p, a);
-                else Put(wall, root.transform, p, a + 90f);
+                else Put(wall, root.transform, p, a);
             }
 
             // Houses: rings of buildings facing the keep, skipping the main street to the gate.

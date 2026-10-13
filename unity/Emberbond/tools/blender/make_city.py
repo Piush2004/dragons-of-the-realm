@@ -134,12 +134,13 @@ class Builder:
 
     def box(self, x0, y0, z0, x1, y1, z1, mat, top=None):
         top = top or mat
-        self.face([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)], mat)          # bottom
-        self.face([(x0, y0, z1), (x0, y1, z1), (x1, y1, z1), (x1, y0, z1)], top)          # top
-        self.face([(x0, y0, z0), (x0, y0, z1), (x1, y0, z1), (x1, y0, z0)], mat)          # front (-y)
-        self.face([(x1, y1, z0), (x1, y1, z1), (x0, y1, z1), (x0, y1, z0)], mat)          # back (+y)
-        self.face([(x0, y1, z0), (x0, y1, z1), (x0, y0, z1), (x0, y0, z0)], mat)          # left
-        self.face([(x1, y0, z0), (x1, y0, z1), (x1, y1, z1), (x1, y1, z0)], mat)          # right
+        # Counter-clockwise seen from outside, so the normals point out and back-face culling keeps the walls.
+        self.face(list(reversed([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)])), mat)          # bottom
+        self.face(list(reversed([(x0, y0, z1), (x0, y1, z1), (x1, y1, z1), (x1, y0, z1)])), top)          # top
+        self.face(list(reversed([(x0, y0, z0), (x0, y0, z1), (x1, y0, z1), (x1, y0, z0)])), mat)          # front (-y)
+        self.face(list(reversed([(x1, y1, z0), (x1, y1, z1), (x0, y1, z1), (x0, y1, z0)])), mat)          # back (+y)
+        self.face(list(reversed([(x0, y1, z0), (x0, y1, z1), (x0, y0, z1), (x0, y0, z0)])), mat)          # left
+        self.face(list(reversed([(x1, y0, z0), (x1, y0, z1), (x1, y1, z1), (x1, y1, z0)])), mat)          # right
 
     def gable(self, x0, y0, x1, y1, z, rise, over, wall_mat, roof_mat):
         """Gable roof along the x axis with the ridge at the middle of y."""
@@ -149,10 +150,10 @@ class Builder:
         self.face([(x0 - over, y0 - over, z - 0.1), (x1 + over, y0 - over, z - 0.1), (x1 + over, ym, zt), (x0 - over, ym, zt)], roof_mat)
         self.face([(x0 - over, y1 + over, z - 0.1), (x0 - over, ym, zt), (x1 + over, ym, zt), (x1 + over, y1 + over, z - 0.1)], roof_mat)
         # gable ends
-        self.face([(x0, y0, z), (x0, y1, z), (x0, ym, zt)], wall_mat)
-        self.face([(x1, y1, z), (x1, y0, z), (x1, ym, zt)], wall_mat)
+        self.face([(x0, y0, z), (x0, ym, zt), (x0, y1, z)], wall_mat)
+        self.face([(x1, y1, z), (x1, ym, zt), (x1, y0, z)], wall_mat)
         # underside
-        self.face([(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)], 'timber')
+        self.face([(x0, y0, z), (x0, y1, z), (x1, y1, z), (x1, y0, z)], 'timber')
 
     def cylinder(self, cx, cy, z0, z1, r, mat, sides=16, cap=None):
         pts0 = [(cx + math.cos(2 * math.pi * i / sides) * r, cy + math.sin(2 * math.pi * i / sides) * r) for i in range(sides)]
@@ -160,7 +161,7 @@ class Builder:
             a, b = pts0[i], pts0[(i + 1) % sides]
             self.face([(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1)], mat)
         if cap:
-            self.face([(p[0], p[1], z1) for p in reversed(pts0)], cap)
+            self.face([(p[0], p[1], z1) for p in pts0], cap)
 
     def cone(self, cx, cy, z0, z1, r, mat, sides=16):
         pts = [(cx + math.cos(2 * math.pi * i / sides) * r, cy + math.sin(2 * math.pi * i / sides) * r) for i in range(sides)]

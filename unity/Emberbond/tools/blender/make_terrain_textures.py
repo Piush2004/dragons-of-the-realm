@@ -100,7 +100,7 @@ def grass(size):
     blades = spectral_noise(size, 0.4, 31)
     height = 0.55 * blades + 0.3 * base + 0.15 * clumps
     dry = smoothstep(0.4, 0.8, clumps)
-    c = lerp3((0.12, 0.17, 0.065), (0.30, 0.31, 0.12), dry)
+    c = lerp3((0.20, 0.27, 0.10), (0.42, 0.42, 0.17), dry)
     c = c * (0.65 + 0.55 * blades[..., None]) * (0.85 + 0.3 * base[..., None])
     soil = smoothstep(0.78, 0.95, base)[..., None]
     c = c * (1 - soil * 0.5) + np.array((0.2, 0.15, 0.09)) * soil * 0.5
@@ -115,7 +115,7 @@ def rock(size):
     height = 0.55 * big + 0.25 * strata + 0.2 * spectral_noise(size, 0.9, 61)
     height = height * (1 - 0.5 * cracks)
     t = smoothstep(0.15, 0.85, height)
-    c = lerp3((0.17, 0.16, 0.15), (0.50, 0.47, 0.42), t)
+    c = lerp3((0.22, 0.21, 0.20), (0.62, 0.59, 0.53), t)
     lichen = smoothstep(0.7, 0.9, fbm(size, 71, betas=(1.0, 1.6), weights=(0.6, 0.4)))[..., None]
     c = c * (1 - lichen * 0.25) + np.array((0.28, 0.32, 0.18)) * lichen * 0.25
     c *= (1 - 0.55 * cracks[..., None])
@@ -153,7 +153,7 @@ def dirt(size):
     n = fbm(size, 141)
     pebbles = smoothstep(0.86, 0.96, spectral_noise(size, 0.5, 151))
     height = 0.6 * n + 0.4 * pebbles
-    c = lerp3((0.17, 0.12, 0.08), (0.36, 0.27, 0.18), n)
+    c = lerp3((0.24, 0.17, 0.11), (0.48, 0.36, 0.24), n)
     c = c * (1 - pebbles[..., None] * 0.2) + np.array((0.4, 0.38, 0.35)) * pebbles[..., None] * 0.2
     write_material('dirt', c, height, 0.04 + 0.04 * n, 1.6)
 

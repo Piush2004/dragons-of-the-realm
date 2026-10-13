@@ -220,8 +220,11 @@ namespace Emberbond.EditorTools
 
             PhysicallyBasedSky sky = p.Add<PhysicallyBasedSky>(true);
             sky.atmosphericScattering.Override(true);
-            sky.groundTint.Override(new Color(0.25f, 0.22f, 0.18f));
-            sky.multiplier.Override(2.2f);
+            sky.groundTint.Override(new Color(0.34f, 0.36f, 0.4f));
+            sky.aerosolDensity.Override(0.004f);
+            sky.aerosolTint.Override(new Color(0.85f, 0.88f, 0.92f));
+            sky.airTint.Override(new Color(0.78f, 0.88f, 1f));
+            sky.multiplier.Override(1.0f);
 
             env.cloudType.Override((int)CloudType.CloudLayer);
             CloudLayer layer = p.Add<CloudLayer>(true);
@@ -237,24 +240,24 @@ namespace Emberbond.EditorTools
 
             VolumetricClouds clouds = p.Add<VolumetricClouds>(true);
             clouds.enable.Override(true);
-            clouds.cloudPreset = VolumetricClouds.CloudPresets.Cloudy;
+            clouds.cloudPreset = VolumetricClouds.CloudPresets.Sparse;
             clouds.bottomAltitude.Override(1100f);
             clouds.altitudeRange.Override(1800f);
-            clouds.densityMultiplier.Override(0.8f);
+            clouds.densityMultiplier.Override(0.5f);
             clouds.shapeFactor.Override(0.75f);
             clouds.shadows.Override(true);
 
             Fog fog = p.Add<Fog>(true);
             fog.enabled.Override(true);
             fog.enableVolumetricFog.Override(true);
-            fog.meanFreePath.Override(1300f);
+            fog.meanFreePath.Override(5200f);
             fog.baseHeight.Override(SeaLevel + 20f);
             fog.maximumHeight.Override(SeaLevel + 260f);
-            fog.albedo.Override(new Color(0.75f, 0.8f, 0.9f));
+            fog.albedo.Override(new Color(0.8f, 0.86f, 0.96f));
 
             Exposure exp = p.Add<Exposure>(true);
             exp.mode.Override(ExposureMode.Fixed);          // automatic exposure is fooled by the bright sky
-            exp.fixedExposure.Override(12.2f);
+            exp.fixedExposure.Override(11.2f);
 
             Tonemapping tm = p.Add<Tonemapping>(true);
             tm.mode.Override(TonemappingMode.ACES);
@@ -357,9 +360,9 @@ namespace Emberbond.EditorTools
             Light sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.intensity = 110000f;                         // lux, HDRP physical units
-            sun.color = new Color(1f, 0.86f, 0.68f);
+            sun.color = new Color(1f, 0.9f, 0.78f);
             sun.shadows = LightShadows.Soft;
-            sunGo.transform.rotation = Quaternion.Euler(34f, -38f, 0f);
+            sunGo.transform.rotation = Quaternion.Euler(40f, -38f, 0f);
             HDAdditionalLightData sunData = sunGo.AddComponent<HDAdditionalLightData>();
             sunData.EnableShadows(true);
             sunData.SetShadowResolution(4096);
@@ -368,8 +371,17 @@ namespace Emberbond.EditorTools
             GameObject volGo = new GameObject("Global Volume");
             Volume volume = volGo.AddComponent<Volume>();
             volume.isGlobal = true;
-            volume.sharedProfile = BuildVolumeProfile();
-            AssetDatabase.CreateAsset(volume.sharedProfile, "Assets/Scenes/IslandVolume.asset");
+            VolumeProfile profile = BuildVolumeProfile();
+            AssetDatabase.CreateAsset(profile, "Assets/Scenes/IslandVolume.asset");
+            // The overrides must be saved inside the profile asset or they are lost when the scene is serialised.
+            foreach (VolumeComponent vc in profile.components)
+            {
+                vc.name = vc.GetType().Name;
+                AssetDatabase.AddObjectToAsset(vc, profile);
+            }
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            volume.sharedProfile = profile;
 
             // Ocean
             GameObject waterGo = new GameObject("Ocean");
