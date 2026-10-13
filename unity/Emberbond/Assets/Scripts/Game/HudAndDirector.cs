@@ -53,10 +53,70 @@ namespace Emberbond
             StartCouncil();
         }
 
+        // ------------------------------------------------------------ throne hall and soldiers
+
+        private readonly List<GameObject> _hallActors = new List<GameObject>();
+        private readonly List<Soldier> _soldiers = new List<Soldier>();
+        private Vector3 _hall;
+        private bool _inHall;
+
+        private void EnterHall()
+        {
+            if (GameBootstrap.Has("-nohall")) return;
+            WorldLayout lay = WorldLayout.Load();
+            _hall = lay.Hall;
+            _inHall = true;
+            if (Rig != null) Rig.Frozen = true;
+            GameObject prince = CharacterFactory.Spawn(_hall + new Vector3(-2.4f, 0.05f, -8f), 90f,
+                new Color(0.13f, 0.11f, 0.11f), new Color(0.06f, 0.05f, 0.05f), new Color(0.88f, 0.87f, 0.82f), "HallPrince");
+            GameObject lord = CharacterFactory.Spawn(_hall + new Vector3(2.4f, 0.05f, -8f), -90f,
+                new Color(0.1f, 0.2f, 0.2f), new Color(0.08f, 0.14f, 0.12f), new Color(0.35f, 0.33f, 0.3f), "HallLord");
+            if (prince != null) _hallActors.Add(prince);
+            if (lord != null) _hallActors.Add(lord);
+            HallCamera();
+        }
+
+        private void HallCamera()
+        {
+            if (!_inHall || Rig == null) return;
+            Camera cam = Rig.GetComponent<Camera>();
+            Vector3 p = _hall + new Vector3(0.6f + Mathf.Sin(Time.time * 0.25f) * 0.35f, 1.55f, -1.2f);
+            Vector3 look = _hall + new Vector3(0f, 1.5f, -8f);
+            Rig.transform.position = p;
+            Rig.transform.rotation = Quaternion.LookRotation(look - p, Vector3.up);
+            if (cam != null) cam.fieldOfView = 36f;
+        }
+
+        private void ExitHall()
+        {
+            _inHall = false;
+            for (int i = 0; i < _hallActors.Count; i++) if (_hallActors[i] != null) Destroy(_hallActors[i]);
+            _hallActors.Clear();
+            if (Rig != null) Rig.Frozen = false;
+        }
+
+        private void SpawnSoldiers()
+        {
+            _soldiers.Clear();
+            if (GameBootstrap.Has("-nosoldiers")) return;
+            Vector3 c = Player.transform.position;
+            Vector3 fwd = Camera.main != null ? Quaternion.Euler(0f, Camera.main.transform.eulerAngles.y, 0f) * Vector3.forward : Vector3.forward;
+            for (int i = 0; i < 4; i++)
+            {
+                float a = (i - 1.5f) * 22f;
+                Vector3 pos = c + Quaternion.Euler(0f, a, 0f) * fwd * (15f + i * 2f);
+                Terrain t = Terrain.activeTerrain;
+                if (t != null) pos.y = t.SampleHeight(pos) + t.transform.position.y + 0.3f;
+                Soldier s = Soldier.Spawn(pos, Player, i);
+                if (s != null) _soldiers.Add(s);
+            }
+        }
+
         // ------------------------------------------------------------ dialogue
 
         private void StartCouncil()
         {
+            EnterHall();
             InDialogue = true;
             Speaker = "Lord Hand Otrek Hale";
             Line = "The old king is dead and the realm waits. Your mother's claim is strong, and so is her brother's. Will you ask the council to bend the knee?";
@@ -74,7 +134,8 @@ namespace Emberbond
             if (!InDialogue || i < 0 || i >= Options.Count) return;
             if (Options[i].Effect != null) Options[i].Effect(this);
             InDialogue = false;
-            BeginQuest(1);
+            ExitHall();
+            BeginQuest(5);
         }
 
         // ------------------------------------------------------------ quests
@@ -84,6 +145,10 @@ namespace Emberbond
             _stage = stage; _stageTime = 0f;
             switch (stage)
             {
+                case 5:
+                    QuestTitle = "Blades in the Market"; QuestHint = "Cut them down. Parry (RMB) their strikes.";
+                    SpawnSoldiers();
+                    break;
                 case 1:
                     QuestTitle = "First Flight"; QuestHint = "Mount your wyrm (E)";
                     Objective = Dragon.transform.position;
@@ -128,6 +193,7 @@ namespace Emberbond
 
             if (InDialogue)
             {
+                HallCamera();
                 DialogueTimer -= Time.deltaTime;
                 if (InputState.Choice >= 0) Choose(InputState.Choice);
                 else if (DialogueTimer <= 0f) Choose(1);            // silence defaults to a cold stare
@@ -141,6 +207,23 @@ namespace Emberbond
 
             switch (_stage)
             {
+                case 5:
+                    {
+                        int alive = 0;
+                        Vector3? nearest = null;
+                        float bestD = 1e9f;
+                        for (int i = 0; i < _soldiers.Count; i++)
+                        {
+                            Soldier s = _soldiers[i];
+                            if (s == null || s.Health == null || s.Health.Dead) continue;
+                            alive++;
+                            float d = (s.transform.position - Player.transform.position).sqrMagnitude;
+                            if (d < bestD) { bestD = d; nearest = s.transform.position; }
+                        }
+                        Objective = nearest;
+                        if (alive == 0 && _stageTime > 1f) { Say("The market falls quiet."); BeginQuest(1); }
+                    }
+                    break;
                 case 1:
                     Objective = Dragon.transform.position;
                     if (Dragon.Mounted) BeginQuest(2);

@@ -355,6 +355,7 @@ namespace Emberbond.EditorTools
             terrain.basemapDistance = 1500f;
             VegetationBuilder.Scatter(terrain, td, heights, splat).transform.position = Vector3.zero;
             CityBuilder.Place(terrain);
+            HallBuilder.Place();
 
             // Sun
             GameObject sunGo = new GameObject("Sun");

@@ -18,6 +18,7 @@ namespace Emberbond
         public static int ScriptedChoice = -1;
         public static Vector2 ScriptedLook;
         public static bool ScriptedFire;
+        public static bool ScriptedAttack, ScriptedBlock;
 
         public static void Poll()
         {
@@ -76,6 +77,8 @@ namespace Emberbond
                 Look = ScriptedLook;
                 if (ScriptedFire) { Fire = true; FireDown = true; }
                 if (ScriptedChoice >= 0) { Choice = ScriptedChoice; ScriptedChoice = -1; }
+                if (ScriptedAttack) { Attack = true; AttackDown = true; ScriptedAttack = false; }
+                if (ScriptedBlock) { Block = true; BlockDown = true; ScriptedBlock = false; }
                 if (Move.sqrMagnitude < 0.01f) Move = new Vector2(0f, 0.0f);
             }
             Move = Vector2.ClampMagnitude(Move, 1f);

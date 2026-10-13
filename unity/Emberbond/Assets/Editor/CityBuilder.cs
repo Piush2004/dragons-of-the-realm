@@ -268,6 +268,10 @@ namespace Emberbond.EditorTools
                 Put(ruin, root.transform, p, (float)rnd.NextDouble() * 360f);
             }
 
+            WorldLayout layout = new WorldLayout { City = c, SeaYaw = seaYaw, Hall = HallBuilder.HallOrigin };
+            Directory.CreateDirectory("Assets/Resources");
+            File.WriteAllText("Assets/Resources/layout.json", JsonUtility.ToJson(layout));
+            AssetDatabase.ImportAsset("Assets/Resources/layout.json");
             Debug.Log("[Emberbond] Hearthmoor placed: " + count + " houses, " + segs + " wall segments, site " + c + ", sea yaw " + seaYaw);
             return root;
         }

@@ -170,6 +170,16 @@ namespace Emberbond
         private void Strike()
         {
             Vector3 origin = transform.position + Vector3.up * 1.1f;
+            // Aim assist: turn toward the closest living enemy within reach.
+            Collider[] near = Physics.OverlapSphere(transform.position, 3.2f);
+            float best = 99f;
+            for (int i = 0; i < near.Length; i++)
+            {
+                Damageable nd = near[i].GetComponentInParent<Damageable>();
+                if (nd == null || nd == Health || nd.Dead) continue;
+                Vector3 off = nd.transform.position - transform.position; off.y = 0f;
+                if (off.magnitude < best) { best = off.magnitude; YawFacing = Mathf.Atan2(off.x, off.z) * Mathf.Rad2Deg; }
+            }
             Vector3 dir = Quaternion.Euler(0f, YawFacing, 0f) * Vector3.forward;
             Collider[] cols = Physics.OverlapSphere(origin + dir * 1.3f, 1.7f);
             for (int i = 0; i < cols.Length; i++)
