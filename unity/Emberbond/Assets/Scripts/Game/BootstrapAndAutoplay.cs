@@ -31,6 +31,8 @@ namespace Emberbond
         private static void Boot()
         {
             if (Has("-emberShots")) return;                   // the flyover screenshot tool owns the camera
+            GameSettings.Load();
+            AudioDirector.Init();
             QualityGovernor.Apply();
             if (Has("-nohall"))
             {
@@ -84,8 +86,18 @@ namespace Emberbond
             Hud hud = dir.AddComponent<Hud>();
             hud.Director = d;
 
+            string saveFile = null;
+            string[] argv = Environment.GetCommandLineArgs();
+            for (int i = 0; i < argv.Length - 1; i++) if (argv[i] == "-savefile") saveFile = argv[i + 1];
+            if (saveFile != null) SaveSystem.PathOverride = saveFile;
+
+            Menu menu = dir.AddComponent<Menu>();
+            menu.Director = d;
+            menu.Rig = rig;
+            bool headless = Has("-autoplay") || Has("-selftest") || Has("-nomenu");
             if (Has("-autoplay")) dir.AddComponent<AutoPlay>();
-            else { Cursor.lockState = CursorLockMode.Locked; Cursor.visible = false; }
+            if (Has("-selftest")) dir.AddComponent<SelfTest>();
+            if (headless) d.BeginNewGame(); else menu.ShowMain();
         }
     }
 

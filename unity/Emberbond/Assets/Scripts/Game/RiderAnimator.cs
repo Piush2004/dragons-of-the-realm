@@ -13,7 +13,7 @@ namespace Emberbond
 
         private sealed class B { public Transform T; public Quaternion Rest; public Quaternion ParentRest; }
         private readonly Dictionary<string, B> _b = new Dictionary<string, B>();
-        private float _phase;
+        private float _phase, _lastS;
         private Transform _root;
 
         private void Awake()
@@ -59,6 +59,8 @@ namespace Emberbond
                 return;
             }
 
+            if (Speed > 0.4f && Mathf.Sign(s) != Mathf.Sign(_lastS)) AudioDirector.Play(Sfx.Step, transform.position, 0.3f);
+            _lastS = s;
             float stride = 32f * amp + 22f * run;
             Pose("thigh_L", X(-s * stride));
             Pose("thigh_R", X(s * stride));

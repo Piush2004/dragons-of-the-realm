@@ -14,232 +14,6 @@ namespace Emberbond
         public int Honour, Fear, Cunning;
     }
 
-    /// <summary>
-    /// Runs the vertical slice's story state: quests, the throne-room council with timed tone choices,
-    /// the flight to the volcano and the duel with the rival dragon.
-    /// </summary>
-    public sealed class Director : MonoBehaviour
-    {
-        public ThirdPersonPlayer Player;
-        public DragonFlight Dragon;
-        public EnemyDragon Enemy;
-        public CameraRig Rig;
-        public Reputation Rep = new Reputation();
-
-        public string QuestTitle = "";
-        public string QuestHint = "";
-        public Vector3? Objective;
-        public string Toast = "";
-        private float _toastTimer;
-
-        // Dialogue
-        public bool InDialogue;
-        public string Speaker = "", Line = "";
-        public List<DialogueOption> Options = new List<DialogueOption>();
-        public float DialogueTimer, DialogueDuration = 18f;
-
-        private int _stage;
-        private float _stageTime;
-        public float Chapter = 2f;
-
-        public static Director Instance;
-
-        private void Awake() { Instance = this; }
-
-        public void Say(string text, float seconds = 4f) { Toast = text; _toastTimer = seconds; }
-
-        private void Start()
-        {
-            StartCouncil();
-        }
-
-        // ------------------------------------------------------------ throne hall and soldiers
-
-        private readonly List<GameObject> _hallActors = new List<GameObject>();
-        private readonly List<Soldier> _soldiers = new List<Soldier>();
-        private Vector3 _hall;
-        private bool _inHall;
-
-        private void EnterHall()
-        {
-            if (GameBootstrap.Has("-nohall")) return;
-            WorldLayout lay = WorldLayout.Load();
-            _hall = lay.Hall;
-            _inHall = true;
-            if (Rig != null) Rig.Frozen = true;
-            GameObject prince = CharacterFactory.Spawn(_hall + new Vector3(-2.4f, 0.05f, -8f), 90f,
-                new Color(0.13f, 0.11f, 0.11f), new Color(0.06f, 0.05f, 0.05f), new Color(0.88f, 0.87f, 0.82f), "HallPrince");
-            GameObject lord = CharacterFactory.Spawn(_hall + new Vector3(2.4f, 0.05f, -8f), -90f,
-                new Color(0.1f, 0.2f, 0.2f), new Color(0.08f, 0.14f, 0.12f), new Color(0.35f, 0.33f, 0.3f), "HallLord");
-            if (prince != null) _hallActors.Add(prince);
-            if (lord != null) _hallActors.Add(lord);
-            HallCamera();
-        }
-
-        private void HallCamera()
-        {
-            if (!_inHall || Rig == null) return;
-            Camera cam = Rig.GetComponent<Camera>();
-            Vector3 p = _hall + new Vector3(0.6f + Mathf.Sin(Time.time * 0.25f) * 0.35f, 1.55f, -1.2f);
-            Vector3 look = _hall + new Vector3(0f, 1.5f, -8f);
-            Rig.transform.position = p;
-            Rig.transform.rotation = Quaternion.LookRotation(look - p, Vector3.up);
-            if (cam != null) cam.fieldOfView = 36f;
-        }
-
-        private void ExitHall()
-        {
-            _inHall = false;
-            for (int i = 0; i < _hallActors.Count; i++) if (_hallActors[i] != null) Destroy(_hallActors[i]);
-            _hallActors.Clear();
-            if (Rig != null) Rig.Frozen = false;
-        }
-
-        private void SpawnSoldiers()
-        {
-            _soldiers.Clear();
-            if (GameBootstrap.Has("-nosoldiers")) return;
-            Vector3 c = Player.transform.position;
-            Vector3 fwd = Camera.main != null ? Quaternion.Euler(0f, Camera.main.transform.eulerAngles.y, 0f) * Vector3.forward : Vector3.forward;
-            for (int i = 0; i < 4; i++)
-            {
-                float a = (i - 1.5f) * 22f;
-                Vector3 pos = c + Quaternion.Euler(0f, a, 0f) * fwd * (15f + i * 2f);
-                Terrain t = Terrain.activeTerrain;
-                if (t != null) pos.y = t.SampleHeight(pos) + t.transform.position.y + 0.3f;
-                Soldier s = Soldier.Spawn(pos, Player, i);
-                if (s != null) _soldiers.Add(s);
-            }
-        }
-
-        // ------------------------------------------------------------ dialogue
-
-        private void StartCouncil()
-        {
-            EnterHall();
-            InDialogue = true;
-            Speaker = "Lord Hand Otrek Hale";
-            Line = "The old king is dead and the realm waits. Your mother's claim is strong, and so is her brother's. Will you ask the council to bend the knee?";
-            Options = new List<DialogueOption>
-            {
-                new DialogueOption { Tone = Tone.Diplomatic, Text = "We must reach an agreement", Effect = d => { d.Rep.Honour += 2; d.Say("The council hears you out."); } },
-                new DialogueOption { Tone = Tone.Aggressive, Text = "Challenge his loyalty", Effect = d => { d.Rep.Fear += 2; d.Say("The Hand's smile thins."); } },
-                new DialogueOption { Tone = Tone.Deceptive, Text = "Agree, for now", Effect = d => { d.Rep.Cunning += 2; d.Say("He believes you. For now."); } },
-            };
-            DialogueTimer = DialogueDuration;
-        }
-
-        private void Choose(int i)
-        {
-            if (!InDialogue || i < 0 || i >= Options.Count) return;
-            if (Options[i].Effect != null) Options[i].Effect(this);
-            InDialogue = false;
-            ExitHall();
-            BeginQuest(5);
-        }
-
-        // ------------------------------------------------------------ quests
-
-        private void BeginQuest(int stage)
-        {
-            _stage = stage; _stageTime = 0f;
-            switch (stage)
-            {
-                case 5:
-                    QuestTitle = "Blades in the Market"; QuestHint = "Cut them down. Parry (RMB) their strikes.";
-                    SpawnSoldiers();
-                    break;
-                case 1:
-                    QuestTitle = "First Flight"; QuestHint = "Mount your wyrm (E)";
-                    Objective = Dragon.transform.position;
-                    break;
-                case 2:
-                    QuestTitle = "First Flight"; QuestHint = "Fly to the rim of the volcano";
-                    Objective = VolcanoRim();
-                    break;
-                case 3:
-                    QuestTitle = "Confront the Beast"; QuestHint = "Defeat the rival wyrm";
-                    if (Enemy != null)
-                    {
-                        Enemy.gameObject.SetActive(true);
-                        Enemy.transform.position = Dragon.transform.position + new Vector3(160f, 60f, 120f);
-                        Enemy.Init(Dragon.transform);
-                    }
-                    Objective = null;
-                    break;
-                case 4:
-                    QuestTitle = "Chapter complete"; QuestHint = "The old wyrm falls into the sea";
-                    Objective = null;
-                    Say("Chapter 2 complete: First Flight", 8f);
-                    break;
-            }
-        }
-
-        public void BeginQuestPublic(int stage) { BeginQuest(stage); }
-
-        public static Vector3 VolcanoRim()
-        {
-            Terrain t = Terrain.activeTerrain;
-            float x = 0.62f * 3000f - 1500f + 70f, z = 0.40f * 3000f - 1500f;
-            float y = t != null ? t.SampleHeight(new Vector3(x, 0f, z)) + t.transform.position.y : 400f;
-            return new Vector3(x, y + 30f, z);
-        }
-
-        private void Update()
-        {
-            InputState.Poll();
-            if (_toastTimer > 0f) _toastTimer -= Time.deltaTime; else Toast = "";
-            _stageTime += Time.deltaTime;
-
-            if (InDialogue)
-            {
-                HallCamera();
-                DialogueTimer -= Time.deltaTime;
-                if (InputState.Choice >= 0) Choose(InputState.Choice);
-                else if (DialogueTimer <= 0f) Choose(1);            // silence defaults to a cold stare
-                return;
-            }
-
-            if (Player != null && Player.Health.Dead && _stage != 99)
-            {
-                _stage = 99; Say("You fell. Press R to try again.", 30f);
-            }
-
-            switch (_stage)
-            {
-                case 5:
-                    {
-                        int alive = 0;
-                        Vector3? nearest = null;
-                        float bestD = 1e9f;
-                        for (int i = 0; i < _soldiers.Count; i++)
-                        {
-                            Soldier s = _soldiers[i];
-                            if (s == null || s.Health == null || s.Health.Dead) continue;
-                            alive++;
-                            float d = (s.transform.position - Player.transform.position).sqrMagnitude;
-                            if (d < bestD) { bestD = d; nearest = s.transform.position; }
-                        }
-                        Objective = nearest;
-                        if (alive == 0 && _stageTime > 1f) { Say("The market falls quiet."); BeginQuest(1); }
-                    }
-                    break;
-                case 1:
-                    Objective = Dragon.transform.position;
-                    if (Dragon.Mounted) BeginQuest(2);
-                    break;
-                case 2:
-                    if (Vector3.Distance(Dragon.transform.position, VolcanoRim()) < 120f) BeginQuest(3);
-                    break;
-                case 3:
-                    if (Enemy != null && Enemy.Health != null && Enemy.Health.Dead) BeginQuest(4);
-                    break;
-            }
-            // Fireballs and fall damage on the player while mounted go to the dragon first.
-            if (Dragon != null && Dragon.Health.Dead && _stage != 99) { _stage = 99; Say("Your wyrm is down. Press R to try again.", 30f); }
-        }
-    }
-
     /// <summary>The on-screen interface, styled after the reference frames: thin bars, compass, prompts.</summary>
     public sealed class Hud : MonoBehaviour
     {
@@ -304,11 +78,18 @@ namespace Emberbond
             Rect(x - 2, y + h + 0.5f, w + 4, 1.5f, new Color(0.6f, 0.5f, 0.3f, 0.8f));
         }
 
+        private float _fps = 60f;
+
+        private void Update()
+        {
+            _fps = Mathf.Lerp(_fps, 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-4f), 0.05f);
+        }
+
         private void OnGUI()
         {
-            if (Director == null) return;
+            if (Director == null || !Director.Started) return;
             Styles();
-            float scale = Mathf.Min(Screen.width / W, Screen.height / H);
+            float scale = Mathf.Min(Screen.width / W, Screen.height / H) * GameSettings.UiScale;
             GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.zero);
 
             DrawCompass();
@@ -321,6 +102,12 @@ namespace Emberbond
             {
                 Rect(W * 0.5f - 420f, 150f, 840f, 52f, new Color(0f, 0f, 0f, 0.55f));
                 GUI.Label(new Rect(W * 0.5f - 410f, 160f, 820f, 40f), Director.Toast, _title);
+            }
+            if (GameSettings.ShowFps) GUI.Label(new Rect(W - 150f, 70f, 130f, 28f), Mathf.RoundToInt(_fps) + " fps", _small);
+            if (Director.DeathProgress > 0f)
+            {
+                Rect(0f, 0f, W, H, new Color(0.3f, 0f, 0f, 0.6f * Director.DeathProgress));
+                GUI.Label(new Rect(0f, H * 0.4f, W, 80f), "You fell", _title);
             }
         }
 
@@ -407,6 +194,7 @@ namespace Emberbond
                     lines.Add("[E]  Land (low and slow)");
                 }
             }
+            lines.Add("[Esc]  Menu");
             float y = H - 40f - lines.Count * 28f;
             for (int i = 0; i < lines.Count; i++)
                 GUI.Label(new Rect(W - 420f, y + i * 28f, 400f, 28f), lines[i], _small);

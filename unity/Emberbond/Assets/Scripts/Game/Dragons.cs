@@ -27,6 +27,17 @@ namespace Emberbond
         public int Crashes;
         public float LastImpact;
 
+        /// <summary>Puts the dragon back on the ground, unmounted and healed (respawn and loading).</summary>
+        public void ResetTo(Vector3 pos)
+        {
+            Mounted = false; Speed = 0f; _roll = 0f; _pitch = 0f;
+            if (Rig != null) Rig.Flight = false;
+            if (Rider != null) Rider.SetMounted(false);
+            transform.position = pos;
+            transform.rotation = Quaternion.Euler(0f, _yaw + ModelYaw, 0f);
+            Health.Health = Health.MaxHealth;
+        }
+
         /// <summary>Points the flight along a direction (used when placing the dragon for tests and cutscenes).</summary>
         public void Aim(Vector3 dir)
         {
@@ -162,6 +173,7 @@ namespace Emberbond
             _impactCooldown = 0.5f;
             Crashes++;
             LastImpact = impact;
+            AudioDirector.Play(Sfx.Crash, point, Mathf.Clamp01(impact / 30f) + 0.3f);
             Rig.Shake(Mathf.Clamp01(impact / 45f));
             Effects.Burst(point, Mathf.Lerp(2f, 7f, Mathf.Clamp01(impact / 40f)));
             float hurt = Mathf.Max(0f, impact - 12f) * 3f;
@@ -189,6 +201,18 @@ namespace Emberbond
             Quaternion flight = Quaternion.Euler(_pitch, _yaw, 0f);
             Vector3 fwd = flight * Vector3.forward;
             Vector3 pos = SweepMove(transform.position, fwd * Speed * dt + Vector3.up * InputState.Vertical * 8f * dt);
+            // The world ends at the edge of the map: turn the dragon back, harder the closer it gets.
+            Vector3 flat = new Vector3(pos.x, 0f, pos.z);
+            float rad = flat.magnitude;
+            if (rad > 1250f)
+            {
+                Vector3 inward = -flat.normalized;
+                Vector3 fw = Quaternion.Euler(_pitch, _yaw, 0f) * Vector3.forward;
+                float turn = Mathf.Lerp(20f, 120f, Mathf.InverseLerp(1250f, 1480f, rad));
+                Aim(Vector3.RotateTowards(fw, inward, Mathf.Deg2Rad * turn * dt, 0f));
+                if (rad > 1490f) { flat = flat.normalized * 1490f; pos.x = flat.x; pos.z = flat.z; }
+            }
+            pos.y = Mathf.Min(pos.y, 1000f);
             _impactCooldown -= dt;
             flight = Quaternion.Euler(_pitch, _yaw, 0f);        // the sweep may have turned us along a surface
             fwd = flight * Vector3.forward;
@@ -203,7 +227,11 @@ namespace Emberbond
             transform.rotation = flight * Quaternion.Euler(0f, ModelYaw, -_roll * 0.0f) * Quaternion.Euler(0f, 0f, _roll);
 
             // Gentle flapping bob; real wing animation comes with the rigged model.
-            _flapPhase += dt * (6f + Speed * 0.04f);
+            float flapStep = dt * (6f + Speed * 0.04f);
+            _flapPhase += flapStep;
+            if (Mathf.Floor(_flapPhase / 6.2832f) != Mathf.Floor((_flapPhase - flapStep) / 6.2832f))
+                AudioDirector.Play(Sfx.Flap, transform.position, 0.9f);
+            AudioDirector.SetWind(Speed / 70f);
             Rig.FlightSpeed = Speed;
             if (_anim != null)
             {
@@ -236,6 +264,9 @@ namespace Emberbond
         private float _fireTimer = 4f;
         private Vector3 _vel;
         private DragonAnimator _anim;
+        private bool _inited;
+
+        private void Vanish() { gameObject.SetActive(false); }
 
         public void Init(Transform target)
         {
@@ -245,10 +276,13 @@ namespace Emberbond
             Health.MaxHealth = Health.Health = 600f;
             Health.DisplayName = "The Old Wyrm";
             Health.IsBoss = true;
-            Health.OnDied += d => { Destroy(gameObject, 0.5f); };
+            if (!_inited) { _inited = true; Health.OnDied += d => { Invoke("Vanish", 1.2f); }; }
             _anim = GetComponent<DragonAnimator>();
-            Collider c = gameObject.AddComponent<SphereCollider>();
-            ((SphereCollider)c).radius = 6f;
+            if (GetComponent<SphereCollider>() == null)
+            {
+                SphereCollider c = gameObject.AddComponent<SphereCollider>();
+                c.radius = 6f;
+            }
         }
 
         private void Update()

@@ -64,6 +64,8 @@ namespace Emberbond
         private bool _winding;
         private float _deadTime;
         private bool _ragdoll;
+        public int Parried, Landed;
+        public bool Staggered { get { return _stagger > 0f; } }
         private Vector3 _knock, _lastHit;
 
         public static Soldier Spawn(Vector3 pos, ThirdPersonPlayer target, int index)
@@ -155,8 +157,14 @@ namespace Emberbond
                     if (Anim != null) Anim.Strike = 0f;
                     if (dist < 2.6f)
                     {
-                        if (Target.TryParry()) _stagger = 1.4f;       // knocked off balance
-                        else Target.Health.Hurt(12f, gameObject);
+                        if (Target.TryParry()) { _stagger = 1.4f; Parried++; }      // knocked off balance
+                        else
+                        {
+                            Target.Health.Hurt(12f, gameObject);
+                            Landed++;
+                            Vector3 shove = Target.transform.position - transform.position; shove.y = 0f;
+                            Target.Knock(shove.normalized * 4f);
+                        }
                     }
                 }
                 return;

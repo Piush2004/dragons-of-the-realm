@@ -18,6 +18,7 @@ namespace Emberbond
             GameObject go = new GameObject("Fireball");
             go.transform.position = pos;
             Fireball f = go.AddComponent<Fireball>();
+            AudioDirector.Play(Sfx.Fire, pos, 1f);
             f.Velocity = velocity; f.Owner = owner; f.Damage = damage;
             return f;
         }
@@ -93,6 +94,7 @@ namespace Emberbond
                 }
             }
             Effects.Burst(at, Radius);
+            AudioDirector.Play(Sfx.Explosion, at, 1f);
             Destroy(gameObject);
         }
     }

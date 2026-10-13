@@ -33,6 +33,7 @@ namespace Emberbond
         public static void Apply()
         {
             bool weak = IsWeakGpu();
+            if (GameSettings.Quality == 1) weak = false; else if (GameSettings.Quality == 2) weak = true;
             string q = Arg("-quality");
             if (q == "high") weak = false;
             if (q == "low") weak = true;
@@ -97,14 +98,20 @@ namespace Emberbond
                 HDAdditionalCameraData hd = cam.GetComponent<HDAdditionalCameraData>();
                 if (hd != null) hd.allowDynamicResolution = true;
             }
-            GameObject go = new GameObject("PerformanceScaler");
-            Object.DontDestroyOnLoad(go);
-            PerformanceScaler ps = go.AddComponent<PerformanceScaler>();
+            PerformanceScaler ps = Object.FindFirstObjectByType<PerformanceScaler>();
+            if (ps == null)
+            {
+                GameObject go = new GameObject("PerformanceScaler");
+                Object.DontDestroyOnLoad(go);
+                ps = go.AddComponent<PerformanceScaler>();
+            }
             ps.TargetMs = 1000f / target;
             ps.MinScale = weak ? 0.45f : 0.6f;
             float fixedScale;
             if (float.TryParse(Arg("-renderscale") ?? "", System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out fixedScale))
                 ps.Pinned = Mathf.Clamp(fixedScale, 0.3f, 1f);
+            else if (GameSettings.RenderScale > 0)
+                ps.Pinned = GameSettings.RenderScale / 100f;
         }
     }
 

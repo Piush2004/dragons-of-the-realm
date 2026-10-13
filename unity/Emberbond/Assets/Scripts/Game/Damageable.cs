@@ -19,6 +19,7 @@ namespace Emberbond
         {
             if (Dead || amount <= 0f) return;
             Health = Mathf.Max(0f, Health - amount);
+            AudioDirector.Play(Sfx.Hit, transform.position, 0.8f);
             if (OnDamaged != null) OnDamaged(this, amount, source);
             if (Health <= 0f && OnDied != null) OnDied(this);
         }

@@ -20,6 +20,28 @@ namespace Emberbond
         private Vector3 _impulse;
         public const float SeaLevel = 80f;
 
+        /// <summary>Moves the rider instantly without healing (used by tests and cutscenes).</summary>
+        public void Teleport(Vector3 pos)
+        {
+            if (_cc == null) _cc = GetComponent<CharacterController>();
+            bool was = _cc.enabled;
+            _cc.enabled = false;
+            transform.position = pos;
+            _cc.enabled = was && !Mounted;
+            _vel = Vector3.zero; _impulse = Vector3.zero;
+        }
+
+        /// <summary>Brings the rider back on foot at full strength.</summary>
+        public void ReviveAt(Vector3 pos)
+        {
+            SetMounted(false);
+            Health.Health = Health.MaxHealth;
+            Stamina = MaxStamina;
+            ParryWindow = 0f; SwingTimer = 0f;
+            Teleport(pos);
+            _cc.enabled = true;
+        }
+
         /// <summary>A shove from a blow or an explosion; decays over about half a second.</summary>
         public void Knock(Vector3 velocity) { _impulse += new Vector3(velocity.x, 0f, velocity.z); if (velocity.y > 0f) _vel.y = Mathf.Max(_vel.y, velocity.y); }
 
@@ -138,7 +160,12 @@ namespace Emberbond
             {
                 // Wading and swimming: slow, buoyant, and tiring.
                 horiz *= 0.55f;
-                _vel.y = Mathf.Lerp(_vel.y, InputState.Jump ? 2.6f : -0.8f, 1f - Mathf.Exp(-4f * dt));
+                // Float with the chest at the surface; Space climbs out, Ctrl dives.
+                float restFeetY = SeaLevel - 1.15f;
+                float want = Mathf.Clamp((restFeetY - transform.position.y) * 3f, -2.5f, 3f);
+                if (InputState.Jump) want = 3.2f;
+                else if (InputState.Crouch) want = -3f;
+                _vel.y = Mathf.Lerp(_vel.y, want, 1f - Mathf.Exp(-6f * dt));
                 Stamina = Mathf.Max(0f, Stamina - 7f * dt);
                 if (Stamina <= 0.5f) Health.Hurt(5f * dt, null);
             }
@@ -204,6 +231,7 @@ namespace Emberbond
 
         private void Strike()
         {
+            AudioDirector.Play(Sfx.Swing, transform.position, 0.8f);
             Vector3 origin = transform.position + Vector3.up * 1.1f;
             // Aim assist: turn toward the closest living enemy within reach.
             Collider[] near = Physics.OverlapSphere(transform.position, 3.2f);
@@ -230,7 +258,12 @@ namespace Emberbond
         /// <summary>Incoming blow from an enemy; a well-timed parry negates it and staggers the attacker.</summary>
         public bool TryParry()
         {
-            if (ParryWindow > 0f) { ParryWindow = 0f; Stamina = Mathf.Min(MaxStamina, Stamina + 15f); return true; }
+            if (ParryWindow > 0f)
+            {
+                ParryWindow = 0f; Stamina = Mathf.Min(MaxStamina, Stamina + 15f);
+                AudioDirector.Play(Sfx.Clang, transform.position, 1f);
+                return true;
+            }
             return false;
         }
     }
@@ -266,7 +299,7 @@ namespace Emberbond
                 transform.position = _smooth;
                 Quaternion look = Quaternion.LookRotation((FlightTarget.position + f * 14f + Vector3.up * 1.5f) - transform.position, Vector3.up);
                 transform.rotation = Quaternion.Slerp(transform.rotation, look, 1f - Mathf.Exp(-8f * Time.deltaTime));
-                float tf = 62f + Mathf.Clamp(FlightSpeed - 30f, 0f, 40f) * 0.45f;
+                float tf = GameSettings.Fov + 2f + Mathf.Clamp(FlightSpeed - 30f, 0f, 40f) * 0.45f;
                 _fov = Mathf.Lerp(_fov, tf, 1f - Mathf.Exp(-3f * Time.deltaTime));
             }
             else if (FootTarget != null)
@@ -283,7 +316,7 @@ namespace Emberbond
                 transform.position = Vector3.Lerp(transform.position, want, 1f - Mathf.Exp(-18f * Time.deltaTime));
                 transform.rotation = rot;
                 _smooth = Vector3.zero;
-                _fov = Mathf.Lerp(_fov, 58f, 1f - Mathf.Exp(-4f * Time.deltaTime));
+                _fov = Mathf.Lerp(_fov, GameSettings.Fov - 2f, 1f - Mathf.Exp(-4f * Time.deltaTime));
             }
             if (ShakeAmount > 0.001f)
             {
