@@ -79,6 +79,19 @@ namespace Emberbond
                 float falloff = 1f - Mathf.Clamp01(Vector3.Distance(at, hits[i].transform.position) / Radius);
                 d.Hurt(Damage * Mathf.Lerp(0.4f, 1f, falloff), Owner);
             }
+            // Blast force on anything that is a rigid body, in a slightly wider ring than the damage.
+            Collider[] around = Physics.OverlapSphere(at, Radius * 1.7f);
+            for (int i = 0; i < around.Length; i++)
+            {
+                Rigidbody rb = around[i].attachedRigidbody;
+                if (rb != null && !rb.isKinematic) rb.AddExplosionForce(1800f, at, Radius * 1.7f, 0.9f, ForceMode.Impulse);
+                ThirdPersonPlayer pl = around[i].GetComponentInParent<ThirdPersonPlayer>();
+                if (pl != null && (Owner == null || pl.gameObject != Owner))
+                {
+                    Vector3 away = pl.transform.position - at; away.y = 0f;
+                    pl.Knock(away.normalized * 9f + Vector3.up * 3f);
+                }
+            }
             Effects.Burst(at, Radius);
             Destroy(gameObject);
         }

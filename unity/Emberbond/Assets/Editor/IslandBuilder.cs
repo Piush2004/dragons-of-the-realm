@@ -204,6 +204,13 @@ namespace Emberbond.EditorTools
                 s.supportDistortion = true;
                 s.supportTransparentDepthPrepass = true;
                 s.supportSubsurfaceScattering = true;
+                GlobalDynamicResolutionSettings dr = s.dynamicResolutionSettings;
+                dr.enabled = true;
+                dr.dynResType = DynamicResolutionType.Software;
+                dr.upsampleFilter = DynamicResUpscaleFilter.CatmullRom;
+                dr.minPercentage = 40f;
+                dr.maxPercentage = 100f;
+                s.dynamicResolutionSettings = dr;
                 asset.currentPlatformRenderPipelineSettings = s;
                 EditorUtility.SetDirty(asset);
             }

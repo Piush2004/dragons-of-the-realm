@@ -75,6 +75,17 @@ namespace Emberbond.EditorTools
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
             GameObject unpacked = inst;
+            if (fbxName.StartsWith("pine") || fbxName.StartsWith("oak"))
+            {
+                CapsuleCollider trunk = unpacked.AddComponent<CapsuleCollider>();
+                trunk.radius = 0.45f; trunk.height = fbxName.StartsWith("pine") ? 16f : 5f;
+                trunk.center = new Vector3(0f, trunk.height * 0.5f, 0f);
+            }
+            else if (fbxName.StartsWith("rock"))
+            {
+                foreach (MeshFilter mf in unpacked.GetComponentsInChildren<MeshFilter>())
+                    if (mf.GetComponent<MeshCollider>() == null) mf.gameObject.AddComponent<MeshCollider>();
+            }
             PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             string path = PrefabDir + "/" + fbxName + ".prefab";
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(unpacked, path);

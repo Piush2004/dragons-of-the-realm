@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -59,6 +60,8 @@ namespace Emberbond
             float sg = t != null ? t.SampleHeight(spawn) + t.transform.position.y : spawn.y;
             spawn.y = sg + 0.5f;
             ThirdPersonPlayer player = ThirdPersonPlayer.Create(spawn);
+            Vector3 inland = -lay.SeaDir;
+            Props.SpawnMarket(spawn + inland * 14f + Vector3.Cross(Vector3.up, inland) * -3f, inland);
 
             CameraRig rig = cam.gameObject.AddComponent<CameraRig>();
             rig.FootTarget = player.transform;
@@ -86,16 +89,18 @@ namespace Emberbond
         }
     }
 
-    /// <summary>Plays a scripted session and saves screenshots, so the real game can be checked unattended.</summary>
+    /// <summary>Plays a scripted session, saves screenshots and measures frame rate and physics, so it can be checked unattended.</summary>
     public sealed class AutoPlay : MonoBehaviour
     {
         private float _t;
         private int _step;
         private Director _d;
         private string _dir;
-        private float _worst, _sum; private int _frames;
+        private readonly List<float> _ft = new List<float>(4096);
         private float _nextSwing;
         private float _bucket; private int _bucketFrames;
+        private Vector3[] _propsBefore;
+        private int _crashStart;
 
         private void Start()
         {
@@ -112,20 +117,26 @@ namespace Emberbond
             Debug.Log("[Emberbond] shot " + n + " stage=" + _d.QuestTitle);
         }
 
+        private static float Pct(List<float> sorted, float p)
+        {
+            if (sorted.Count == 0) return 0f;
+            return sorted[Mathf.Clamp(Mathf.RoundToInt(p * (sorted.Count - 1)), 0, sorted.Count - 1)];
+        }
+
         private void LateUpdate()
         {
             float dtf = Time.unscaledDeltaTime;
             _t += dtf;
-            if (_t > 3f) { _sum += dtf; _frames++; _worst = Mathf.Max(_worst, dtf); }
-            if (dtf > 0.5f) Debug.Log("[Emberbond] STALL " + dtf.ToString("0.0") + " s at t=" + _t.ToString("0.0") + " step=" + _step + " quest=" + _d.QuestTitle);
+            if (_t > 8f && dtf < 0.5f) _ft.Add(dtf * 1000f);
+            if (dtf > 0.5f) Debug.Log("[Emberbond] STALL " + dtf.ToString("0.0") + " s at t=" + _t.ToString("0.0") + " step=" + _step);
             _bucket += dtf; _bucketFrames++;
             if (_bucket >= 5f)
             {
-                Debug.Log("[Emberbond] perf t=" + _t.ToString("0") + " fps=" + (_bucketFrames / _bucket).ToString("0") + " step=" + _step);
+                PerformanceScaler ps = FindFirstObjectByType<PerformanceScaler>();
+                Debug.Log("[Emberbond] perf t=" + _t.ToString("0") + " fps=" + (_bucketFrames / _bucket).ToString("0") + " scale=" + (ps != null ? ps.Scale.ToString("0.00") : "-") + " step=" + _step);
                 _bucket = 0f; _bucketFrames = 0;
             }
 
-            // While the fight is on, keep swinging and raise a guard now and then.
             if (_step >= 2 && _step <= 5 && _t > _nextSwing)
             {
                 _nextSwing = _t + 0.65f;
@@ -138,25 +149,72 @@ namespace Emberbond
                 case 1: if (_t > 6f) { InputState.ScriptedChoice = 0; _step++; } break;
                 case 2: if (_t > 9f) { Shot("02_soldiers"); _step++; } break;
                 case 3: if (_t > 15f) { Shot("03_combat"); _step++; } break;
-                case 4: if (_t > 22f) { Shot("04_aftermath"); _step++; } break;
-                case 5:
-                    if (_t > 24f)
+                case 4:
+                    if (_t > 22f)
                     {
+                        Shot("04_aftermath");
+                        // Blast the crates: they must move.
+                        _propsBefore = Props.Snapshot();
+                        Vector3 p = _d.Player.transform.position;
+                        Vector3 toward = Props.All.Count > 0 && Props.All[0] != null ? (Props.All[0].position - p) : Vector3.forward;
+                        toward.y = 0f; toward.Normalize();
+                        Fireball.Spawn(p + Vector3.up * 1.5f + toward * 2f, toward * 60f, _d.Player.gameObject, 40f);
+                        _step++;
+                    }
+                    break;
+                case 5:
+                    if (_t > 25f)
+                    {
+                        Debug.Log("[Emberbond] PHYSICS crates=" + Props.All.Count + " movedByBlast=" + Props.CountMoved(_propsBefore, 0.5f));
                         _d.BeginQuestPublic(1);
+                        WorldLayout lay = WorldLayout.Load();
                         _d.Dragon.transform.position = _d.Player.transform.position + new Vector3(8f, 0f, 0f);
                         _d.Dragon.Mount();
                         _step++;
                     }
                     break;
-                case 6: if (_t > 28f) { InputState.ScriptedLook = new Vector2(0.4f, -0.1f); _step++; } break;
-                case 7: if (_t > 31f) { Shot("05_flight"); InputState.ScriptedFire = true; _step++; } break;
-                case 8: if (_t > 32.5f) { Shot("06_fire"); InputState.ScriptedFire = false; _d.BeginQuestPublic(3); _step++; } break;
-                case 9: if (_t > 45f) { Shot("07_rival"); _step++; } break;
-                case 10:
-                    if (_t > 47f)
+                case 6:
+                    if (_t > 28f)
                     {
-                        Debug.Log("[Emberbond] autoplay done frames=" + _frames + " avg=" + (_sum / Mathf.Max(1, _frames) * 1000f).ToString("0.0") +
-                                  " ms worst=" + (_worst * 1000f).ToString("0.0") + " ms playerHealth=" + _d.Player.Health.Health.ToString("0"));
+                        // Fly low and fast straight into the city wall: the dragon must be stopped and take a crash.
+                        WorldLayout lay = WorldLayout.Load();
+                        Vector3 start = lay.City + lay.SeaDir * 330f;
+                        Terrain t = Terrain.activeTerrain;
+                        float gy = t != null ? t.SampleHeight(start) + t.transform.position.y : lay.City.y;
+                        _d.Dragon.transform.position = new Vector3(start.x, gy + 12f, start.z);
+                        _d.Dragon.Aim(-lay.SeaDir);
+                        _crashStart = _d.Dragon.Crashes;
+                        _step++;
+                    }
+                    break;
+                case 7:
+                    if (_t > 36f)
+                    {
+                        WorldLayout lay = WorldLayout.Load();
+                        Vector3 pos = _d.Dragon.transform.position;
+                        float fromCentre = Vector3.Distance(new Vector3(pos.x, 0f, pos.z), new Vector3(lay.City.x, 0f, lay.City.z));
+                        Debug.Log("[Emberbond] PHYSICS dragon crashes=" + (_d.Dragon.Crashes - _crashStart) + " lastImpact=" + _d.Dragon.LastImpact.ToString("0") +
+                                  " distFromCentre=" + fromCentre.ToString("0") + " dragonHealth=" + _d.Dragon.Health.Health.ToString("0"));
+                        Shot("05_wall_crash");
+                        _d.Dragon.transform.position = lay.City + Vector3.up * 200f + lay.SeaDir * 250f;
+                        _d.Dragon.Aim(Vector3.forward);
+                        InputState.ScriptedLook = new Vector2(0.4f, -0.1f);
+                        _step++;
+                    }
+                    break;
+                case 8: if (_t > 40f) { Shot("06_flight"); InputState.ScriptedFire = true; _step++; } break;
+                case 9: if (_t > 41.5f) { Shot("07_fire"); InputState.ScriptedFire = false; _d.BeginQuestPublic(3); _step++; } break;
+                case 10: if (_t > 52f) { Shot("08_rival"); _step++; } break;
+                case 11:
+                    if (_t > 54f)
+                    {
+                        _ft.Sort();
+                        int over = 0;
+                        for (int i = 0; i < _ft.Count; i++) if (_ft[i] > 17.5f) over++;
+                        PerformanceScaler ps = FindFirstObjectByType<PerformanceScaler>();
+                        Debug.Log("[Emberbond] autoplay done frames=" + _ft.Count + " p50=" + Pct(_ft, 0.5f).ToString("0.0") + " ms p95=" + Pct(_ft, 0.95f).ToString("0.0") +
+                                  " ms p99=" + Pct(_ft, 0.99f).ToString("0.0") + " ms under60=" + (100f * (1f - over / (float)Mathf.Max(1, _ft.Count))).ToString("0") + "% scale=" +
+                                  (ps != null ? ps.Scale.ToString("0.00") : "-") + " playerHealth=" + _d.Player.Health.Health.ToString("0"));
                         File.WriteAllText(Path.Combine(_dir, "done.txt"), "ok");
                         Application.Quit(0);
                         _step++;

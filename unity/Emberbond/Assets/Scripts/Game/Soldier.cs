@@ -63,6 +63,8 @@ namespace Emberbond
         private float _cooldown = 0.5f, _wind, _stagger, _facing;
         private bool _winding;
         private float _deadTime;
+        private bool _ragdoll;
+        private Vector3 _knock, _lastHit;
 
         public static Soldier Spawn(Vector3 pos, ThirdPersonPlayer target, int index)
         {
@@ -85,6 +87,30 @@ namespace Emberbond
         {
             _cc = GetComponent<CharacterController>();
             Health.OnDied += d => { _deadTime = 0.01f; };
+            Health.OnDamaged += (d, amount, src) =>
+            {
+                if (src == null) return;
+                Vector3 away = transform.position - src.transform.position;
+                away.y = 0f;
+                _lastHit = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;
+                _knock = _lastHit * 5.5f;
+                _stagger = Mathf.Max(_stagger, 0.3f);
+            };
+        }
+
+        /// <summary>On death the soldier becomes a rigid body that is flung by the killing blow and falls where it lands.</summary>
+        private void BecomeRagdoll()
+        {
+            _ragdoll = true;
+            _cc.enabled = false;
+            CapsuleCollider cap = gameObject.AddComponent<CapsuleCollider>();
+            cap.height = 1.8f; cap.radius = 0.35f; cap.center = new Vector3(0f, 0.9f, 0f);
+            Rigidbody rb = gameObject.AddComponent<Rigidbody>();
+            rb.mass = 80f;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.AddForce(_lastHit * 4.5f + Vector3.up * 2.5f, ForceMode.Impulse);
+            rb.AddTorque(Vector3.Cross(Vector3.up, _lastHit) * 90f + Random.insideUnitSphere * 12f, ForceMode.Impulse);
         }
 
         private void Update()
@@ -94,15 +120,18 @@ namespace Emberbond
             if (Health.Dead)
             {
                 _deadTime += dt;
-                _cc.enabled = false;
-                float t = Mathf.Clamp01(_deadTime / 0.6f);
-                transform.rotation = Quaternion.Slerp(Quaternion.Euler(0f, _facing, 0f), Quaternion.Euler(-88f, _facing, 0f), t);
+                if (!_ragdoll) BecomeRagdoll();
                 if (Anim != null) { Anim.Speed = 0f; Anim.Strike = 0f; }
-                if (_deadTime > 10f) Destroy(gameObject);
+                if (_deadTime > 14f) Destroy(gameObject);
                 return;
             }
             if (Target.Health.Dead) { if (Anim != null) Anim.Speed = 0f; return; }
 
+            if (_knock.sqrMagnitude > 0.01f)
+            {
+                _cc.Move(_knock * dt);
+                _knock = Vector3.Lerp(_knock, Vector3.zero, 1f - Mathf.Exp(-9f * dt));
+            }
             Vector3 to = Target.transform.position - transform.position;
             to.y = 0f;
             float dist = to.magnitude;

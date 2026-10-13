@@ -19,8 +19,21 @@ namespace Emberbond
         private float _flapPhase;
         private Transform _model;
         private DragonAnimator _anim;
+        private BoxCollider _body;
+        private float _impactCooldown;
 
         public float BondTrust = 20f;
+        public float BodyRadius = 2.4f;
+        public int Crashes;
+        public float LastImpact;
+
+        /// <summary>Points the flight along a direction (used when placing the dragon for tests and cutscenes).</summary>
+        public void Aim(Vector3 dir)
+        {
+            dir.Normalize();
+            _yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            _pitch = Mathf.Clamp(-Mathf.Asin(Mathf.Clamp(dir.y, -1f, 1f)) * Mathf.Rad2Deg, -65f, 65f);
+        }
 
         public void Init(ThirdPersonPlayer rider, CameraRig rig)
         {
@@ -37,6 +50,11 @@ namespace Emberbond
             seat.transform.localPosition = new Vector3(0f, 0.45f, 0.05f);
             Seat = seat.transform;
             _anim = GetComponent<DragonAnimator>();
+            // A solid body so the player and soldiers cannot walk through a perched dragon.
+            Vector3 ls = transform.lossyScale;
+            _body = gameObject.AddComponent<BoxCollider>();
+            _body.center = new Vector3(0f, 1.2f / Mathf.Max(ls.y, 0.01f), 0f);
+            _body.size = new Vector3(3.2f / Mathf.Max(ls.x, 0.01f), 3.2f / Mathf.Max(ls.y, 0.01f), 13f / Mathf.Max(ls.z, 0.01f));
         }
 
         public bool RiderNear { get { return Rider != null && Vector3.Distance(Rider.transform.position, transform.position) < 14f; } }
@@ -98,6 +116,63 @@ namespace Emberbond
             transform.rotation = Quaternion.Euler(0f, _yaw + ModelYaw, 0f);
         }
 
+        /// <summary>
+        /// Moves the dragon through the world with a swept sphere: it stops at surfaces, slides along them, loses speed,
+        /// and takes damage (and shakes the camera) in proportion to how hard it hit.
+        /// </summary>
+        private Vector3 SweepMove(Vector3 from, Vector3 delta)
+        {
+            float dist = delta.magnitude;
+            if (dist < 1e-4f) return from;
+            Vector3 dir = delta / dist;
+            RaycastHit[] hits = Physics.SphereCastAll(from, BodyRadius, dir, dist + 0.2f, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit best = default(RaycastHit);
+            float bestDist = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit h = hits[i];
+                if (h.collider == null) continue;
+                Transform ht = h.collider.transform;
+                if (ht.IsChildOf(transform) || (Rider != null && ht.IsChildOf(Rider.transform))) continue;
+                if (h.distance <= 0f) continue;                  // already overlapping at the start: ignore, do not trap
+                if (h.distance < bestDist) { bestDist = h.distance; best = h; found = true; }
+            }
+            if (!found) return from + delta;
+
+            Vector3 n = best.normal;
+            float into = Mathf.Clamp01(-Vector3.Dot(dir, n));
+            float impact = Speed * into;
+            Vector3 stop = from + dir * Mathf.Max(0f, best.distance - 0.05f);
+            Vector3 remaining = delta - (stop - from);
+            Vector3 slide = remaining - n * Vector3.Dot(remaining, n);
+            Vector3 along = dir - n * Vector3.Dot(dir, n);
+            if (along.sqrMagnitude > 0.02f)
+            {
+                Aim(along);
+            }
+            Speed *= Mathf.Lerp(1f, 0.4f, into);
+            OnImpact(impact, best.point, n);
+            return stop + n * 0.08f + slide * 0.6f;
+        }
+
+        private void OnImpact(float impact, Vector3 point, Vector3 normal)
+        {
+            if (impact < 5f || _impactCooldown > 0f) return;
+            _impactCooldown = 0.5f;
+            Crashes++;
+            LastImpact = impact;
+            Rig.Shake(Mathf.Clamp01(impact / 45f));
+            Effects.Burst(point, Mathf.Lerp(2f, 7f, Mathf.Clamp01(impact / 40f)));
+            float hurt = Mathf.Max(0f, impact - 12f) * 3f;
+            if (hurt > 0f)
+            {
+                Health.Hurt(hurt, null);
+                if (Rider != null) Rider.Health.Hurt(hurt * 0.3f, null);
+            }
+            Debug.Log("[Emberbond] impact " + impact.ToString("0") + " m/s damage " + hurt.ToString("0"));
+        }
+
         private void Fly(float dt)
         {
             _yaw += InputState.Look.x * 1.2f;
@@ -113,7 +188,10 @@ namespace Emberbond
 
             Quaternion flight = Quaternion.Euler(_pitch, _yaw, 0f);
             Vector3 fwd = flight * Vector3.forward;
-            Vector3 pos = transform.position + fwd * Speed * dt + Vector3.up * InputState.Vertical * 8f * dt;
+            Vector3 pos = SweepMove(transform.position, fwd * Speed * dt + Vector3.up * InputState.Vertical * 8f * dt);
+            _impactCooldown -= dt;
+            flight = Quaternion.Euler(_pitch, _yaw, 0f);        // the sweep may have turned us along a surface
+            fwd = flight * Vector3.forward;
 
             float floor = GroundHeight(pos) + 4f;
             if (pos.y < floor)

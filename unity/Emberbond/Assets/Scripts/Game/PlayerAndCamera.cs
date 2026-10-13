@@ -17,6 +17,20 @@ namespace Emberbond
 
         private CharacterController _cc;
         private Vector3 _vel;
+        private Vector3 _impulse;
+        public const float SeaLevel = 80f;
+
+        /// <summary>A shove from a blow or an explosion; decays over about half a second.</summary>
+        public void Knock(Vector3 velocity) { _impulse += new Vector3(velocity.x, 0f, velocity.z); if (velocity.y > 0f) _vel.y = Mathf.Max(_vel.y, velocity.y); }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            Rigidbody rb = hit.collider.attachedRigidbody;
+            if (rb == null || rb.isKinematic) return;
+            Vector3 push = hit.moveDirection; push.y = 0f;
+            if (push.sqrMagnitude < 0.01f) return;
+            rb.AddForceAtPosition(push.normalized * 5.5f, hit.point, ForceMode.Impulse);
+        }
         private float _swingCooldown;
         private float _staminaRegenDelay;
         private float _moveBlend;
@@ -117,14 +131,35 @@ namespace Emberbond
             if (InputState.Crouch) speed *= 0.5f;
             Vector3 horiz = wish * speed;
 
-            if (_cc.isGrounded)
+            bool wasGrounded = _cc.isGrounded;
+            float prevVy = _vel.y;
+            bool swimming = transform.position.y + 0.9f < SeaLevel;
+            if (swimming)
             {
-                _vel.y = -1f;
-                if (InputState.JumpDown && Stamina > 10f) { _vel.y = 6.2f; Stamina -= 8f; }
+                // Wading and swimming: slow, buoyant, and tiring.
+                horiz *= 0.55f;
+                _vel.y = Mathf.Lerp(_vel.y, InputState.Jump ? 2.6f : -0.8f, 1f - Mathf.Exp(-4f * dt));
+                Stamina = Mathf.Max(0f, Stamina - 7f * dt);
+                if (Stamina <= 0.5f) Health.Hurt(5f * dt, null);
             }
-            _vel.y -= 20f * dt;
+            else
+            {
+                if (wasGrounded)
+                {
+                    _vel.y = -1f;
+                    if (InputState.JumpDown && Stamina > 10f) { _vel.y = 6.2f; Stamina -= 8f; }
+                }
+                _vel.y -= 20f * dt;
+            }
             Vector3 motion = new Vector3(horiz.x, _vel.y, horiz.z) * dt;
-            _cc.Move(motion);
+            _cc.Move(motion + _impulse * dt);
+            _impulse = Vector3.Lerp(_impulse, Vector3.zero, 1f - Mathf.Exp(-7f * dt));
+            if (!wasGrounded && _cc.isGrounded && prevVy < -15f)
+            {
+                float dmg = (-prevVy - 15f) * 4f;                 // a fall from about 12 m starts to hurt
+                Health.Hurt(dmg, null);
+                Debug.Log("[Emberbond] landed hard " + (-prevVy).ToString("0") + " m/s damage " + dmg.ToString("0"));
+            }
 
             if (wish.sqrMagnitude > 0.01f)
             {
@@ -187,6 +222,8 @@ namespace Emberbond
                 Damageable d = cols[i].GetComponentInParent<Damageable>();
                 if (d == null || d == Health || d.Dead) continue;
                 d.Hurt(24f, gameObject);
+                Rigidbody hrb = cols[i].attachedRigidbody;
+                if (hrb != null) hrb.AddForce(dir * 6f + Vector3.up * 1.5f, ForceMode.Impulse);
             }
         }
 
@@ -207,6 +244,9 @@ namespace Emberbond
         public float FlightSpeed;
         public float Yaw = 20f, Pitch = 12f;
         public bool Frozen;          // used by scripted shots
+        public float ShakeAmount;
+
+        public void Shake(float amount) { ShakeAmount = Mathf.Max(ShakeAmount, amount); }
         public float FlightBack = 22f, FlightUp = 6f;
 
         private float _fov = 60f;
@@ -244,6 +284,12 @@ namespace Emberbond
                 transform.rotation = rot;
                 _smooth = Vector3.zero;
                 _fov = Mathf.Lerp(_fov, 58f, 1f - Mathf.Exp(-4f * Time.deltaTime));
+            }
+            if (ShakeAmount > 0.001f)
+            {
+                transform.position += Random.insideUnitSphere * ShakeAmount * 0.9f;
+                transform.rotation *= Quaternion.Euler(Random.Range(-1f, 1f) * ShakeAmount * 2f, Random.Range(-1f, 1f) * ShakeAmount * 2f, 0f);
+                ShakeAmount = Mathf.MoveTowards(ShakeAmount, 0f, Time.deltaTime * 1.6f);
             }
             _cam.fieldOfView = _fov;
         }
