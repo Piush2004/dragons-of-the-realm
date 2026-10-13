@@ -36,8 +36,21 @@ namespace Emberbond
             return p;
         }
 
+        public RiderAnimator Anim;
+
         private void BuildVisual()
         {
+            GameObject prefab = Resources.Load<GameObject>("Rider");
+            if (prefab != null)
+            {
+                GameObject rider = Instantiate(prefab, transform);
+                rider.name = "Visual";
+                rider.transform.localPosition = Vector3.zero;
+                Visual = rider.transform;
+                Anim = rider.AddComponent<RiderAnimator>();
+                foreach (Collider col in rider.GetComponentsInChildren<Collider>()) Destroy(col);
+                return;
+            }
             GameObject v = new GameObject("Visual");
             v.transform.SetParent(transform, false);
             Visual = v.transform;
@@ -83,6 +96,7 @@ namespace Emberbond
         public void SetMounted(bool mounted)
         {
             Mounted = mounted;
+            if (Anim != null) Anim.Seated = mounted;
             if (_cc == null) _cc = GetComponent<CharacterController>();
             _cc.enabled = !mounted;
         }
@@ -119,7 +133,14 @@ namespace Emberbond
             }
             else _moveBlend = Mathf.MoveTowards(_moveBlend, 0f, dt * 6f);
             Visual.rotation = Quaternion.Euler(0f, YawFacing, 0f);
-            Visual.localPosition = new Vector3(0f, Mathf.Abs(Mathf.Sin(Time.time * (sprint ? 12f : 8f))) * 0.06f * _moveBlend, 0f);
+            Visual.localPosition = Anim != null ? Vector3.zero : new Vector3(0f, Mathf.Abs(Mathf.Sin(Time.time * (sprint ? 12f : 8f))) * 0.06f * _moveBlend, 0f);
+            if (Anim != null)
+            {
+                Anim.Seated = false;
+                Anim.Speed = _moveBlend * (sprint ? 2f : 1f) * (InputState.Crouch ? 0.5f : 1f);
+                Anim.Strike = SwingTimer > 0f ? 1f - SwingTimer / 0.35f : 0f;
+                Anim.Parry = ParryWindow > 0f ? 1f : 0f;
+            }
 
             // Stamina
             if (sprint) { Stamina -= 14f * dt; _staminaRegenDelay = 0.8f; }

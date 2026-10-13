@@ -324,6 +324,7 @@ namespace Emberbond.EditorTools
             AssetDatabase.Refresh();
             EnableHdrpFeatures();
             CreateFxAssets();
+            CharacterBuilder.Build();
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
