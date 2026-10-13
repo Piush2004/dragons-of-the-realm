@@ -104,7 +104,7 @@ def grass(size):
     c = c * (0.65 + 0.55 * blades[..., None]) * (0.85 + 0.3 * base[..., None])
     soil = smoothstep(0.78, 0.95, base)[..., None]
     c = c * (1 - soil * 0.5) + np.array((0.2, 0.15, 0.09)) * soil * 0.5
-    write_material('grass', c, height, 0.25 + 0.15 * blades, 1.6)
+    write_material('grass', c, height, 0.05 + 0.05 * blades, 1.6)
 
 
 def rock(size):
@@ -119,7 +119,7 @@ def rock(size):
     lichen = smoothstep(0.7, 0.9, fbm(size, 71, betas=(1.0, 1.6), weights=(0.6, 0.4)))[..., None]
     c = c * (1 - lichen * 0.25) + np.array((0.28, 0.32, 0.18)) * lichen * 0.25
     c *= (1 - 0.55 * cracks[..., None])
-    write_material('rock', c, height, 0.2 + 0.3 * t, 3.2, ao_radius=4, ao_strength=4.5)
+    write_material('rock', c, height, 0.08 + 0.12 * t, 3.2, ao_radius=4, ao_strength=4.5)
 
 
 def sand(size):
@@ -128,7 +128,7 @@ def sand(size):
     height = 0.6 * ripples * fbm(size, 83, betas=(1.2, 2.0), weights=(0.5, 0.5)) + 0.4 * grain
     c = lerp3((0.62, 0.55, 0.40), (0.82, 0.74, 0.55), grain)
     c *= 0.9 + 0.2 * ripples[..., None]
-    write_material('sand', c, height, 0.12 + 0.1 * grain, 0.9, ao_radius=2, ao_strength=1.5)
+    write_material('sand', c, height, 0.04 + 0.05 * grain, 0.9, ao_radius=2, ao_strength=1.5)
 
 
 def ash(size):
@@ -138,7 +138,7 @@ def ash(size):
     height = 0.6 * n + 0.4 * cinder
     c = lerp3((0.04, 0.04, 0.045), (0.22, 0.21, 0.20), n)
     c = c + glow[..., None] * np.array((0.08, 0.02, 0.0))
-    write_material('ash', c, height, 0.15 + 0.2 * cinder, 2.2)
+    write_material('ash', c, height, 0.05 + 0.08 * cinder, 2.2)
 
 
 def snow(size):
@@ -146,7 +146,7 @@ def snow(size):
     sparkle = spectral_noise(size, 0.1, 131)
     c = lerp3((0.78, 0.82, 0.88), (0.97, 0.98, 1.0), n)
     c *= 0.95 + 0.07 * sparkle[..., None]
-    write_material('snow', c, 0.5 * n + 0.5 * sparkle, 0.55 + 0.35 * sparkle, 0.7, ao_strength=1.0)
+    write_material('snow', c, 0.5 * n + 0.5 * sparkle, 0.25 + 0.2 * sparkle, 0.7, ao_strength=1.0)
 
 
 def dirt(size):
@@ -155,7 +155,7 @@ def dirt(size):
     height = 0.6 * n + 0.4 * pebbles
     c = lerp3((0.17, 0.12, 0.08), (0.36, 0.27, 0.18), n)
     c = c * (1 - pebbles[..., None] * 0.2) + np.array((0.4, 0.38, 0.35)) * pebbles[..., None] * 0.2
-    write_material('dirt', c, height, 0.1 + 0.1 * n, 1.6)
+    write_material('dirt', c, height, 0.04 + 0.04 * n, 1.6)
 
 
 for fn in (grass, rock, sand, ash, snow, dirt):

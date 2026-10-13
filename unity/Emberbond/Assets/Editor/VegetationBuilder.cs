@@ -145,6 +145,9 @@ namespace Emberbond.EditorTools
                     float y = heights[hz, hx] * IslandBuilder.WorldHeight;
                     float elev = y - IslandBuilder.SeaLevel;
                     if (elev < 5f || elev > 270f) continue;
+                    Vector3 wpos = new Vector3(wx - size * 0.5f, 0f, wz - size * 0.5f);
+                    Vector3 cs = CityBuilder.SiteWorld();
+                    if (Vector2.Distance(new Vector2(wpos.x, wpos.z), new Vector2(cs.x, cs.z)) < CityBuilder.PlateauRadius + 25f) continue;   // keep the town clear
                     int ax = Mathf.Clamp(Mathf.RoundToInt(u * (ar - 1)), 0, ar - 1);
                     int az = Mathf.Clamp(Mathf.RoundToInt(v * (ar - 1)), 0, ar - 1);
                     float grassW = splat[az, ax, 0] + splat[az, ax, 5] * 0.6f;
@@ -202,7 +205,10 @@ namespace Emberbond.EditorTools
                     int hx = Mathf.Clamp(Mathf.RoundToInt(u * (hr - 1)), 0, hr - 1);
                     int hz = Mathf.Clamp(Mathf.RoundToInt(v * (hr - 1)), 0, hr - 1);
                     float elev = heights[hz, hx] * IslandBuilder.WorldHeight - IslandBuilder.SeaLevel;
-                    if (gw > 0.5f && elev > 3f && elev < 260f && Hash(x, z, 11) < 0.55f * gw) layer[z, x] = 1 + (int)(Hash(x, z, 12) * 2f);
+                    Vector3 cs2 = CityBuilder.SiteWorld();
+                    float dxc = u * size - size * 0.5f - cs2.x, dzc = v * size - size * 0.5f - cs2.z;
+                    bool inCity = dxc * dxc + dzc * dzc < (CityBuilder.PlateauRadius * 0.85f) * (CityBuilder.PlateauRadius * 0.85f);
+                    if (!inCity && gw > 0.5f && elev > 3f && elev < 260f && Hash(x, z, 11) < 0.55f * gw) layer[z, x] = 1 + (int)(Hash(x, z, 12) * 2f);
                 }
             td.SetDetailLayer(0, 0, 0, layer);
             terrain.detailObjectDistance = 120f;

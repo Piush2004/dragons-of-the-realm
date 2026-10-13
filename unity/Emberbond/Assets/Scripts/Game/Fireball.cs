@@ -37,10 +37,10 @@ namespace Emberbond
             ParticleSystemRenderer psr = ps.GetComponent<ParticleSystemRenderer>();
             psr.sharedMaterial = m;
             var main = ps.main;
-            main.startLifetime = 0.6f; main.startSize = 4.5f; main.startSpeed = 0.5f;
-            main.startColor = new Color(1f, 0.55f, 0.15f, 0.9f);
+            main.startLifetime = 0.5f; main.startSize = 3.2f; main.startSpeed = 0.5f;
+            main.startColor = new Color(1f, 0.6f, 0.2f, 0.28f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            var em = ps.emission; em.rateOverTime = 90f;
+            var em = ps.emission; em.rateOverTime = 50f;
             var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = 0.9f;
             var col = ps.colorOverLifetime; col.enabled = true;
             Gradient gr = new Gradient();

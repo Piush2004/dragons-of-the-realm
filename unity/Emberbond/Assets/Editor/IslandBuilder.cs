@@ -96,6 +96,7 @@ namespace Emberbond.EditorTools
                     float y = SeaLevel + Elevation(u, v);
                     heights[z, x] = Mathf.Clamp01(y / WorldHeight);
                 }
+            CityBuilder.Flatten(heights);
             TerrainData td = new TerrainData();
             td.heightmapResolution = HeightRes;
             td.size = new Vector3(WorldSize, WorldHeight, WorldSize);
@@ -220,31 +221,40 @@ namespace Emberbond.EditorTools
             PhysicallyBasedSky sky = p.Add<PhysicallyBasedSky>(true);
             sky.atmosphericScattering.Override(true);
             sky.groundTint.Override(new Color(0.25f, 0.22f, 0.18f));
+            sky.multiplier.Override(2.2f);
 
             env.cloudType.Override((int)CloudType.CloudLayer);
             CloudLayer layer = p.Add<CloudLayer>(true);
             layer.opacity.Override(0.9f);
+            layer.layers.Override(CloudMapMode.Single);
+            Texture2D cloudMap = AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipelineResources/Texture/DefaultCloudMap.png");
+            if (cloudMap != null) layer.layerA.cloudMap.Override(cloudMap);
+            else Debug.LogWarning("[Emberbond] default cloud map not found");
+            layer.layerA.opacityR.Override(1f);
+            layer.layerA.tint.Override(new Color(1f, 0.97f, 0.92f));
+            layer.layerA.altitude.Override(7000f);
+            layer.layerA.exposure.Override(0.3f);
 
             VolumetricClouds clouds = p.Add<VolumetricClouds>(true);
-            clouds.enable.Override(false);              // too costly for the benefit at ground level; the cloud layer carries the sky
+            clouds.enable.Override(true);
             clouds.cloudPreset = VolumetricClouds.CloudPresets.Cloudy;
             clouds.bottomAltitude.Override(1100f);
             clouds.altitudeRange.Override(1800f);
-            clouds.densityMultiplier.Override(0.55f);
+            clouds.densityMultiplier.Override(0.8f);
             clouds.shapeFactor.Override(0.75f);
             clouds.shadows.Override(true);
 
             Fog fog = p.Add<Fog>(true);
             fog.enabled.Override(true);
             fog.enableVolumetricFog.Override(true);
-            fog.meanFreePath.Override(1800f);
+            fog.meanFreePath.Override(1300f);
             fog.baseHeight.Override(SeaLevel + 20f);
             fog.maximumHeight.Override(SeaLevel + 260f);
             fog.albedo.Override(new Color(0.75f, 0.8f, 0.9f));
 
             Exposure exp = p.Add<Exposure>(true);
             exp.mode.Override(ExposureMode.Fixed);          // automatic exposure is fooled by the bright sky
-            exp.fixedExposure.Override(12.6f);
+            exp.fixedExposure.Override(12.2f);
 
             Tonemapping tm = p.Add<Tonemapping>(true);
             tm.mode.Override(TonemappingMode.ACES);
@@ -294,7 +304,7 @@ namespace Emberbond.EditorTools
             Material m = new Material(Shader.Find("HDRP/Unlit"));
             m.name = "FireAdditive";
             m.SetTexture("_UnlitColorMap", glow);
-            m.SetColor("_UnlitColor", Color.white);
+            m.SetColor("_UnlitColor", new Color(1f, 0.42f, 0.09f) * 0.55f);
             m.SetFloat("_SurfaceType", 1f);
             m.SetFloat("_BlendMode", 1f);               // additive
             m.SetFloat("_DoubleSidedEnable", 1f);
@@ -319,12 +329,12 @@ namespace Emberbond.EditorTools
             TerrainData td = BuildTerrainData(out heights);
             TerrainLayer[] layers =
             {
-                MakeLayer("grass", 7f, 1.0f, 0.2f),
-                MakeLayer("rock", 11f, 1.2f, 0.25f),
-                MakeLayer("sand", 6f, 0.8f, 0.15f),
-                MakeLayer("ash", 9f, 1.0f, 0.2f),
-                MakeLayer("snow", 8f, 0.6f, 0.5f),
-                MakeLayer("dirt", 5f, 1.0f, 0.12f),
+                MakeLayer("grass", 7f, 1.0f, 0.05f),
+                MakeLayer("rock", 11f, 1.2f, 0.1f),
+                MakeLayer("sand", 6f, 0.8f, 0.05f),
+                MakeLayer("ash", 9f, 1.0f, 0.06f),
+                MakeLayer("snow", 8f, 0.6f, 0.3f),
+                MakeLayer("dirt", 5f, 1.0f, 0.05f),
             };
             td.terrainLayers = layers;
             float[,,] splat = BuildSplat(heights, layers.Length);
@@ -340,6 +350,7 @@ namespace Emberbond.EditorTools
             terrain.drawInstanced = false;
             terrain.basemapDistance = 1500f;
             VegetationBuilder.Scatter(terrain, td, heights, splat).transform.position = Vector3.zero;
+            CityBuilder.Place(terrain);
 
             // Sun
             GameObject sunGo = new GameObject("Sun");
@@ -348,7 +359,7 @@ namespace Emberbond.EditorTools
             sun.intensity = 110000f;                         // lux, HDRP physical units
             sun.color = new Color(1f, 0.86f, 0.68f);
             sun.shadows = LightShadows.Soft;
-            sunGo.transform.rotation = Quaternion.Euler(24f, -38f, 0f);
+            sunGo.transform.rotation = Quaternion.Euler(34f, -38f, 0f);
             HDAdditionalLightData sunData = sunGo.AddComponent<HDAdditionalLightData>();
             sunData.EnableShadows(true);
             sunData.SetShadowResolution(4096);

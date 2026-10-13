@@ -24,8 +24,21 @@ namespace Emberbond
             int width = 1920, height = 1080;
             foreach (string a in args) if (a == "-4k") { width = 3840; height = 2160; }
             Camera cam = Camera.main;
+            Vector3 city = new Vector3(-540f, 110f, 660f);
+            Terrain tr = Terrain.activeTerrain;
+            System.Func<Vector3, float, Vector3> above = (p, h) => new Vector3(p.x, (tr != null ? tr.SampleHeight(p) + tr.transform.position.y : 100f) + h, p.z);
+            Vector3 seaDir = new Vector3(-0.866f, 0f, 0.5f);
+            Vector3 p1 = above(city + seaDir * 560f, 90f);
+            Vector3 p2 = above(city + new Vector3(330f, 0f, -240f), 70f);
+            Vector3 p3 = above(city + new Vector3(-30f, 0f, -290f), 45f);
+            Vector3 p4 = above(city + seaDir * 150f, 14f);
             Pose[] poses =
             {
+                new Pose { Name = "sky_up",     Pos = p4 + Vector3.up * 40f, Euler = new Vector3(-28f, 40f, 0f) },
+                new Pose { Name = "city_sea",   Pos = p1, Euler = Quaternion.LookRotation(city + Vector3.up * 40f - p1).eulerAngles },
+                new Pose { Name = "city_hill",  Pos = p2, Euler = Quaternion.LookRotation(city - p2).eulerAngles },
+                new Pose { Name = "city_back",  Pos = p3, Euler = Quaternion.LookRotation(city + Vector3.up * 25f - p3).eulerAngles },
+                new Pose { Name = "city_gate",  Pos = p4, Euler = Quaternion.LookRotation(city + Vector3.up * 20f - p4).eulerAngles },
                 new Pose { Name = "coast",   Pos = new Vector3(-420f, 220f, -980f), Euler = new Vector3(8f, 28f, 0f) },
                 new Pose { Name = "volcano", Pos = new Vector3(-100f, 330f, -300f), Euler = new Vector3(6f, 62f, 0f) },
                 new Pose { Name = "dragon",  Pos = new Vector3(-330f, 160f, -900f), Euler = new Vector3(4f, -18f, 0f) },
