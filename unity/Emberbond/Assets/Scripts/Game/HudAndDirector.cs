@@ -68,6 +68,19 @@ namespace Emberbond
             GUI.color = c; GUI.DrawTexture(new Rect(x, y, w, h), _white); GUI.color = Color.white;
         }
 
+        // Text with a soft dark drop shadow so it stays readable over bright sky, snow and sunlit grass.
+        private static GUIStyle _shadowStyle;
+        private static void Lbl(Rect r, string text, GUIStyle style)
+        {
+            if (_shadowStyle == null) _shadowStyle = new GUIStyle();
+            _shadowStyle.font = style.font; _shadowStyle.fontSize = style.fontSize; _shadowStyle.fontStyle = style.fontStyle;
+            _shadowStyle.alignment = style.alignment; _shadowStyle.wordWrap = style.wordWrap; _shadowStyle.clipping = style.clipping;
+            _shadowStyle.normal.textColor = new Color(0f, 0f, 0f, 0.85f);
+            Rect s = r; s.x += 1.5f; s.y += 1.5f;
+            GUI.Label(s, text, _shadowStyle);
+            GUI.Label(r, text, style);
+        }
+
         private void Bar(float x, float y, float w, float h, float frac, Color fill, Color tip)
         {
             Rect(x - 2, y - 2, w + 4, h + 4, new Color(0.05f, 0.05f, 0.06f, 0.92f));
@@ -96,18 +109,18 @@ namespace Emberbond
             DrawVitals();
             DrawQuest();
             DrawBoss();
-            DrawPrompts();
+            if (!Director.InDialogue) DrawPrompts();
             if (Director.InDialogue) DrawDialogue();
             if (!string.IsNullOrEmpty(Director.Toast))
             {
                 Rect(W * 0.5f - 420f, 150f, 840f, 52f, new Color(0f, 0f, 0f, 0.55f));
-                GUI.Label(new Rect(W * 0.5f - 410f, 160f, 820f, 40f), Director.Toast, _title);
+                Lbl(new Rect(W * 0.5f - 410f, 160f, 820f, 40f), Director.Toast, _title);
             }
-            if (GameSettings.ShowFps) GUI.Label(new Rect(W - 150f, 70f, 130f, 28f), Mathf.RoundToInt(_fps) + " fps", _small);
+            if (GameSettings.ShowFps) Lbl(new Rect(W - 150f, 70f, 130f, 28f), Mathf.RoundToInt(_fps) + " fps", _small);
             if (Director.DeathProgress > 0f)
             {
                 Rect(0f, 0f, W, H, new Color(0.3f, 0f, 0f, 0.6f * Director.DeathProgress));
-                GUI.Label(new Rect(0f, H * 0.4f, W, 80f), "You fell", _title);
+                Lbl(new Rect(0f, H * 0.4f, W, 80f), "You fell", _title);
             }
         }
 
@@ -124,7 +137,7 @@ namespace Emberbond
                 float d = Mathf.DeltaAngle(yaw, i * 90f);
                 if (Mathf.Abs(d) > 70f) continue;
                 float px = cx + d / 70f * half;
-                GUI.Label(new Rect(px - 12f, y - 18f, 28f, 28f), names[i], _label);
+                Lbl(new Rect(px - 12f, y - 18f, 28f, 28f), names[i], _label);
             }
             for (int t = -6; t <= 6; t++)
             {
@@ -141,7 +154,7 @@ namespace Emberbond
                 Rect(px - 9f, y - 2f, 18f, 18f, new Color(0.95f, 0.78f, 0.3f, 1f));
                 Rect(px - 5f, y + 2f, 10f, 10f, new Color(0.1f, 0.08f, 0.05f, 1f));
                 string dist = Mathf.RoundToInt(to.magnitude).ToString() + " m";
-                GUI.Label(new Rect(px - 30f, y + 18f, 90f, 24f), dist, _small);
+                Lbl(new Rect(px - 30f, y + 18f, 90f, 24f), dist, _small);
             }
         }
 
@@ -162,9 +175,9 @@ namespace Emberbond
             if (string.IsNullOrEmpty(Director.QuestTitle)) return;
             Rect(30f, 70f, 480f, 82f, new Color(0f, 0f, 0f, 0.35f));
             Rect(30f, 70f, 4f, 82f, new Color(0.85f, 0.7f, 0.35f, 1f));
-            GUI.Label(new Rect(48f, 74f, 460f, 30f), "Quest Active:", _small);
-            GUI.Label(new Rect(48f, 98f, 460f, 34f), Director.QuestTitle, _quest);
-            GUI.Label(new Rect(48f, 126f, 460f, 26f), Director.QuestHint, _small);
+            Lbl(new Rect(48f, 74f, 460f, 30f), "Quest Active:", _small);
+            Lbl(new Rect(48f, 98f, 460f, 34f), Director.QuestTitle, _quest);
+            Lbl(new Rect(48f, 126f, 460f, 26f), Director.QuestHint, _small);
         }
 
         private void DrawBoss()
@@ -173,7 +186,7 @@ namespace Emberbond
             if (Director.Enemy.Health.Dead) return;
             float w = 560f;
             Bar(W * 0.5f - w * 0.5f, 100f, w, 14f, Director.Enemy.Health.Fraction, new Color(0.72f, 0.1f, 0.08f, 1f), new Color(0.95f, 0.5f, 0.1f, 1f));
-            GUI.Label(new Rect(W * 0.5f - w * 0.5f, 114f, w, 28f), Director.Enemy.Health.DisplayName, _small);
+            Lbl(new Rect(W * 0.5f - w * 0.5f, 114f, w, 28f), Director.Enemy.Health.DisplayName, _small);
         }
 
         private void DrawPrompts()
@@ -196,20 +209,22 @@ namespace Emberbond
             }
             lines.Add("[Esc]  Menu");
             float y = H - 40f - lines.Count * 28f;
+            Rect(W - 436f, y - 8f, 424f, lines.Count * 28f + 16f, new Color(0f, 0f, 0f, 0.3f));
             for (int i = 0; i < lines.Count; i++)
-                GUI.Label(new Rect(W - 420f, y + i * 28f, 400f, 28f), lines[i], _small);
+                Lbl(new Rect(W - 420f, y + i * 28f, 400f, 28f), lines[i], _small);
         }
 
         private void DrawDialogue()
         {
             Rect(0f, 0f, W, H, new Color(0f, 0f, 0f, 0.3f));
-            float bw = 1100f, bx = W * 0.5f - bw * 0.5f, by = H - 330f;
+            float bw = 1100f, bx = W * 0.5f - bw * 0.5f, by = H - 400f;
             Rect(bx, by, bw, 150f, new Color(0.04f, 0.035f, 0.03f, 0.88f));
             Rect(bx, by, bw, 2f, new Color(0.8f, 0.68f, 0.4f, 1f));
-            GUI.Label(new Rect(bx + 20f, by + 8f, bw - 40f, 30f), Director.Speaker, _quest);
+            Lbl(new Rect(bx + 20f, by + 8f, bw - 40f, 30f), Director.Speaker, _quest);
             GUIStyle wrap = new GUIStyle(_small) { wordWrap = true, fontSize = 20 };
-            GUI.Label(new Rect(bx + 20f, by + 42f, bw - 40f, 100f), Director.Line, wrap);
+            Lbl(new Rect(bx + 20f, by + 42f, bw - 40f, 100f), Director.Line, wrap);
 
+            Rect(bx, by + 152f, bw, 80f, new Color(0.04f, 0.035f, 0.03f, 0.78f));
             string[] tags = { "[Diplomatic]", "[Aggressive]", "[Deceptive]" };
             Color[] cols = { new Color(0.85f, 0.85f, 0.95f), new Color(0.95f, 0.35f, 0.3f), new Color(0.65f, 0.9f, 0.55f) };
             for (int i = 0; i < Director.Options.Count; i++)
@@ -218,9 +233,9 @@ namespace Emberbond
                 GUIStyle tag = new GUIStyle(_small) { fontSize = 20, wordWrap = true };
                 tag.normal.textColor = cols[(int)o.Tone];
                 float ox = bx + i * (bw / 3f);
-                GUI.Label(new Rect(ox + 10f, by + 160f, bw / 3f - 16f, 60f), (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text, tag);
+                Lbl(new Rect(ox + 10f, by + 160f, bw / 3f - 16f, 60f), (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text, tag);
             }
-            GUI.Label(new Rect(bx + bw - 120f, by + 196f, 120f, 26f), Mathf.CeilToInt(Director.DialogueTimer) + " s", _small);
+            Lbl(new Rect(bx + bw - 120f, by + 196f, 120f, 26f), Mathf.CeilToInt(Director.DialogueTimer) + " s", _small);
         }
     }
 }

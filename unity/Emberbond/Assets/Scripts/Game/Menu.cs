@@ -37,7 +37,7 @@ namespace Emberbond
             _white = new Texture2D(1, 1);
             _white.SetPixel(0, 0, Color.white);
             _white.Apply();
-            _lockCursor = !(GameBootstrap.Has("-autoplay") || GameBootstrap.Has("-selftest"));
+            _lockCursor = !(GameBootstrap.Has("-autoplay") || GameBootstrap.Has("-selftest") || GameBootstrap.Has("-soak") || GameBootstrap.Has("-menushots"));
         }
 
         // ------------------------------------------------------------ opening and closing
@@ -179,6 +179,11 @@ namespace Emberbond
             _sel = 0;
         }
 
+        // Test hooks.
+        public void DebugOpenSettings() { Current = Page.Main; OpenSettings(Page.Main); InputState.Blocked = true; }
+        public void DebugCloseAll() { Close(); }
+        public void DebugPause() { OpenPause(); }
+
         private void ToTitle()
         {
             Director.SaveNow();
@@ -272,7 +277,7 @@ namespace Emberbond
             if (_title != null) return;
             _title = new GUIStyle(GUI.skin.label) { fontSize = 64, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.96f, 0.9f, 0.76f) } };
             _item = new GUIStyle(GUI.skin.label) { fontSize = 32, alignment = TextAnchor.MiddleLeft, normal = { textColor = new Color(0.9f, 0.88f, 0.82f) } };
-            _hint = new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.75f, 0.72f, 0.65f) } };
+            _hint = new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.9f, 0.87f, 0.8f) } };
             _small = new GUIStyle(GUI.skin.label) { fontSize = 22, normal = { textColor = new Color(0.8f, 0.78f, 0.7f) } };
         }
 
@@ -285,9 +290,10 @@ namespace Emberbond
 
             if (Current == Page.Main)
             {
-                Rect(0f, 0f, W, 260f, new Color(0f, 0f, 0f, 0.55f));
+                Rect(0f, 0f, W, 260f, new Color(0f, 0f, 0f, 0.7f));
                 GUI.Label(new Rect(0f, 70f, W, 90f), "E M B E R B O N D", _title);
                 GUI.Label(new Rect(0f, 160f, W, 40f), "A story of dragons and a dying dynasty", _hint);
+                Rect(0f, H - 110f, W, 90f, new Color(0f, 0f, 0f, 0.6f));
             }
             else Rect(0f, 0f, W, H, new Color(0f, 0f, 0f, 0.6f));
 
@@ -296,8 +302,10 @@ namespace Emberbond
             float panelW = Current == Page.Settings ? 900f : 520f;
             float top = Current == Page.Main ? 360f : Mathf.Max(120f, (H - rows.Count * rowH) * 0.5f);
             float x = (W - panelW) * 0.5f;
-            if (Current == Page.Settings) GUI.Label(new Rect(0f, top - 90f, W, 60f), "Settings", _title);
-            if (Current == Page.Pause) GUI.Label(new Rect(0f, top - 100f, W, 70f), "Paused", _title);
+            // A dark backing panel keeps the rows readable over bright terrain on the title screen.
+            if (Current == Page.Main) Rect(x - 24f, top - 16f, panelW + 48f, rows.Count * rowH + 24f, new Color(0.04f, 0.035f, 0.03f, 0.82f));
+            if (Current == Page.Settings) GUI.Label(new Rect(0f, top - 100f, W, 90f), "Settings", _title);
+            if (Current == Page.Pause) GUI.Label(new Rect(0f, top - 110f, W, 90f), "Paused", _title);
 
             for (int i = 0; i < rows.Count; i++)
             {
@@ -324,7 +332,9 @@ namespace Emberbond
                     Event.current.Use();
                 }
             }
-            string hint = Current == Page.Settings ? "Up/Down select    Left/Right change    Esc back" : "Up/Down select    Enter choose    Esc resume";
+            string hint = Current == Page.Settings ? "Up/Down select    Left/Right change    Esc back"
+                        : Current == Page.Main ? "Up/Down select    Enter choose"
+                        : "Up/Down select    Enter choose    Esc resume";
             GUI.Label(new Rect(0f, H - 90f, W, 40f), hint, _hint);
         }
     }

@@ -15,6 +15,8 @@ images the look is aimed at.
 * Summon and mount your wyrm; chase-camera flight with boost and dive, fireballs with real lights, a rival wyrm
   boss with a health bar; quest banner, compass with objective, sigil health badge.
 * A procedurally animated, rigged rider and dragon (wing beats, tail, jaw), generated in Blender.
+* Title screen, pause menu and settings (mouse, keyboard or gamepad), save and continue, respawn at checkpoints,
+  procedurally synthesised sound and music, fall damage, swimming, crashing into walls and terrain.
 
 ## Controls
 
@@ -39,13 +41,34 @@ Unity.exe -batchmode -nographics -quit -projectPath Emberbond -executeMethod Emb
 ```
 
 Run `Builds/Windows/Emberbond.exe`. Useful flags: `-autoplay` (scripted session with screenshots into `play/`),
-`-quality high|low`, `-nohall`, `-nosoldiers`, `-nocity`.
+`-quality high|low`, `-renderscale 0.5..1`, `-fps N`, `-nohall`, `-nosoldiers`, `-nocity`, `-nomenu`.
+
+## Testing
+
+All run from the built player; none need a person at the keyboard.
+
+| Flag | What it does |
+| --- | --- |
+| `-selftest` | 33 checks: world, dialogue, combat and parry, ragdolls, props, pushing, falls, water, death and respawn, save and load (including corrupted and out-of-range saves), mounting, terrain and wall collisions, world bounds, frame time, zero logged errors. Prints `[TEST] SUMMARY`. |
+| `-soak [seconds]` | Random scripted play (walk, fight, mount, fly, fire, teleport) while checking positions, health, stamina, memory growth and frame time. Prints `[SOAK] RESULT`. |
+| `-menushots` | Writes title, settings, council, gameplay and pause screenshots into `menu/`. |
+| `-autoplay` | Scripted session with frame percentiles and physics measurements. |
+
+Last results (Radeon 780M integrated graphics, the only adapter available when these ran):
+
+* Self-test 33/33 at 1280x720, 2560x1440 and 3840x2160; frame time p50 16.7 ms, p95 16.7 ms, p99 under 17.1 ms.
+* 5 minute soak: 0 errors, 0 invariant violations, 17,610 frames averaging 16.8 ms (worst single frame 130 ms),
+  memory 311 MB to 319 MB, 4 deaths all respawned.
+* The adaptive resolution scaler sits at its 45 % floor on this GPU to hold 60 fps, so the picture is upscaled.
 
 ## Graphics tiers
 
 On a discrete GPU everything is on. On integrated graphics the game switches off volumetric clouds and fog, screen
-space reflections, shortens shadows and tree distance (see `QualityGovernor.cs`). Measured on a laptop with an RTX 5060
-the slice ran at 60-100+ fps at 1080p; on the same laptop's Radeon 780M it runs at about 15 fps.
+space reflections, shortens shadows and tree distance (see `QualityGovernor.cs`), and a dynamic resolution controller
+lowers the render scale (down to 45 % on weak GPUs, 60 % otherwise) whenever a frame exceeds 16.7 ms and raises it when
+there is headroom. On the Radeon 780M this holds 60 fps at 45 % scale. Earlier measurements on the same laptop's
+RTX 5060 ran 60-100+ fps at 1080p before the governor existed; the RTX was not enumerated by Windows during the final
+test runs, so the full-quality tier has not been re-measured.
 
 ## Known limits
 
@@ -54,4 +77,6 @@ the slice ran at 60-100+ fps at 1080p; on the same laptop's Radeon 780M it runs 
 * Only chapters 1-2 of the ten in the design are playable; the Pit descent, the mounted charge, the aerial duel in
   full, the Pale Tide act and the three endings are designed (`Design/story_v2_reference_driven.md`) but not built.
 * Entering the throne hall for the first time stalls for several seconds while its shaders compile.
-* No save system, menus, settings, audio or localisation yet.
+* Sound is synthesised (no recorded effects, voice or composed score); no localisation; no key rebinding; changing
+  the graphics tier needs a restart.
+* The title and pause menus use immediate-mode UI with the default font.

@@ -94,7 +94,9 @@ namespace Emberbond
             Menu menu = dir.AddComponent<Menu>();
             menu.Director = d;
             menu.Rig = rig;
-            bool headless = Has("-autoplay") || Has("-selftest") || Has("-nomenu");
+            bool headless = Has("-autoplay") || Has("-selftest") || Has("-nomenu") || Has("-soak");
+            if (Has("-soak")) dir.AddComponent<SoakTest>();
+            if (Has("-menushots")) dir.AddComponent<MenuShots>();
             if (Has("-autoplay")) dir.AddComponent<AutoPlay>();
             if (Has("-selftest")) dir.AddComponent<SelfTest>();
             if (headless) d.BeginNewGame(); else menu.ShowMain();
