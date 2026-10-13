@@ -24,17 +24,7 @@ namespace Emberbond
 
         private void Start()
         {
-            GameObject core = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            core.transform.SetParent(transform, false);
-            core.transform.localScale = Vector3.one * 2.2f;
-            Destroy(core.GetComponent<Collider>());
-            Renderer r = core.GetComponent<Renderer>();
-            Material m = new Material(Shader.Find("HDRP/Unlit"));
-            m.SetColor("_UnlitColor", new Color(1f, 0.55f, 0.1f));
-            m.SetColor("_EmissiveColor", new Color(1f, 0.5f, 0.1f) * 40f);
-            m.SetFloat("_UseEmissiveIntensity", 0f);
-            r.sharedMaterial = m;
-            r.shadowCastingMode = ShadowCastingMode.Off;
+            Material m = Effects.Additive;
 
             _light = gameObject.AddComponent<Light>();
             _light.type = LightType.Point;
@@ -47,8 +37,8 @@ namespace Emberbond
             ParticleSystemRenderer psr = ps.GetComponent<ParticleSystemRenderer>();
             psr.sharedMaterial = m;
             var main = ps.main;
-            main.startLifetime = 0.8f; main.startSize = 1.6f; main.startSpeed = 0.5f;
-            main.startColor = new Color(1f, 0.45f, 0.08f, 0.8f);
+            main.startLifetime = 0.6f; main.startSize = 4.5f; main.startSpeed = 0.5f;
+            main.startColor = new Color(1f, 0.55f, 0.15f, 0.9f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             var em = ps.emission; em.rateOverTime = 90f;
             var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = 0.9f;
@@ -97,6 +87,17 @@ namespace Emberbond
     /// <summary>Small one-shot visual effects built from code.</summary>
     public static class Effects
     {
+        private static Material _additive;
+        public static Material Additive
+        {
+            get
+            {
+                if (_additive == null) _additive = Resources.Load<Material>("FireAdditive");
+                if (_additive == null) _additive = new Material(Shader.Find("HDRP/Unlit"));
+                return _additive;
+            }
+        }
+
         public static void Burst(Vector3 at, float radius)
         {
             GameObject go = new GameObject("Explosion");
@@ -105,9 +106,7 @@ namespace Emberbond
             l.type = LightType.Point; l.color = new Color(1f, 0.6f, 0.25f); l.range = radius * 14f; l.intensity = 6e6f;
             ParticleSystem ps = go.AddComponent<ParticleSystem>();
             ParticleSystemRenderer psr = ps.GetComponent<ParticleSystemRenderer>();
-            Material m = new Material(Shader.Find("HDRP/Unlit"));
-            m.SetColor("_UnlitColor", new Color(1f, 0.5f, 0.12f));
-            psr.sharedMaterial = m;
+            psr.sharedMaterial = Additive;
             var main = ps.main;
             main.duration = 0.4f; main.loop = false; main.startLifetime = 1.4f; main.startSize = radius * 0.7f;
             main.startSpeed = radius * 1.2f; main.startColor = new Color(1f, 0.5f, 0.1f, 0.9f);

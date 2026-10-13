@@ -344,10 +344,10 @@ namespace Emberbond
             for (int i = 0; i < Director.Options.Count; i++)
             {
                 DialogueOption o = Director.Options[i];
-                GUIStyle tag = new GUIStyle(_small) { fontSize = 20 };
+                GUIStyle tag = new GUIStyle(_small) { fontSize = 20, wordWrap = true };
                 tag.normal.textColor = cols[(int)o.Tone];
                 float ox = bx + i * (bw / 3f);
-                GUI.Label(new Rect(ox + 10f, by + 160f, bw / 3f, 28f), (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text, tag);
+                GUI.Label(new Rect(ox + 10f, by + 160f, bw / 3f - 16f, 60f), (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text, tag);
             }
             GUI.Label(new Rect(bx + bw - 120f, by + 196f, 120f, 26f), Mathf.CeilToInt(Director.DialogueTimer) + " s", _small);
         }

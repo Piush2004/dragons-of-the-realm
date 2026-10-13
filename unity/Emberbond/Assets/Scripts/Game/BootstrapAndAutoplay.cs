@@ -14,6 +14,18 @@ namespace Emberbond
             return false;
         }
 
+        /// <summary>Scales a model so its largest horizontal extent (the wingspan) is the given size in metres.</summary>
+        public static float Normalize(GameObject go, float targetSpan)
+        {
+            Renderer[] rs = go.GetComponentsInChildren<Renderer>();
+            if (rs.Length == 0) return targetSpan;
+            Bounds b = rs[0].bounds;
+            for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
+            float span = Mathf.Max(b.size.x, b.size.z);
+            if (span > 0.01f) go.transform.localScale *= targetSpan / span;
+            return targetSpan;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
@@ -22,27 +34,34 @@ namespace Emberbond
             Camera cam = Camera.main;
             if (dragonGo == null || cam == null) return;
 
+            float playerSpan = Normalize(dragonGo, 20f);
+            GameObject enemyGo0 = GameObject.Find("EnemyDragon");
+            if (enemyGo0 != null) Normalize(enemyGo0, 34f);
+
             Terrain t = Terrain.activeTerrain;
             Vector3 dp = dragonGo.transform.position;
             float ground = t != null ? t.SampleHeight(dp) + t.transform.position.y : dp.y;
             dragonGo.transform.position = new Vector3(dp.x, ground + 1.2f, dp.z);
 
-            Vector3 spawn = dragonGo.transform.position + new Vector3(12f, 0f, -4f);
+            Vector3 spawn = dragonGo.transform.position + new Vector3(0f, 0f, -26f);
             float sg = t != null ? t.SampleHeight(spawn) + t.transform.position.y : spawn.y;
             spawn.y = sg + 0.5f;
             ThirdPersonPlayer player = ThirdPersonPlayer.Create(spawn);
 
             CameraRig rig = cam.gameObject.AddComponent<CameraRig>();
             rig.FootTarget = player.transform;
-            rig.Yaw = 200f;
+            rig.Yaw = 0f;                                   // look toward the dragon
+            rig.FlightBack = playerSpan * 1.15f;
+            rig.FlightUp = playerSpan * 0.3f;
 
+            dragonGo.AddComponent<DragonAnimator>();
             DragonFlight dragon = dragonGo.AddComponent<DragonFlight>();
             dragon.Init(player, rig);
             dragon.ModelYaw = 0f;
 
             EnemyDragon enemy = null;
             GameObject enemyGo = GameObject.Find("EnemyDragon");
-            if (enemyGo != null) { enemy = enemyGo.AddComponent<EnemyDragon>(); enemyGo.SetActive(false); }
+            if (enemyGo != null) { enemyGo.AddComponent<DragonAnimator>(); enemy = enemyGo.AddComponent<EnemyDragon>(); enemyGo.SetActive(false); }
 
             GameObject dir = new GameObject("Director");
             Director d = dir.AddComponent<Director>();

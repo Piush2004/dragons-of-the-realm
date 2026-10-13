@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Rendering.HighDefinition;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -220,8 +221,12 @@ namespace Emberbond.EditorTools
             sky.atmosphericScattering.Override(true);
             sky.groundTint.Override(new Color(0.25f, 0.22f, 0.18f));
 
+            env.cloudType.Override((int)CloudType.CloudLayer);
+            CloudLayer layer = p.Add<CloudLayer>(true);
+            layer.opacity.Override(0.9f);
+
             VolumetricClouds clouds = p.Add<VolumetricClouds>(true);
-            clouds.enable.Override(true);
+            clouds.enable.Override(false);              // too costly for the benefit at ground level; the cloud layer carries the sky
             clouds.cloudPreset = VolumetricClouds.CloudPresets.Cloudy;
             clouds.bottomAltitude.Override(1100f);
             clouds.altitudeRange.Override(1800f);
@@ -238,10 +243,8 @@ namespace Emberbond.EditorTools
             fog.albedo.Override(new Color(0.75f, 0.8f, 0.9f));
 
             Exposure exp = p.Add<Exposure>(true);
-            exp.mode.Override(ExposureMode.Automatic);
-            exp.limitMin.Override(-2f);
-            exp.limitMax.Override(14f);
-            exp.compensation.Override(0.6f);
+            exp.mode.Override(ExposureMode.Fixed);          // automatic exposure is fooled by the bright sky
+            exp.fixedExposure.Override(12.6f);
 
             Tonemapping tm = p.Add<Tonemapping>(true);
             tm.mode.Override(TonemappingMode.ACES);
@@ -266,12 +269,48 @@ namespace Emberbond.EditorTools
             return p;
         }
 
+        /// <summary>Soft round glow texture and an additive HDRP unlit material for fire, embers and sparks.</summary>
+        private static void CreateFxAssets()
+        {
+            Directory.CreateDirectory("Assets/Resources");
+            const int s = 128;
+            Texture2D t = new Texture2D(s, s, TextureFormat.RGBA32, false);
+            for (int y = 0; y < s; y++)
+                for (int x = 0; x < s; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x, y), new Vector2(s * 0.5f, s * 0.5f)) / (s * 0.5f);
+                    float a = Mathf.Clamp01(1f - d);
+                    a = a * a * (3f - 2f * a);
+                    t.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            t.Apply();
+            File.WriteAllBytes("Assets/Resources/FireGlow.png", t.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(t);
+            AssetDatabase.ImportAsset("Assets/Resources/FireGlow.png");
+            TextureImporter ti = AssetImporter.GetAtPath("Assets/Resources/FireGlow.png") as TextureImporter;
+            if (ti != null) { ti.alphaIsTransparency = true; ti.mipmapEnabled = false; ti.SaveAndReimport(); }
+            Texture2D glow = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Resources/FireGlow.png");
+
+            Material m = new Material(Shader.Find("HDRP/Unlit"));
+            m.name = "FireAdditive";
+            m.SetTexture("_UnlitColorMap", glow);
+            m.SetColor("_UnlitColor", Color.white);
+            m.SetFloat("_SurfaceType", 1f);
+            m.SetFloat("_BlendMode", 1f);               // additive
+            m.SetFloat("_DoubleSidedEnable", 1f);
+            m.SetFloat("_ZWrite", 0f);
+            HDMaterial.ValidateMaterial(m);
+            AssetDatabase.CreateAsset(m, "Assets/Resources/FireAdditive.mat");
+            AssetDatabase.SaveAssets();
+        }
+
         [MenuItem("Emberbond/Build island scene")]
         public static void Build()
         {
             ConfigureTextureImport();
             AssetDatabase.Refresh();
             EnableHdrpFeatures();
+            CreateFxAssets();
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -306,7 +345,7 @@ namespace Emberbond.EditorTools
             GameObject sunGo = new GameObject("Sun");
             Light sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 85000f;                         // lux, HDRP physical units
+            sun.intensity = 110000f;                         // lux, HDRP physical units
             sun.color = new Color(1f, 0.86f, 0.68f);
             sun.shadows = LightShadows.Soft;
             sunGo.transform.rotation = Quaternion.Euler(24f, -38f, 0f);

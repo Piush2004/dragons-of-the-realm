@@ -176,6 +176,7 @@ namespace Emberbond
         public float FlightSpeed;
         public float Yaw = 20f, Pitch = 12f;
         public bool Frozen;          // used by scripted shots
+        public float FlightBack = 22f, FlightUp = 6f;
 
         private float _fov = 60f;
         private Camera _cam;
@@ -189,7 +190,7 @@ namespace Emberbond
             if (Flight && FlightTarget != null)
             {
                 Vector3 f = FlightTarget.forward;
-                Vector3 want = FlightTarget.position - f * 16f + Vector3.up * 4.2f - FlightTarget.right * 0.0f;
+                Vector3 want = FlightTarget.position - f * FlightBack + Vector3.up * FlightUp;
                 _smooth = Vector3.Lerp(_smooth == Vector3.zero ? want : _smooth, want, 1f - Mathf.Exp(-6f * Time.deltaTime));
                 transform.position = _smooth;
                 Quaternion look = Quaternion.LookRotation((FlightTarget.position + f * 14f + Vector3.up * 1.5f) - transform.position, Vector3.up);

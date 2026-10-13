@@ -18,6 +18,7 @@ namespace Emberbond
         private Vector3 _perchPos;
         private float _flapPhase;
         private Transform _model;
+        private DragonAnimator _anim;
 
         public float BondTrust = 20f;
 
@@ -33,8 +34,9 @@ namespace Emberbond
             _perchPos = transform.position;
             GameObject seat = new GameObject("Seat");
             seat.transform.SetParent(transform, false);
-            seat.transform.localPosition = new Vector3(0f, 0.9f, 0.1f);
+            seat.transform.localPosition = new Vector3(0f, 0.45f, 0.05f);
             Seat = seat.transform;
+            _anim = GetComponent<DragonAnimator>();
         }
 
         public bool RiderNear { get { return Rider != null && Vector3.Distance(Rider.transform.position, transform.position) < 14f; } }
@@ -53,6 +55,7 @@ namespace Emberbond
                     Quaternion want = Quaternion.LookRotation(to) * Quaternion.Euler(0f, ModelYaw, 0f);
                     transform.rotation = Quaternion.Slerp(transform.rotation, want, 1f - Mathf.Exp(-1.5f * dt));
                 }
+                if (_anim != null) { _anim.FlapRate = 0.45f; _anim.FlapAmplitude = 0.12f; _anim.JawOpen = 0f; _anim.Bank = 0f; }
                 if (InputState.Interact && RiderNear) Mount();
                 if (InputState.Summon) CallToRider();
                 return;
@@ -124,6 +127,14 @@ namespace Emberbond
             // Gentle flapping bob; real wing animation comes with the rigged model.
             _flapPhase += dt * (6f + Speed * 0.04f);
             Rig.FlightSpeed = Speed;
+            if (_anim != null)
+            {
+                bool climbing = _pitch < -8f;
+                _anim.FlapRate = Mathf.Lerp(0.9f, 1.8f, Mathf.InverseLerp(20f, 70f, Speed)) + (climbing ? 0.5f : 0f);
+                _anim.FlapAmplitude = _pitch > 22f ? 0.1f : Mathf.Lerp(0.5f, 0.85f, Mathf.InverseLerp(20f, 70f, Speed));   // glide on a dive
+                _anim.Bank = Mathf.Clamp(_roll / 40f, -1f, 1f);
+                _anim.JawOpen = _fireCooldown > 0.5f ? 1f : 0f;
+            }
 
             if (Rider != null) Rider.transform.position = Seat.position;
             _fireCooldown -= dt;
@@ -146,6 +157,7 @@ namespace Emberbond
         private float _orbit;
         private float _fireTimer = 4f;
         private Vector3 _vel;
+        private DragonAnimator _anim;
 
         public void Init(Transform target)
         {
@@ -156,6 +168,7 @@ namespace Emberbond
             Health.DisplayName = "The Old Wyrm";
             Health.IsBoss = true;
             Health.OnDied += d => { Destroy(gameObject, 0.5f); };
+            _anim = GetComponent<DragonAnimator>();
             Collider c = gameObject.AddComponent<SphereCollider>();
             ((SphereCollider)c).radius = 6f;
         }
@@ -166,7 +179,7 @@ namespace Emberbond
             float dt = Time.deltaTime;
             _orbit += dt * 0.18f;
             Vector3 centre = Target.position;
-            Vector3 want = centre + new Vector3(Mathf.Cos(_orbit) * 140f, 40f + Mathf.Sin(_orbit * 1.7f) * 18f, Mathf.Sin(_orbit) * 140f);
+            Vector3 want = centre + new Vector3(Mathf.Cos(_orbit) * 170f, 45f + Mathf.Sin(_orbit * 1.7f) * 20f, Mathf.Sin(_orbit) * 170f);
             Vector3 to = want - transform.position;
             Vector3 desired = to.normalized * Mathf.Min(40f, to.magnitude);
             _vel = Vector3.Lerp(_vel, desired, 1f - Mathf.Exp(-1.2f * dt));
@@ -175,6 +188,7 @@ namespace Emberbond
             if (_vel.sqrMagnitude > 1f) look = Vector3.Lerp(_vel, look, 0.35f);
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(look.normalized, Vector3.up) * Quaternion.Euler(0f, ModelYaw, 0f), 1f - Mathf.Exp(-2f * dt));
 
+            if (_anim != null) { _anim.FlapRate = 1.1f; _anim.FlapAmplitude = 0.7f; _anim.JawOpen = _fireTimer < 0.5f ? 1f : 0f; }
             _fireTimer -= dt;
             if (_fireTimer <= 0f && Vector3.Distance(Target.position, transform.position) < 260f)
             {
