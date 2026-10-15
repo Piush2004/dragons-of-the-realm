@@ -21,6 +21,7 @@ namespace Emberbond
         public static bool ScriptedAttack, ScriptedBlock, ScriptedBoost;
         public static Vector2 ScriptedMove;
         public static bool Blocked;                        // true while a menu is open
+        public static bool Cinematic;                      // true during dialogue: no movement or combat, choices still work
 
         public static void Poll()
         {
@@ -35,16 +36,16 @@ namespace Emberbond
 
             if (k != null)
             {
-                float x = (k.dKey.isPressed ? 1f : 0f) - (k.aKey.isPressed ? 1f : 0f);
-                float y = (k.wKey.isPressed ? 1f : 0f) - (k.sKey.isPressed ? 1f : 0f);
+                float x = (Bindings.Held(GameAction.Right) ? 1f : 0f) - (Bindings.Held(GameAction.Left) ? 1f : 0f);
+                float y = (Bindings.Held(GameAction.Forward) ? 1f : 0f) - (Bindings.Held(GameAction.Back) ? 1f : 0f);
                 Move += new Vector2(x, y);
-                Jump = k.spaceKey.isPressed; JumpDown = k.spaceKey.wasPressedThisFrame;
-                Sprint = k.leftShiftKey.isPressed; Crouch = k.leftCtrlKey.isPressed;
-                Interact = k.eKey.wasPressedThisFrame;
-                Summon = k.gKey.wasPressedThisFrame;
+                Jump = Bindings.Held(GameAction.Jump); JumpDown = Bindings.Pressed(GameAction.Jump);
+                Sprint = Bindings.Held(GameAction.Sprint); Crouch = Bindings.Held(GameAction.Crouch);
+                Interact = Bindings.Pressed(GameAction.Interact);
+                Summon = Bindings.Pressed(GameAction.Summon);
                 Pause = k.escapeKey.wasPressedThisFrame; Map = k.mKey.wasPressedThisFrame;
-                Boost = k.leftShiftKey.isPressed;
-                Vertical = (k.spaceKey.isPressed ? 1f : 0f) - (k.leftCtrlKey.isPressed ? 1f : 0f);
+                Boost = Sprint;
+                Vertical = (Jump ? 1f : 0f) - (Crouch ? 1f : 0f);
                 if (k.digit1Key.wasPressedThisFrame) Choice = 0;
                 if (k.digit2Key.wasPressedThisFrame) Choice = 1;
                 if (k.digit3Key.wasPressedThisFrame) Choice = 2;
@@ -52,10 +53,11 @@ namespace Emberbond
             if (m != null)
             {
                 Look += m.delta.ReadValue() * 0.06f;
-                Attack = m.leftButton.isPressed; AttackDown = m.leftButton.wasPressedThisFrame;
-                Block = m.rightButton.isPressed; BlockDown = m.rightButton.wasPressedThisFrame;
-                Fire = m.leftButton.isPressed; FireDown = m.leftButton.wasPressedThisFrame;
             }
+            // Strike, fire and parry follow the bindings, so they work on keys as well as mouse buttons.
+            Attack = Bindings.Held(GameAction.Attack); AttackDown = Bindings.Pressed(GameAction.Attack);
+            Block = Bindings.Held(GameAction.Block); BlockDown = Bindings.Pressed(GameAction.Block);
+            Fire = Attack; FireDown = AttackDown;
             UsingPad = false;
             if (g != null)
             {
@@ -89,6 +91,12 @@ namespace Emberbond
             if (Blocked)
             {
                 Move = Vector2.zero; Look = Vector2.zero; Vertical = 0f; Choice = -1;
+                Jump = JumpDown = Sprint = Crouch = false;
+                Interact = Summon = Attack = AttackDown = Block = BlockDown = Fire = FireDown = Boost = false;
+            }
+            if (Cinematic)
+            {
+                Move = Vector2.zero; Look = Vector2.zero; Vertical = 0f;
                 Jump = JumpDown = Sprint = Crouch = false;
                 Interact = Summon = Attack = AttackDown = Block = BlockDown = Fire = FireDown = Boost = false;
             }

@@ -1,0 +1,69 @@
+Mono path[0] = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/Managed'
+Mono config path = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.3.26f1 (de8167e7440c)
+[Subsystems] Discovering subsystems at path D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/UnitySubsystems
+[D3D12 Device Filter] Vendor Name: ATI
+[D3D12 Device Filter] Device Name: AMD Radeon 780M Graphics
+[D3D12 Device Filter] Driver Version: 32.0.21030.11004
+[D3D12 Device Filter] Feature Level: 12.2
+[D3D12 Device Filter] Graphics Memory: 11933 MB
+[D3D12 Device Filter] Processor Count: 16
+[D3D12 Device Filter] Device Type: Integrated
+[D3D12 Device Filter] D3D12 API denied by user filter(s): {"Vendor": "ATI", "Device Type:": Integrated}, but allowed by user filter(s): {"Feature Level Comparator": Greater Than Or Equal To"Feature Level": "12.2", "Device Type:": Integrated}
+GfxDevice: creating device client; kGfxThreadingModeSplitJobs
+d3d12: failed to query info queue interface (0x80004002).
+Direct3D:
+    Version:         Direct3D 12 [level 12.2]
+    Renderer:        AMD Radeon 780M Graphics (ID=0x1900)
+    Vendor:          ATI
+    VRAM:            11933 MB
+    App VRAM Budget: 11582 MB
+    Driver:          32.0.21030.11004
+    Unified Memory Architecture
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.515 seconds
+- Finished resetting the current domain, in  0.004 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+D3D11 device created for Microsoft Media Foundation video decoding.
+<RI> Initializing input.
+Using Windows.Gaming.Input
+Direct3D: detected that IDXGISwapChain::GetFrameStatistics is broken (it does not return proper timestamps). Delta time will now be calculated using cpu-side time stampling until the game window is moved.
+The tree pine_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnloadTime: 1.518300 ms
+[Emberbond] graphics: AMD Radeon 780M Graphics -> reduced quality, target 60 fps
+[SHOTS] start
+[SHOTS] run
+[SHOTS] choose
+[SHOT] 10a_pit_top cam=(416, 1328, -399) player=(420, 1326, -398) flight=False frozen=False mounted=False stage=10 hp=120 dragon=(431, 1301, -424)
+[SHOT] 10b_pit_bottom cam=(430, 1303, -409) player=(428, 1300, -412) flight=False frozen=False mounted=False stage=10 hp=96 dragon=(431, 1301, -424)
+[SHOT] 11a_charge_start cam=(-635, 112, 714) player=(-631, 110, 712) flight=False frozen=False mounted=False stage=11 hp=120 dragon=(-670, 111, 735)
+[SHOT] 11b_tower cam=(-650, 94, 941) player=(-651, 91, 945) flight=False frozen=False mounted=False stage=11 hp=120 dragon=(-670, 111, 735)
+[SHOT] 11c_tower_falls cam=(-650, 94, 941) player=(-651, 91, 945) flight=False frozen=False mounted=False stage=11 hp=120 dragon=(-670, 111, 735)
+[Emberbond] impact 29 m/s damage 51
+[SHOT] 12_duel cam=(-613, 133, 658) player=(-613, 128, 629) flight=True frozen=False mounted=True stage=12 hp=105 dragon=(-613, 128, 629)
+[SHOT] 13_riot cam=(413, 1303, -417) player=(413, 1300, -413) flight=False frozen=False mounted=False stage=13 hp=70 dragon=(431, 1301, -424)
+[SHOT] 14_tide cam=(-634, 112, 714) player=(-630, 110, 712) flight=False frozen=False mounted=False stage=14 hp=92 dragon=(-670, 111, 735)
+[SHOT] 15_egg cam=(426, 507, -289) player=(430, 505, -291) flight=False frozen=False mounted=False stage=15 hp=120 dragon=(-670, 111, 735)
+[SHOT] 16_ending_wildfire cam=(-595, 239, 365) player=(430, 505, -291) flight=False frozen=True mounted=False stage=16 hp=120 dragon=(-670, 111, 735)
+[SHOT] 16_ending_hearthfire cam=(-664, 239, 387) player=(430, 505, -291) flight=False frozen=True mounted=False stage=16 hp=120 dragon=(-670, 111, 735)
+[SHOT] 16_ending_unbound cam=(-725, 239, 424) player=(430, 505, -291) flight=False frozen=True mounted=False stage=16 hp=120 dragon=(-670, 111, 735)
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.

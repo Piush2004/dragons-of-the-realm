@@ -1,0 +1,90 @@
+Mono path[0] = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/Managed'
+Mono config path = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.3.26f1 (de8167e7440c)
+[Subsystems] Discovering subsystems at path D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/UnitySubsystems
+[D3D12 Device Filter] Vendor Name: ATI
+[D3D12 Device Filter] Device Name: AMD Radeon 780M Graphics
+[D3D12 Device Filter] Driver Version: 32.0.21030.11004
+[D3D12 Device Filter] Feature Level: 12.2
+[D3D12 Device Filter] Graphics Memory: 11933 MB
+[D3D12 Device Filter] Processor Count: 16
+[D3D12 Device Filter] Device Type: Integrated
+[D3D12 Device Filter] D3D12 API denied by user filter(s): {"Vendor": "ATI", "Device Type:": Integrated}, but allowed by user filter(s): {"Feature Level Comparator": Greater Than Or Equal To"Feature Level": "12.2", "Device Type:": Integrated}
+GfxDevice: creating device client; kGfxThreadingModeSplitJobs
+d3d12: failed to query info queue interface (0x80004002).
+Direct3D:
+    Version:         Direct3D 12 [level 12.2]
+    Renderer:        AMD Radeon 780M Graphics (ID=0x1900)
+    Vendor:          ATI
+    VRAM:            11933 MB
+    App VRAM Budget: 11582 MB
+    Driver:          32.0.21030.11004
+    Unified Memory Architecture
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.648 seconds
+- Finished resetting the current domain, in  0.006 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+D3D11 device created for Microsoft Media Foundation video decoding.
+<RI> Initializing input.
+Using Windows.Gaming.Input
+The tree pine_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnloadTime: 5.907000 ms
+[Emberbond] graphics: AMD Radeon 780M Graphics -> reduced quality, target 60 fps
+[TEST] PASS terrain exists
+[TEST] PASS layout loaded  (city (-540.00, 109.50, 660.00))
+[TEST] PASS player starts on the ground  (y=109.6 ground=109.5)
+[TEST] PASS dragon exists and has a rig
+[TEST] PASS rider has a rig
+[TEST] PASS council dialogue opens with three tones
+[TEST] PASS each tone changes its own reputation value
+[TEST] PASS choosing moves to the market fight
+[TEST] PASS four soldiers appear  (count=4)
+[TEST] PASS soldiers close in on the player  (11 -> 3 m)
+[TEST] PASS a timed parry negates strikes  (parried=8 landed=0)
+[TEST] PASS an unguarded strike hurts for 12  (health 108)
+[TEST] PASS the soldiers can be defeated and the quest advances  (stage=1)
+[TEST] PASS fallen soldiers are physical bodies resting on the ground  (4/4)
+[TEST] PASS crates and barrels rest on the ground  (n=27 minClearance=0.45)
+[TEST] PASS walking into a barrel pushes it  (barrel moved 5.50 m, rider moved 7.6 m, start gap 3.0)
+[Emberbond] landed hard 31 m/s damage 65
+[TEST] PASS a 25 m fall hurts but does not kill  (lost 65)
+[TEST] PASS the player floats in water instead of sinking  (y=78.9)
+[TEST] PASS an exhausted swimmer drowns slowly  (120 -> 100)
+[TEST] PASS death respawns the player alive at a checkpoint  (respawns=1 health=120)
+[TEST] PASS respawn is above the ground
+[TEST] PASS the game saves
+[TEST] PASS the game loads what it saved  (honour=7 deaths=4)
+[TEST] PASS a damaged save is rejected without crashing
+[TEST] PASS an out-of-range save is rejected
+[TEST] PASS mounting works
+[Emberbond] impact 40 m/s damage 84
+[Emberbond] impact 19 m/s damage 22
+[TEST] PASS a dive cannot go through the terrain  (lowest clearance 4.0 m)
+[Emberbond] impact 59 m/s damage 142
+[TEST] PASS the wall stops the dragon and it crashes  (crashes=1 closest=170 m)
+[TEST] PASS a crash hurts the dragon  (258)
+[TEST] PASS the dragon cannot leave the world  (furthest 1323 m)
+[TEST] PASS dismounting returns control to the rider
+[TEST] PASS frame time holds the 60 fps budget (p95 <= 20 ms)  (p50=16.7 p95=16.7 p99=17.0 ms over 3149 frames)
+[TEST] PASS no errors or exceptions were logged  (0 logged)
+[TEST] SUMMARY pass=33 fail=0
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.

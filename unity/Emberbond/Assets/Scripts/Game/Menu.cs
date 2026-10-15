@@ -8,7 +8,7 @@ namespace Emberbond
     /// <summary>Title screen, pause menu and settings, navigable with mouse, keyboard or gamepad.</summary>
     public sealed class Menu : MonoBehaviour
     {
-        public enum Page { None, Main, Pause, Settings }
+        public enum Page { None, Main, Pause, Settings, Controls }
 
         public Director Director;
         public CameraRig Rig;
@@ -21,6 +21,8 @@ namespace Emberbond
         private GUIStyle _title, _item, _hint, _small;
         private const float W = 1920f, H = 1080f;
         private bool _lockCursor = true;
+        private GameAction? _capturing;
+        private float _captureStart;
 
         private sealed class Row
         {
@@ -28,6 +30,7 @@ namespace Emberbond
             public Func<string> Value;          // null for plain buttons
             public Action<int> Change;          // -1, 0 (activate), +1
             public Func<bool> Enabled = () => true;
+            public bool Arrows = true;           // draw < value > around the value
         }
 
         public bool IsOpen { get { return Current != Page.None; } }
@@ -37,7 +40,7 @@ namespace Emberbond
             _white = new Texture2D(1, 1);
             _white.SetPixel(0, 0, Color.white);
             _white.Apply();
-            _lockCursor = !(GameBootstrap.Has("-autoplay") || GameBootstrap.Has("-selftest") || GameBootstrap.Has("-soak") || GameBootstrap.Has("-menushots"));
+            _lockCursor = !(GameBootstrap.Has("-autoplay") || GameBootstrap.Has("-selftest") || GameBootstrap.Has("-soak") || GameBootstrap.Has("-menushots") || GameBootstrap.Has("-chaptershots"));
         }
 
         // ------------------------------------------------------------ opening and closing
@@ -108,8 +111,25 @@ namespace Emberbond
                     r.Add(Choice("Graphics tier (restart)", () => GameSettings.Quality, v => GameSettings.Quality = v, new[] { "Auto", "High", "Low" }));
                     r.Add(Choice("Render scale", () => ScaleIndex(), v => { GameSettings.RenderScale = ScaleFromIndex(v); ApplyScale(); }, new[] { "Auto (hold 60 fps)", "100%", "85%", "70%", "55%" }));
                     r.Add(Toggle("Show frame rate", () => GameSettings.ShowFps, v => GameSettings.ShowFps = v));
+                    r.Add(Toggle("Show tips", () => GameSettings.ShowHints, v => GameSettings.ShowHints = v));
                     r.Add(Slider("Interface size", () => GameSettings.UiScale, v => GameSettings.UiScale = v, 0.8f, 1.4f, 0.1f, "0.0"));
+                    r.Add(new Row { Label = () => "Controls...", Change = d => { if (d == 0) { Current = Page.Controls; _sel = 0; } } });
                     r.Add(new Row { Label = () => "Back", Change = d => { if (d == 0) { GameSettings.Save(); Current = _settingsFrom; _sel = 0; } } });
+                    break;
+                case Page.Controls:
+                    foreach (GameAction act in Bindings.All)
+                    {
+                        GameAction a = act;
+                        r.Add(new Row
+                        {
+                            Label = () => Bindings.ActionName(a),
+                            Value = () => _capturing.HasValue && _capturing.Value == a ? "press a key or mouse button" : Bindings.Label(a),
+                            Arrows = false,
+                            Change = d => { if (d == 0) { _capturing = a; _captureStart = Time.unscaledTime; } },
+                        });
+                    }
+                    r.Add(new Row { Label = () => "Reset to defaults", Change = d => { if (d == 0) { Bindings.ResetDefaults(); Bindings.Save(); AudioDirector.Ui(); } } });
+                    r.Add(new Row { Label = () => "Back", Change = d => { if (d == 0) { Bindings.Save(); Current = Page.Settings; _sel = 0; } } });
                     break;
             }
             return r;
@@ -183,6 +203,7 @@ namespace Emberbond
         public void DebugOpenSettings() { Current = Page.Main; OpenSettings(Page.Main); InputState.Blocked = true; }
         public void DebugCloseAll() { Close(); }
         public void DebugPause() { OpenPause(); }
+        public void DebugOpenControls() { Current = Page.Controls; _sel = 0; InputState.Blocked = true; }
 
         private void ToTitle()
         {
@@ -226,6 +247,12 @@ namespace Emberbond
                 Rig.transform.rotation = Quaternion.LookRotation(c + Vector3.up * 30f - p, Vector3.up);
             }
 
+            if (_capturing.HasValue)
+            {
+                UpdateCapture(k);
+                return;
+            }
+
             List<Row> rows = Rows();
             if (_sel >= rows.Count) _sel = rows.Count - 1;
             _navCooldown -= Time.unscaledDeltaTime;
@@ -260,8 +287,40 @@ namespace Emberbond
             if (activate && cur.Enabled()) { cur.Change(0); AudioDirector.Ui(); }
             if (back)
             {
-                if (Current == Page.Settings) { GameSettings.Save(); Current = _settingsFrom; _sel = 0; }
+                if (Current == Page.Controls) { Bindings.Save(); Current = Page.Settings; _sel = 0; }
+                else if (Current == Page.Settings) { GameSettings.Save(); Current = _settingsFrom; _sel = 0; }
                 else if (Current == Page.Pause) Close();
+            }
+        }
+
+        /// <summary>Waits for a key or mouse button and binds it. Escape cancels.</summary>
+        private void UpdateCapture(Keyboard k)
+        {
+            if (Time.unscaledTime - _captureStart < 0.25f) return;       // ignore the click that started the capture
+            if (k != null && k.escapeKey.wasPressedThisFrame) { _capturing = null; return; }
+            Bind? got = null;
+            if (k != null)
+            {
+                foreach (UnityEngine.InputSystem.Controls.KeyControl kc in k.allKeys)
+                {
+                    if (kc.wasPressedThisFrame && Bindings.Assignable(kc.keyCode)) { got = Bind.K(kc.keyCode); break; }
+                }
+            }
+            Mouse m = Mouse.current;
+            if (got == null && m != null)
+            {
+                if (m.leftButton.wasPressedThisFrame) got = Bind.M(0);
+                else if (m.rightButton.wasPressedThisFrame) got = Bind.M(1);
+                else if (m.middleButton.wasPressedThisFrame) got = Bind.M(2);
+                else if (m.backButton.wasPressedThisFrame) got = Bind.M(3);
+                else if (m.forwardButton.wasPressedThisFrame) got = Bind.M(4);
+            }
+            if (got.HasValue)
+            {
+                Bindings.Set(_capturing.Value, got.Value);
+                Bindings.Save();
+                _capturing = null;
+                AudioDirector.Ui();
             }
         }
 
@@ -299,12 +358,13 @@ namespace Emberbond
 
             List<Row> rows = Rows();
             float rowH = 62f;
-            float panelW = Current == Page.Settings ? 900f : 520f;
+            float panelW = (Current == Page.Settings || Current == Page.Controls) ? 900f : 520f;
             float top = Current == Page.Main ? 360f : Mathf.Max(120f, (H - rows.Count * rowH) * 0.5f);
             float x = (W - panelW) * 0.5f;
             // A dark backing panel keeps the rows readable over bright terrain on the title screen.
             if (Current == Page.Main) Rect(x - 24f, top - 16f, panelW + 48f, rows.Count * rowH + 24f, new Color(0.04f, 0.035f, 0.03f, 0.82f));
             if (Current == Page.Settings) GUI.Label(new Rect(0f, top - 100f, W, 90f), "Settings", _title);
+            if (Current == Page.Controls) GUI.Label(new Rect(0f, top - 100f, W, 90f), "Controls", _title);
             if (Current == Page.Pause) GUI.Label(new Rect(0f, top - 110f, W, 90f), "Paused", _title);
 
             for (int i = 0; i < rows.Count; i++)
@@ -319,20 +379,23 @@ namespace Emberbond
                 if (r.Value != null)
                 {
                     GUIStyle right = new GUIStyle(_item) { alignment = TextAnchor.MiddleRight };
-                    GUI.Label(new Rect(box.x + box.width * 0.5f, box.y, box.width * 0.5f - 24f, box.height), "<  " + r.Value() + "  >", right);
+                    string shown = r.Arrows ? "<  " + r.Value() + "  >" : r.Value();
+                    GUI.Label(new Rect(box.x + box.width * 0.5f, box.y, box.width * 0.5f - 24f, box.height), shown, right);
                 }
                 GUI.contentColor = old;
                 if (Event.current.type == EventType.MouseDown && box.Contains(Event.current.mousePosition))
                 {
                     Vector2 m = Event.current.mousePosition;      // already in the scaled GUI space
                     _sel = i;
-                    if (r.Value != null) r.Change(m.x < x + panelW * 0.75f ? -1 : 1);
+                    if (r.Value != null && r.Arrows) r.Change(m.x < x + panelW * 0.75f ? -1 : 1);
+                    else if (r.Value != null) r.Change(0);
                     else if (enabled) r.Change(0);
                     AudioDirector.Ui();
                     Event.current.Use();
                 }
             }
-            string hint = Current == Page.Settings ? "Up/Down select    Left/Right change    Esc back"
+            string hint = Current == Page.Controls ? (_capturing.HasValue ? "Press the new key or mouse button    Esc cancel" : "Up/Down select    Enter rebind    Esc back")
+                        : Current == Page.Settings ? "Up/Down select    Left/Right change    Esc back"
                         : Current == Page.Main ? "Up/Down select    Enter choose"
                         : "Up/Down select    Enter choose    Esc resume";
             GUI.Label(new Rect(0f, H - 90f, W, 40f), hint, _hint);

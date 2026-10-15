@@ -11,6 +11,7 @@ namespace Emberbond
         public float Damage = 25f;
         public float Radius = 7f;
         public float Life = 6f;
+        public Color Tint;                              // alpha 0 = the usual orange
         private Light _light;
 
         public static Fireball Spawn(Vector3 pos, Vector3 velocity, GameObject owner, float damage)
@@ -29,7 +30,8 @@ namespace Emberbond
 
             _light = gameObject.AddComponent<Light>();
             _light.type = LightType.Point;
-            _light.color = new Color(1f, 0.55f, 0.2f);
+            Color fire = Tint.a > 0f ? Tint : new Color(1f, 0.55f, 0.2f);
+            _light.color = fire;
             _light.range = 90f;
             _light.intensity = 3e6f;                       // HDRP uses lumens; this reads as a bright fire
             _light.shadows = LightShadows.None;
@@ -39,7 +41,7 @@ namespace Emberbond
             psr.sharedMaterial = m;
             var main = ps.main;
             main.startLifetime = 0.5f; main.startSize = 3.2f; main.startSpeed = 0.5f;
-            main.startColor = new Color(1f, 0.6f, 0.2f, 0.28f);
+            main.startColor = Tint.a > 0f ? new Color(Tint.r, Tint.g, Tint.b, 0.3f) : new Color(1f, 0.6f, 0.2f, 0.28f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             var em = ps.emission; em.rateOverTime = 50f;
             var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Sphere; sh.radius = 0.9f;

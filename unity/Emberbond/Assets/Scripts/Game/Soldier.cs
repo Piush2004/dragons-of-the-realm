@@ -65,14 +65,19 @@ namespace Emberbond
         private float _deadTime;
         private bool _ragdoll;
         public int Parried, Landed;
+        public float WalkSpeed = 3.1f, Damage = 12f;
+        public float Aggro;                 // 0 = always hunts; otherwise only within this many metres and on the same level
         public bool Staggered { get { return _stagger > 0f; } }
         private Vector3 _knock, _lastHit;
 
         public static Soldier Spawn(Vector3 pos, ThirdPersonPlayer target, int index)
         {
-            Color cloth = new Color(0.55f, 0.1f, 0.08f);
-            Color cloak = new Color(0.45f, 0.35f, 0.1f);
-            GameObject go = CharacterFactory.Spawn(pos, 0f, cloth, cloak, new Color(0.15f, 0.1f, 0.07f), "Soldier" + index);
+            return Spawn(pos, target, index, new Color(0.55f, 0.1f, 0.08f), new Color(0.45f, 0.35f, 0.1f), "Soldier");
+        }
+
+        public static Soldier Spawn(Vector3 pos, ThirdPersonPlayer target, int index, Color cloth, Color cloak, string name)
+        {
+            GameObject go = CharacterFactory.Spawn(pos, 0f, cloth, cloak, new Color(0.15f, 0.1f, 0.07f), name + index);
             if (go == null) return null;
             CharacterController cc = go.AddComponent<CharacterController>();
             cc.height = 1.8f; cc.radius = 0.35f; cc.center = new Vector3(0f, 0.9f, 0f); cc.stepOffset = 0.4f;
@@ -81,7 +86,7 @@ namespace Emberbond
             s.Anim = go.GetComponent<RiderAnimator>();
             s.Health = go.AddComponent<Damageable>();
             s.Health.MaxHealth = s.Health.Health = 55f;
-            s.Health.DisplayName = "Soldier";
+            s.Health.DisplayName = name;
             return s;
         }
 
@@ -146,6 +151,12 @@ namespace Emberbond
                 if (Anim != null) { Anim.Speed = 0f; Anim.Strike = 0f; }
                 return;
             }
+            bool aware = Aggro <= 0f || (dist < Aggro && Mathf.Abs(Target.transform.position.y - transform.position.y) < 4.5f);
+            if (!aware && !_winding)
+            {
+                if (Anim != null) { Anim.Speed = 0f; Anim.Strike = 0f; }
+                return;
+            }
             _cooldown -= dt;
             if (_winding)
             {
@@ -160,7 +171,7 @@ namespace Emberbond
                         if (Target.TryParry()) { _stagger = 1.4f; Parried++; }      // knocked off balance
                         else
                         {
-                            Target.Health.Hurt(12f, gameObject);
+                            Target.Health.Hurt(Damage, gameObject);
                             Landed++;
                             Vector3 shove = Target.transform.position - transform.position; shove.y = 0f;
                             Target.Knock(shove.normalized * 4f);
@@ -171,7 +182,7 @@ namespace Emberbond
             }
             if (dist > 2.1f)
             {
-                _cc.SimpleMove(to.normalized * 3.1f);
+                _cc.SimpleMove(to.normalized * WalkSpeed);
                 if (Anim != null) { Anim.Speed = 1.4f; Anim.Strike = 0f; }
             }
             else

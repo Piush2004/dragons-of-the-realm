@@ -1,0 +1,1460 @@
+VBCSCompilerServerWatchdog: watching VBCSCompiler (PID 18144)
+.. is not a valid directory name. Please make sure there are no unallowed characters in the name.
+.. is not a valid directory name. Please make sure there are no unallowed characters in the name.
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.3/staging' branch; Version is '6000.3.26f1 (de8167e7440c) revision 14582119'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-piush" at "2026-10-13T02:04:03.2157144Z"
+OS: 'Windows 11  (10.0.26300) CoreSingleLanguage' Language: 'en' Physical Memory: 23866 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-10-13T02:04:03Z
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 23292, path: "C:/Program Files/WindowsApps/UnityTechnologies.UnityHub_3.22.2.65535_x64__2vrhnee42bhxm/app/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.3+d7ffd15
+  Session Id:              fc39dbe09913494fbe725393f313591e
+  Correlation Id:          0401dad14c269a7cbb17b9e14581327c
+  External correlation Id: 4935869256753510594
+  Machine Id:              XSsPbwqyPjreXn3bRvlUdGvMpgU=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-piush" (connect: 0.00s, validation: 0.00s, handshake: 0.12s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-piush-notifications" at "2026-10-13T02:04:03.3388305Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 13469982287279-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.14s
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Unity.exe
+-batchmode
+-nographics
+-quit
+-projectPath
+D:/Projects/Games/claude/unity/Emberbond
+-executeMethod
+Emberbond.EditorTools.IslandBuilder.Build
+-logFile
+D:/Projects/Games/claude/unity/Emberbond/../emberbond_build11.log
+Successfully changed project path to: D:/Projects/Games/claude/unity/Emberbond
+D:/Projects/Games/claude/unity/Emberbond
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-remapper-allocator-initial-capacity=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+Failed to start primary listening socket at (0.0.0.0:55504-55512).
+Player connection [30664]  Target information:
+
+Player connection [30664]  * "[IP] 172.22.64.1 [Port] 55511 [Flags] 2 [Guid] 4215243531 [EditorId] 4215243531 [Version] 1048832 [Id] WindowsEditor(7,Piush) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [30664]  * "[IP] 192.168.0.9 [Port] 55511 [Flags] 2 [Guid] 4215243531 [EditorId] 4215243531 [Version] 1048832 [Id] WindowsEditor(7,Piush) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [30664] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [30664] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-30152" after 0.5 seconds.
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Artifact Garbage Collection - Removed 2 unused hashed content files
+Refreshing native plugins compatible for Editor in 0.14 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.3.26f1 (de8167e7440c)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path D:/Projects/Games/claude/unity/Emberbond/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56152
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.3.26f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.003993 seconds.
+- Loaded All Assemblies, in  0.767 seconds
+Native extension for WindowsStandalone target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.751 seconds
+Domain Reload Profiling: 1512ms
+	BeginReloadAssembly (267ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (11ms)
+	RebuildCommonClasses (69ms)
+	RebuildNativeTypeToScriptingClass (23ms)
+	initialDomainReloadingComplete (101ms)
+	LoadAllAssembliesAndSetupDomain (300ms)
+		LoadAssemblies (247ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (294ms)
+			TypeCache.Refresh (291ms)
+				TypeCache.ScanAssembly (271ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (1ms)
+	FinalizeReload (752ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (670ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (78ms)
+			SetLoadedEditorAssemblies (6ms)
+			BeforeProcessingInitializeOnLoad (152ms)
+			ProcessInitializeOnLoadAttributes (253ms)
+			ProcessInitializeOnLoadMethodAttributes (180ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 33 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.inputsystem@1.14.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.inputsystem@7fe8299111a7)
+    com.unity.timeline@1.8.9 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.timeline@6b9e48457ddb)
+    com.unity.burst@1.8.30 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.burst@2f3d916873ea)
+    com.unity.mathematics@1.3.3 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.collections@2.6.8 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.collections@84e8eb3fc12e)
+    com.unity.searcher@4.9.5 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.searcher@a463122f2c00)
+    com.unity.nuget.mono-cecil@1.11.6 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.5.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.test-framework.performance@8b56083ec0f0)
+  Built-in packages:
+    com.unity.render-pipelines.high-definition@17.3.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.render-pipelines.high-definition@db870df5790c)
+    com.unity.ugui@2.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.ugui@0e6b3c20b946)
+    com.unity.modules.ai@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.animation@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.audio@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.imageconversion@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.particlesystem@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.screencapture@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.ui@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.unitywebrequest@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.visualeffectgraph@17.3.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.visualeffectgraph@a963c7d0e87b)
+    com.unity.shadergraph@17.3.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.shadergraph@9b839d46559e)
+    com.unity.render-pipelines.core@17.3.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.render-pipelines.core@9e589b64c45d)
+    com.unity.modules.imgui@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.director@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.uielements@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.video@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.video)
+    com.unity.render-pipelines.high-definition-config@17.3.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.render-pipelines.high-definition-config@a5eed8fc07b1)
+    com.unity.modules.jsonserialize@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.hierarchycore@1.0.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.test-framework@1.6.0 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.test-framework@bd7f943e9647)
+    com.unity.ext.nunit@2.0.5 (location: D:\Projects\Games\claude\unity\Emberbond\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.04 seconds
+[ScriptCompilation] Requested script compilation because: Assetdatabase observed changes in script compilation related files
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:80
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\Projects\Games\claude\unity\Emberbond\
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 65.6827ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: D:/Projects/Games/claude/unity/Emberbond
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/ConfigurePostProcessors application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/ConfigurePostProcessors'
+DisplayProgressbar: Compiling Scripts
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.runtime.interopservices.windowsruntime has duplicate hint path. Ignoring "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" in favor of "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\NetStandard\Extensions\2.0.0\System.Runtime.InteropServices.WindowsRuntime.dll"
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.componentmodel.composition has duplicate hint path. Ignoring "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\System.ComponentModel.Composition.dll" in favor of "C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.ComponentModel.Composition.dll"
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Burst.Cecil, Version=0.11.6.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.burst@2f3d916873ea\Unity.Burst.CodeGen\Unity.Burst.Cecil.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff\Mono.Cecil.dll
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/ConfigurePostProcessors'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/ConfigurePostProcessors application/grpc - - 200 - application/grpc 113.3467ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll, with 137 defines and 302 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Collections, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with Library\Bee\artifacts\1900b0aE.dag\Unity.Collections.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\Managed\UnityEngine\UnityEditor.CoreModule.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with C:\Program Files\Unity\Hub\Editor\6000.3.26f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Burst.Cecil.Rocks, Version=0.11.6.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.burst@2f3d916873ea\Unity.Burst.CodeGen\Unity.Burst.Cecil.Rocks.dll
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 724.4523ms
+ExitCode: 0 Duration: 3s441ms
+[355/606    0s] WriteResponseFile Library/Bee/artifacts/rsp/4747638433968585886.rsp
+[487/606    0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[602/606    2s] Csc Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll (+2 others)
+[603/606    0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll, with 137 defines and 302 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[604/606    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.pdb
+[605/606    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+*** Tundra build success (3.36 seconds), 6 items updated, 606 evaluated
+AssetDatabase: script compilation time: 4.312671s
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  1.483 seconds
+Refreshing native plugins compatible for Editor in 0.50 ms, found 0 plugins.
+Native extension for WindowsStandalone target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  5.995 seconds
+Domain Reload Profiling: 7471ms
+	BeginReloadAssembly (493ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (36ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (180ms)
+	RebuildCommonClasses (71ms)
+	RebuildNativeTypeToScriptingClass (25ms)
+	initialDomainReloadingComplete (58ms)
+	LoadAllAssembliesAndSetupDomain (827ms)
+		LoadAssemblies (706ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (324ms)
+			TypeCache.Refresh (229ms)
+				TypeCache.ScanAssembly (215ms)
+			BuildScriptInfoCaches (71ms)
+			ResolveRequiredComponents (19ms)
+	FinalizeReload (5997ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (5396ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (45ms)
+			SetLoadedEditorAssemblies (10ms)
+			BeforeProcessingInitializeOnLoad (290ms)
+			ProcessInitializeOnLoadAttributes (4249ms)
+			ProcessInitializeOnLoadMethodAttributes (785ms)
+			AfterProcessingInitializeOnLoad (14ms)
+			EditorAssembliesLoaded (3ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (93ms)
+Start importing Assets/Art/City/house_a.fbx using Guid(111dc9cef6f01d244bc433db28ad726a) (FBXImporter)Launched and connected shader compiler UnityShaderCompiler.exe after 0.03 seconds
+ -> (artifact id: 'c01a5db9f34de6c35ce07dc3cbd9dcd1') in 0.3212405 seconds
+Start importing Assets/Art/City/house_b.fbx using Guid(c182011bb96104542b51fe2a0e4c5431) (FBXImporter) -> (artifact id: 'c609fd1e4057854443b54d9e15baaa76') in 0.1238084 seconds
+Start importing Assets/Art/City/house_d.fbx using Guid(a2793714174b5fd4fa4ceffedad585a8) (FBXImporter) -> (artifact id: 'bc2fe46156de6e78a433232929487d2c') in 0.0589999 seconds
+Start importing Assets/Art/City/wall_segment.fbx using Guid(33d5e98b34ddfed448b7c1f6084af11c) (FBXImporter) -> (artifact id: 'f779c470712c028ab7fbab8c67a2ba00') in 0.0246778 seconds
+Start importing Assets/Art/City/house_c.fbx using Guid(736b18201fbca944b98c190ea6e1808f) (FBXImporter) -> (artifact id: '00ef694a65740a3434e1cc8e2ff6a0db') in 0.0453173 seconds
+Start importing Assets/Art/City/market_stall.fbx using Guid(85ee2333eb428834bb7e6abc4bc93bb3) (FBXImporter) -> (artifact id: 'cb5ed81798cf6718ee128da79ebd5e23') in 0.0362997 seconds
+Start importing Assets/Art/City/tower_round.fbx using Guid(27cdd78451ab3314bb4d36b83b252e28) (FBXImporter) -> (artifact id: 'c5e575b3d1383986b8e4114180f0c729') in 0.0458545 seconds
+Start importing Assets/Art/City/ruin_wall.fbx using Guid(d9ef6c55570679c43ba43166d85dc1f0) (FBXImporter) -> (artifact id: 'a3ebf2cdb3b1681169176e84daa7ea19') in 0.027246 seconds
+Start importing Assets/Art/City/keep.fbx using Guid(1a5afa87bf2811e45acadfe0bd09d184) (FBXImporter) -> (artifact id: '408e2de9861bd0a58a017f97a172d46f') in 0.0464861 seconds
+Start importing Assets/Art/City/gate.fbx using Guid(2c295b91f2fde164bb36e5ff1a3bc8fe) (FBXImporter) -> (artifact id: 'a78159452b2e9fa9e6dc7e12cdad8b7d') in 0.0353132 seconds
+Start importing Assets/Art/City/ship.fbx using Guid(4c6871629af07b94e9a174b3b67d2d62) (FBXImporter) -> (artifact id: 'beee436e7cd0536107fd0b7aa590f7eb') in 0.0233414 seconds
+Start importing Assets/Art/City/pier.fbx using Guid(eef718a0de023e4498ecf61c014628a9) (FBXImporter) -> (artifact id: 'c26e95ed18806ed3313942b7569f1d7f') in 0.0297217 seconds
+Refreshing native plugins compatible for Editor in 0.59 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=a8f83db1badf75d42ba7e79766e516e7): Total: 14.306 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=12 (actual=12, local cache=0, cache server=0)
+		Asset DB Process Time: managed=343 ms, native=7506 ms
+		Asset DB Callback time: managed=517 ms, native=54 ms
+		Scripting: domain reloads=1, domain reload time=1485 ms, compile time=4317 ms, other=80 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=13, moved=0, deleted=1
+		Scan Filter Count: 0
+	InvokeCustomDependenciesCallbacks: 0.003ms
+	InvokePackagesCallback: 43.594ms
+	ApplyChangesToAssetFolders: 1.629ms
+	Scan: 287.200ms
+	OnSourceAssetsModified: 2.069ms
+	CategorizeAssetsWithTransientArtifact: 34.857ms
+	ProcessAssetsWithTransientArtifactChanges: 113.160ms
+	UnregisterDeletedAssets: 0.006ms
+	CategorizeAssets: 210.135ms
+	ImportOutOfDateAssets: 6845.414ms (1689.851ms without children)
+		ImportManagerImport: 832.053ms (3.816ms without children)
+			ImportInProcess: 827.960ms
+			UpdateCategorizedAssets: 0.277ms
+		CompileScripts: 4316.872ms
+		ReloadNativeAssets: 0.098ms
+		UnloadImportedAssets: 4.135ms
+		ReloadImportedAssets: 0.004ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 1.256ms
+		InitializingProgressBar: 0.017ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.002ms
+		OnDemandSchedulerStart: 1.127ms
+	PostProcessAllAssets: 525.965ms
+	Hotreload: 5.026ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.004ms
+	UnloadStreamsBegin: 3.079ms
+	PersistCurrentRevisions: 0.555ms
+	UnloadStreamsEnd: 0.003ms
+	GenerateScriptTypeHashes: 24.752ms
+	Untracked: 6233.566ms
+
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 3.682ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Emberbond
+Unloading 60 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 5025 unused Assets / (10.2 MB). Loaded Objects now: 6096.
+Memory consumption went from 255.1 MB to 244.9 MB.
+Total: 21.796500 ms (FindLiveObjects: 1.151500 ms CreateObjectMapping: 0.519400 ms MarkObjects: 10.766800 ms  DeleteObjects: 9.357100 ms)
+
+Start importing Assets/Art/Terrain/ash_albedo.png using Guid(3e350fbb13345d94f8d3eb0a747ac60e) (TextureImporter) -> (artifact id: '04e878ab1301c31e5c9bc9dcaa51c9ba') in 0.48396 seconds
+Refreshing native plugins compatible for Editor in 0.37 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=9196b2ee453a303478da787059acd9d7): Total: 0.666 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=4 ms, native=653 ms
+		Asset DB Callback time: managed=7 ms, native=1 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.198ms
+	Scan: 39.904ms
+	OnSourceAssetsModified: 0.002ms
+	CategorizeAssetsWithTransientArtifact: 0.047ms
+	ProcessAssetsWithTransientArtifactChanges: 0.168ms
+	CategorizeAssets: 118.106ms
+	ImportOutOfDateAssets: 487.949ms (0.294ms without children)
+		ImportManagerImport: 485.174ms (0.724ms without children)
+			ImportInProcess: 484.421ms
+			UpdateCategorizedAssets: 0.029ms
+		ReloadNativeAssets: 0.117ms
+		UnloadImportedAssets: 0.395ms
+		ReloadImportedAssets: 0.277ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.898ms
+		InitializingProgressBar: 0.014ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.779ms
+	PostProcessAllAssets: 7.857ms
+	Hotreload: 0.602ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.158ms
+	UnloadStreamsBegin: 0.063ms
+	PersistCurrentRevisions: 0.203ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 10.972ms
+
+Start importing Assets/Art/Terrain/ash_mask.png using Guid(0322f580c0e64fb4a802d3bfb0705470) (TextureImporter) -> (artifact id: '7427b146b113bb923f906fd5ac7d90d7') in 0.9049217 seconds
+Refreshing native plugins compatible for Editor in 0.36 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=a3e041fd514857849bae7a49c7306e62): Total: 0.922 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=919 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.086ms
+	Scan: 7.728ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.041ms
+	CategorizeAssets: 1.701ms
+	ImportOutOfDateAssets: 907.837ms (0.047ms without children)
+		ImportManagerImport: 906.190ms (0.687ms without children)
+			ImportInProcess: 905.476ms
+			UpdateCategorizedAssets: 0.027ms
+		ReloadNativeAssets: 0.076ms
+		UnloadImportedAssets: 0.313ms
+		ReloadImportedAssets: 0.311ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.480ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.414ms
+	PostProcessAllAssets: 1.000ms
+	Hotreload: 0.534ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.196ms
+	UnloadStreamsBegin: 0.050ms
+	PersistCurrentRevisions: 0.167ms
+	UnloadStreamsEnd: 0.000ms
+	Untracked: 2.300ms
+
+Start importing Assets/Art/Terrain/ash_normal.png using Guid(8a45d937e91e7e84895fdec02d64b095) (TextureImporter) -> (artifact id: '6db67f526dc635795f087ddd4ece11ce') in 1.0063377 seconds
+Refreshing native plugins compatible for Editor in 0.42 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=ad9d264d47ce3234dafb7b259a81752e): Total: 1.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1021 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.111ms
+	Scan: 8.725ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.041ms
+	CategorizeAssets: 1.619ms
+	ImportOutOfDateAssets: 1008.981ms (0.003ms without children)
+		ImportManagerImport: 1007.514ms (0.672ms without children)
+			ImportInProcess: 1006.814ms
+			UpdateCategorizedAssets: 0.028ms
+		ReloadNativeAssets: 0.060ms
+		UnloadImportedAssets: 0.264ms
+		ReloadImportedAssets: 0.301ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.461ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.371ms
+	PostProcessAllAssets: 0.969ms
+	Hotreload: 0.659ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.165ms
+	UnloadStreamsBegin: 0.028ms
+	PersistCurrentRevisions: 0.182ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.411ms
+
+Start importing Assets/Art/Terrain/dirt_albedo.png using Guid(79b2e9203dff56c4bb86c9d18b9a38c7) (TextureImporter) -> (artifact id: '5f2df61d85da1cc5f0b735bdc0569aaa') in 0.4328299 seconds
+Refreshing native plugins compatible for Editor in 0.35 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=4e89fc774b025e0488debda022fcdf23): Total: 0.451 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=449 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.101ms
+	Scan: 7.357ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.030ms
+	CategorizeAssets: 2.930ms
+	ImportOutOfDateAssets: 436.156ms (0.191ms without children)
+		ImportManagerImport: 434.005ms (0.644ms without children)
+			ImportInProcess: 433.330ms
+			UpdateCategorizedAssets: 0.030ms
+		ReloadNativeAssets: 0.087ms
+		UnloadImportedAssets: 0.449ms
+		ReloadImportedAssets: 0.292ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.650ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.071ms
+		OnDemandSchedulerStart: 0.404ms
+	PostProcessAllAssets: 1.093ms
+	Hotreload: 0.548ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.164ms
+	UnloadStreamsBegin: 0.062ms
+	PersistCurrentRevisions: 0.161ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.599ms
+
+Start importing Assets/Art/Terrain/dirt_mask.png using Guid(472d3b61a03dbad4d8f47b673257b9c0) (TextureImporter) -> (artifact id: '4cf32b7fed0a6ff3bc12068df2a21066') in 0.8612116 seconds
+Refreshing native plugins compatible for Editor in 0.31 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=dc0db71d40b8d98418dbd8a70926c467): Total: 0.878 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=876 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.000ms
+	InvokePackagesCallback: 0.000ms
+	ApplyChangesToAssetFolders: 0.067ms
+	Scan: 7.796ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.015ms
+	ProcessAssetsWithTransientArtifactChanges: 0.046ms
+	CategorizeAssets: 1.557ms
+	ImportOutOfDateAssets: 864.196ms (0.069ms without children)
+		ImportManagerImport: 862.610ms (0.815ms without children)
+			ImportInProcess: 861.756ms
+			UpdateCategorizedAssets: 0.039ms
+		ReloadNativeAssets: 0.064ms
+		UnloadImportedAssets: 0.249ms
+		ReloadImportedAssets: 0.351ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.469ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.376ms
+	PostProcessAllAssets: 1.159ms
+	Hotreload: 0.481ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.149ms
+	UnloadStreamsBegin: 0.026ms
+	PersistCurrentRevisions: 0.159ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.648ms
+
+Start importing Assets/Art/Terrain/dirt_normal.png using Guid(ac940a2c384cf6146b38dc5eda77eb17) (TextureImporter) -> (artifact id: '8276f73216960192df69d5c331f9e529') in 1.0021958 seconds
+Refreshing native plugins compatible for Editor in 0.42 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=0e24edb107e306440a598d7ebef6e64c): Total: 1.018 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1016 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.072ms
+	Scan: 7.467ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.039ms
+	CategorizeAssets: 1.781ms
+	ImportOutOfDateAssets: 1004.881ms (0.035ms without children)
+		ImportManagerImport: 1003.292ms (0.644ms without children)
+			ImportInProcess: 1002.621ms
+			UpdateCategorizedAssets: 0.027ms
+		ReloadNativeAssets: 0.063ms
+		UnloadImportedAssets: 0.339ms
+		ReloadImportedAssets: 0.279ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.499ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.366ms
+	PostProcessAllAssets: 0.868ms
+	Hotreload: 0.596ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.138ms
+	UnloadStreamsBegin: 0.026ms
+	PersistCurrentRevisions: 0.154ms
+	UnloadStreamsEnd: 0.000ms
+	Untracked: 2.165ms
+
+Start importing Assets/Art/Terrain/grass_albedo.png using Guid(112119d44ddbaad45af78fff197c2d61) (TextureImporter) -> (artifact id: '13b6b1397911202a125123db91787bff') in 0.5041799 seconds
+Refreshing native plugins compatible for Editor in 1.12 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=367f49da6774c5f40a04d143dd5a487a): Total: 0.525 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=521 ms
+		Asset DB Callback time: managed=1 ms, native=1 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.000ms
+	ApplyChangesToAssetFolders: 0.075ms
+	Scan: 7.267ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.019ms
+	ProcessAssetsWithTransientArtifactChanges: 0.043ms
+	CategorizeAssets: 2.718ms
+	ImportOutOfDateAssets: 507.150ms (-0.020ms without children)
+		ImportManagerImport: 505.385ms (0.722ms without children)
+			ImportInProcess: 504.613ms
+			UpdateCategorizedAssets: 0.050ms
+		ReloadNativeAssets: 0.065ms
+		UnloadImportedAssets: 0.302ms
+		ReloadImportedAssets: 0.344ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.510ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.557ms
+	PostProcessAllAssets: 1.601ms
+	Hotreload: 1.696ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.135ms
+	UnloadStreamsBegin: 0.026ms
+	PersistCurrentRevisions: 0.162ms
+	UnloadStreamsEnd: 0.003ms
+	Untracked: 4.008ms
+
+Start importing Assets/Art/Terrain/grass_mask.png using Guid(fa818f7d88426b24a80b764349af4ff1) (TextureImporter) -> (artifact id: '0b68f62eea1bca8432450372488cc43b') in 0.9268845 seconds
+Refreshing native plugins compatible for Editor in 0.43 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=05f067b14c23eec48bcf6220cd4f6f30): Total: 0.946 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=942 ms
+		Asset DB Callback time: managed=1 ms, native=1 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.100ms
+	Scan: 7.537ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.007ms
+	ProcessAssetsWithTransientArtifactChanges: 0.030ms
+	CategorizeAssets: 1.664ms
+	ImportOutOfDateAssets: 930.976ms (-0.239ms without children)
+		ImportManagerImport: 928.909ms (1.251ms without children)
+			ImportInProcess: 927.613ms
+			UpdateCategorizedAssets: 0.044ms
+		ReloadNativeAssets: 0.093ms
+		UnloadImportedAssets: 0.447ms
+		ReloadImportedAssets: 0.679ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.724ms
+		InitializingProgressBar: 0.008ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.355ms
+	PostProcessAllAssets: 1.332ms
+	Hotreload: 0.707ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.274ms
+	UnloadStreamsBegin: 0.046ms
+	PersistCurrentRevisions: 0.248ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.669ms
+
+Start importing Assets/Art/Terrain/grass_normal.png using Guid(689ba8e5b71e8db408600c509f17e352) (TextureImporter) -> (artifact id: '9fe9addaf28d4694bdd22f4daee463ac') in 1.090055 seconds
+Refreshing native plugins compatible for Editor in 0.32 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=5d74d770512e05444b1de8be8cef8dc7): Total: 1.108 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1106 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.123ms
+	Scan: 7.486ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.041ms
+	CategorizeAssets: 2.398ms
+	ImportOutOfDateAssets: 1093.468ms (0.198ms without children)
+		ImportManagerImport: 1091.281ms (0.632ms without children)
+			ImportInProcess: 1090.622ms
+			UpdateCategorizedAssets: 0.028ms
+		ReloadNativeAssets: 0.116ms
+		UnloadImportedAssets: 0.533ms
+		ReloadImportedAssets: 0.284ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.672ms
+		InitializingProgressBar: 0.010ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.373ms
+	PostProcessAllAssets: 0.874ms
+	Hotreload: 0.482ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.238ms
+	UnloadStreamsBegin: 0.036ms
+	PersistCurrentRevisions: 0.174ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.805ms
+
+Start importing Assets/Art/Terrain/rock_albedo.png using Guid(d2722a989dc2a9d4bb946cb34e4f56c9) (TextureImporter) -> (artifact id: 'ad365572e2cef17e5c29b60c2d86caf4') in 0.4638809 seconds
+Refreshing native plugins compatible for Editor in 0.30 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=ef8de33f05b11ad45b6f45584340f79c): Total: 0.482 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=480 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.000ms
+	ApplyChangesToAssetFolders: 0.071ms
+	Scan: 9.265ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.006ms
+	ProcessAssetsWithTransientArtifactChanges: 0.030ms
+	CategorizeAssets: 1.480ms
+	ImportOutOfDateAssets: 467.078ms (-0.042ms without children)
+		ImportManagerImport: 465.428ms (0.834ms without children)
+			ImportInProcess: 464.534ms
+			UpdateCategorizedAssets: 0.060ms
+		ReloadNativeAssets: 0.070ms
+		UnloadImportedAssets: 0.276ms
+		ReloadImportedAssets: 0.360ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.529ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.451ms
+	PostProcessAllAssets: 0.986ms
+	Hotreload: 0.486ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.173ms
+	UnloadStreamsBegin: 0.026ms
+	PersistCurrentRevisions: 0.158ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.144ms
+
+Start importing Assets/Art/Terrain/rock_mask.png using Guid(481f8d5f5325abe4fb8bbac0487ad4df) (TextureImporter) -> (artifact id: 'f83393b2b177cc2ff66955675ec93918') in 0.8963697 seconds
+Refreshing native plugins compatible for Editor in 0.33 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=88de8b9dcddd97242943315f30fa972c): Total: 0.917 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=914 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.091ms
+	Scan: 9.444ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.010ms
+	ProcessAssetsWithTransientArtifactChanges: 0.068ms
+	CategorizeAssets: 2.538ms
+	ImportOutOfDateAssets: 899.514ms (0.045ms without children)
+		ImportManagerImport: 897.625ms (0.750ms without children)
+			ImportInProcess: 896.843ms
+			UpdateCategorizedAssets: 0.031ms
+		ReloadNativeAssets: 0.092ms
+		UnloadImportedAssets: 0.418ms
+		ReloadImportedAssets: 0.359ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.587ms
+		InitializingProgressBar: 0.008ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.380ms
+	PostProcessAllAssets: 0.874ms
+	Hotreload: 0.531ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.189ms
+	UnloadStreamsBegin: 0.035ms
+	PersistCurrentRevisions: 0.157ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 3.171ms
+
+Start importing Assets/Art/Terrain/rock_normal.png using Guid(7f2c532a0150bbb4ea3b6810d1f4b198) (TextureImporter) -> (artifact id: '4773e8ba42cb33bd426addb232ad7b3d') in 0.9988403 seconds
+Refreshing native plugins compatible for Editor in 0.30 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=6ee2b2f37d3f6df4c923ffdcde6199b8): Total: 1.017 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1015 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.093ms
+	Scan: 8.201ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.012ms
+	ProcessAssetsWithTransientArtifactChanges: 0.076ms
+	CategorizeAssets: 2.119ms
+	ImportOutOfDateAssets: 1001.962ms (0.179ms without children)
+		ImportManagerImport: 999.946ms (0.624ms without children)
+			ImportInProcess: 999.295ms
+			UpdateCategorizedAssets: 0.027ms
+		ReloadNativeAssets: 0.103ms
+		UnloadImportedAssets: 0.369ms
+		ReloadImportedAssets: 0.279ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.634ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.444ms
+	PostProcessAllAssets: 0.873ms
+	Hotreload: 0.467ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.162ms
+	UnloadStreamsBegin: 0.042ms
+	PersistCurrentRevisions: 0.157ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 3.074ms
+
+Start importing Assets/Art/Terrain/sand_albedo.png using Guid(ddfba761ba0a7ab4b9ef2966fd3f7c32) (TextureImporter) -> (artifact id: '30dc465c7ccd647c47bdea58f29ced39') in 0.4354214 seconds
+Refreshing native plugins compatible for Editor in 0.33 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=3b47243789c391a41b19867c7b0d076d): Total: 0.456 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=454 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.079ms
+	Scan: 7.433ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.051ms
+	CategorizeAssets: 3.931ms
+	ImportOutOfDateAssets: 439.873ms (0.427ms without children)
+		ImportManagerImport: 437.189ms (1.226ms without children)
+			ImportInProcess: 435.933ms
+			UpdateCategorizedAssets: 0.030ms
+		ReloadNativeAssets: 0.098ms
+		UnloadImportedAssets: 0.432ms
+		ReloadImportedAssets: 0.524ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.774ms
+		InitializingProgressBar: 0.016ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.002ms
+		OnDemandSchedulerStart: 0.412ms
+	PostProcessAllAssets: 0.936ms
+	Hotreload: 0.517ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.141ms
+	UnloadStreamsBegin: 0.025ms
+	PersistCurrentRevisions: 0.171ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.752ms
+
+Start importing Assets/Art/Terrain/sand_mask.png using Guid(25a0825e91f0cd64198cee09b48616a3) (TextureImporter) -> (artifact id: '2168662a58d1d8d836d44db37179a356') in 0.8940379 seconds
+Refreshing native plugins compatible for Editor in 0.45 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=21556a0356daf5e42b865f9b81acb7ed): Total: 0.914 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=911 ms
+		Asset DB Callback time: managed=0 ms, native=1 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.097ms
+	Scan: 9.824ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.055ms
+	CategorizeAssets: 1.728ms
+	ImportOutOfDateAssets: 897.402ms (0.085ms without children)
+		ImportManagerImport: 895.242ms (0.723ms without children)
+			ImportInProcess: 894.488ms
+			UpdateCategorizedAssets: 0.030ms
+		ReloadNativeAssets: 0.080ms
+		UnloadImportedAssets: 0.431ms
+		ReloadImportedAssets: 0.315ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.533ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.709ms
+	PostProcessAllAssets: 0.970ms
+	Hotreload: 0.797ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.151ms
+	UnloadStreamsBegin: 0.038ms
+	PersistCurrentRevisions: 0.172ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.613ms
+
+Start importing Assets/Art/Terrain/sand_normal.png using Guid(e07daed8e1a192a488e187d1cae88880) (TextureImporter) -> (artifact id: '82696482ed0255f4212cc6116a4150b4') in 0.9996489 seconds
+Refreshing native plugins compatible for Editor in 0.43 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=8cc8445291f15504dac1e39b6048215d): Total: 1.018 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1015 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.082ms
+	Scan: 7.013ms
+	OnSourceAssetsModified: 0.002ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.059ms
+	CategorizeAssets: 1.918ms
+	ImportOutOfDateAssets: 1003.143ms (-0.018ms without children)
+		ImportManagerImport: 1001.202ms (0.992ms without children)
+			ImportInProcess: 1000.170ms
+			UpdateCategorizedAssets: 0.039ms
+		ReloadNativeAssets: 0.065ms
+		UnloadImportedAssets: 0.284ms
+		ReloadImportedAssets: 0.388ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.568ms
+		InitializingProgressBar: 0.007ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.646ms
+	PostProcessAllAssets: 0.940ms
+	Hotreload: 0.677ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.156ms
+	UnloadStreamsBegin: 0.031ms
+	PersistCurrentRevisions: 0.167ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 4.047ms
+
+Start importing Assets/Art/Terrain/snow_albedo.png using Guid(b4a3bc36830d9444faff7ec89097ca77) (TextureImporter) -> (artifact id: '4fe6a0e3b4599ee87d54eaaecc25a2ed') in 0.4627646 seconds
+Refreshing native plugins compatible for Editor in 0.29 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=f42b9656ac90f5049a5cf8995846a3a0): Total: 0.479 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=477 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.132ms
+	Scan: 7.133ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.040ms
+	CategorizeAssets: 1.796ms
+	ImportOutOfDateAssets: 465.755ms (0.091ms without children)
+		ImportManagerImport: 463.891ms (0.652ms without children)
+			ImportInProcess: 463.210ms
+			UpdateCategorizedAssets: 0.029ms
+		ReloadNativeAssets: 0.064ms
+		UnloadImportedAssets: 0.409ms
+		ReloadImportedAssets: 0.277ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.619ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.397ms
+	PostProcessAllAssets: 0.826ms
+	Hotreload: 0.451ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.198ms
+	UnloadStreamsBegin: 0.031ms
+	PersistCurrentRevisions: 0.154ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.643ms
+
+Start importing Assets/Art/Terrain/snow_mask.png using Guid(84862e7f509342f4495e09d4e46f492b) (TextureImporter) -> (artifact id: 'b4e70dc5286c12b1729e58bd5a595fb2') in 0.9387387 seconds
+Refreshing native plugins compatible for Editor in 0.35 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=bb4a8661305264f4e8cee62c48c7db12): Total: 0.954 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=952 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.000ms
+	ApplyChangesToAssetFolders: 0.089ms
+	Scan: 6.831ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.008ms
+	ProcessAssetsWithTransientArtifactChanges: 0.042ms
+	CategorizeAssets: 1.904ms
+	ImportOutOfDateAssets: 941.438ms (0.057ms without children)
+		ImportManagerImport: 939.875ms (0.654ms without children)
+			ImportInProcess: 939.195ms
+			UpdateCategorizedAssets: 0.027ms
+		ReloadNativeAssets: 0.126ms
+		UnloadImportedAssets: 0.240ms
+		ReloadImportedAssets: 0.261ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.460ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.412ms
+	PostProcessAllAssets: 0.852ms
+	Hotreload: 0.546ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.135ms
+	UnloadStreamsBegin: 0.025ms
+	PersistCurrentRevisions: 0.160ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.280ms
+
+Start importing Assets/Art/Terrain/snow_normal.png using Guid(a3f0d6dd944014e4b8be97aca392b78d) (TextureImporter) -> (artifact id: 'e9b4e6466e7a4171d012622ffa7b5724') in 1.0003803 seconds
+Refreshing native plugins compatible for Editor in 0.37 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=0e08b774b624eb14199d9df0b9d4e976): Total: 1.017 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1015 ms
+		Asset DB Callback time: managed=0 ms, native=0 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1104, non-scripts=2713
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 0.001ms
+	ApplyChangesToAssetFolders: 0.080ms
+	Scan: 7.863ms
+	OnSourceAssetsModified: 0.001ms
+	CategorizeAssetsWithTransientArtifact: 0.007ms
+	ProcessAssetsWithTransientArtifactChanges: 0.042ms
+	CategorizeAssets: 1.424ms
+	ImportOutOfDateAssets: 1003.480ms (-0.010ms without children)
+		ImportManagerImport: 1001.775ms (0.833ms without children)
+			ImportInProcess: 1000.911ms
+			UpdateCategorizedAssets: 0.030ms
+		ReloadNativeAssets: 0.061ms
+		UnloadImportedAssets: 0.294ms
+		ReloadImportedAssets: 0.345ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.533ms
+		InitializingProgressBar: 0.006ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.001ms
+		OnDemandSchedulerStart: 0.475ms
+	PostProcessAllAssets: 0.963ms
+	Hotreload: 0.553ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.144ms
+	UnloadStreamsBegin: 0.030ms
+	PersistCurrentRevisions: 0.279ms
+	UnloadStreamsEnd: 0.001ms
+	Untracked: 2.556ms
+
+Asset Pipeline Refresh (id=9a35b6725b936794ca39f59c150664a2): Total: 0.002 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Start importing Assets/Settings/HDRP Performant.asset using Guid(168a2336534e4e043b2a210b6f8d379a) (NativeFormatImporter) -> (artifact id: '98ea3f0df1e1847258f191b5b34573c2') in 0.0030474 seconds
+Start importing Assets/Settings/HDRP High Fidelity.asset using Guid(36dd385e759c96147b6463dcd1149c11) (NativeFormatImporter) -> (artifact id: 'ca493d33dbeb579f4e2135574ab2058b') in 0.0020107 seconds
+Start importing Assets/Settings/HDRPDefaultResources/HDRenderPipelineAsset.asset using Guid(b9f3086da92434da0bc1518f19f0ce86) (NativeFormatImporter) -> (artifact id: '51957fa430a63454d652bd16f36b9975') in 0.0020514 seconds
+Start importing Assets/Settings/HDRP Balanced.asset using Guid(3e2e6bfc59709614ab90c0cd7d755e48) (NativeFormatImporter) -> (artifact id: '3d6c93e35828a4f74dc847c92acee756') in 0.0018853 seconds
+Refreshing native plugins compatible for Editor in 0.32 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=1abcd690f88bada4685e9e549e7b4642): Total: 0.031 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Resources/FireGlow.png using Guid(22b678e606715db479d79b09d2953d61) (TextureImporter) -> (artifact id: 'e863ca360f6ce212cf6b17c853703820') in 0.0049808 seconds
+Refreshing native plugins compatible for Editor in 0.56 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=6abb84196e1b37544851ef5877fd568d): Total: 0.029 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Resources/FireGlow.png using Guid(22b678e606715db479d79b09d2953d61) (TextureImporter) -> (artifact id: 'e863ca360f6ce212cf6b17c853703820') in 0.0034803 seconds
+Refreshing native plugins compatible for Editor in 0.40 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=46501b289861b4849a33b2f19129401d): Total: 0.022 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Resources/FireAdditive.mat using Guid(d34c58b3d93fd0f48bea374a8e7dd822) (NativeFormatImporter) -> (artifact id: '15d847fbf0d4ffb90ba7af8270f90ddf') in 0.0029426 seconds
+Refreshing native plugins compatible for Editor in 0.52 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=01ee3b741732cae4ca5ed94bc434aec8): Total: 0.121 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Resources/FireAdditive.mat using Guid(d34c58b3d93fd0f48bea374a8e7dd822) (NativeFormatImporter) -> (artifact id: '33a19bdd6ffb8d7c633ba6b9ee236d33') in 0.0022842 seconds
+Refreshing native plugins compatible for Editor in 0.42 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=86aa608903a4c8c48acb9ea65bcf3e05): Total: 0.101 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 26 unused Assets / (16.8 KB). Loaded Objects now: 6099.
+Memory consumption went from 237.1 MB to 237.1 MB.
+Total: 14.373800 ms (FindLiveObjects: 0.737000 ms CreateObjectMapping: 0.545700 ms MarkObjects: 12.888500 ms  DeleteObjects: 0.200200 ms)
+
+[Emberbond] city site uv=(0.32, 0.72) height=109.4982
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Emberbond.EditorTools.CityBuilder:FindSite () (at Assets/Editor/CityBuilder.cs:53)
+Emberbond.EditorTools.CityBuilder:Flatten (single[,]) (at Assets/Editor/CityBuilder.cs:65)
+Emberbond.EditorTools.IslandBuilder:BuildTerrainData (single[,]&) (at Assets/Editor/IslandBuilder.cs:99)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:329)
+
+(Filename: Assets/Editor/CityBuilder.cs Line: 53)
+
+Asset Pipeline Refresh (id=647d5119e1e9e6b458e27edd50ac8735): Total: 0.036 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=8841983d61c1a5c47aa53a7fb623bb79): Total: 0.017 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=fa2bbabd49354a54d95576b993493c5c): Total: 0.016 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=2f781e510b70cb64cab94a7fb5903e56): Total: 0.020 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=4bad9a37839d2934c9e6cf2f8ae685c5): Total: 0.018 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=8621aed0f366b5542833b3fbe199ba14): Total: 0.014 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Scenes/IslandTerrain.asset using Guid(a3907a45bb9c5704b9b1202aefddcdb3) (NativeFormatImporter) -> (artifact id: 'd003e6b8f6e273bccf0a01d434ad5621') in 0.002962 seconds
+Refreshing native plugins compatible for Editor in 0.47 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=c54279a18abc87c409979d230a1825d5): Total: 0.144 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/bark_albedo.png using Guid(e07296e3b7bb25a4e978b083c37883ef) (TextureImporter) -> (artifact id: 'efb08644a6015a15928cf38755682dad') in 0.0186479 seconds
+Refreshing native plugins compatible for Editor in 0.40 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=e91f7fb34cb9e5a40ad930815253c640): Total: 0.045 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/bark_normal.png using Guid(8ee0f63c063d19944883d0cd32bfa78b) (TextureImporter) -> (artifact id: '83c0642c96d955f5e01534bdec59d8cc') in 0.0228627 seconds
+Refreshing native plugins compatible for Editor in 0.39 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=94b33f5de411cbb439c1745ff3aaf1cf): Total: 0.045 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/grass_albedo.png using Guid(cd9b926c66b14bd4e9ca9ce17ef12e2e) (TextureImporter) -> (artifact id: 'ad04fc34651fb449ce02c778974e0229') in 0.0097358 seconds
+Refreshing native plugins compatible for Editor in 0.38 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=b5425a22e811a98458a5a368c78184fb): Total: 0.028 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/leaf_albedo.png using Guid(57566bbef4d297948843a953c9e3ce3d) (TextureImporter) -> (artifact id: '94a8ddcd18a8c4ad62a451b36d8fe0cb') in 0.0198985 seconds
+Refreshing native plugins compatible for Editor in 0.40 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=0f6950a8cac10dd409827048efdf08b0): Total: 0.043 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/needle_albedo.png using Guid(306909c0ba205e94c8429095c51833f2) (TextureImporter) -> (artifact id: '2bb2dd5980be706175b76e54b1ba895c') in 0.0201253 seconds
+Refreshing native plugins compatible for Editor in 0.29 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=88809028b92cb074b8cade734f424ae5): Total: 0.046 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=59df69a31f34adc4f86a80a375d32792): Total: 0.011 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/Prefabs/bark.mat using Guid(26616768d01b8354ebdf81ec0ddf48f2) (NativeFormatImporter) -> (artifact id: '986d315f98ef6368d12bb4ab6a93ab56') in 0.0023258 seconds
+Refreshing native plugins compatible for Editor in 0.34 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=ca0979d80ccabf34da7b207620d8af5b): Total: 0.105 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/Prefabs/leaf.mat using Guid(b293ee99eb95a8942a18113b16392c29) (NativeFormatImporter) -> (artifact id: 'eae0e69458867e0e7b869f31859d0436') in 0.0027332 seconds
+Refreshing native plugins compatible for Editor in 0.37 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=f7f8c2bc9d77d204badd7b2192195924): Total: 0.093 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/Prefabs/needle.mat using Guid(7f3ee078f65acee479faf57d21371205) (NativeFormatImporter) -> (artifact id: '72620d50b37d3b14fac4bdbc36c7e2c2') in 0.0025437 seconds
+Refreshing native plugins compatible for Editor in 0.41 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=99f56e3de4aea05429b4b9761938e756): Total: 0.112 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/Prefabs/grass_blade.mat using Guid(7d67df23b7a0ba04ea0c97aaa8cfcdf6) (NativeFormatImporter) -> (artifact id: '9eb9b7f9644c369faf654d6aad8ff827') in 0.0028811 seconds
+Refreshing native plugins compatible for Editor in 0.30 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=229155bef8f472947a36e7632494fcfb): Total: 0.109 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/Vegetation/Prefabs/rock_object.mat using Guid(959542851589be947a150c3dd3c24dba) (NativeFormatImporter) -> (artifact id: '74ea6cc74a7685a57d2a294cd74318d9') in 0.0023424 seconds
+Refreshing native plugins compatible for Editor in 0.40 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=265cb04445327af439cb1870d3c60a92): Total: 0.088 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=a67119c883e6ad14b9e8bba1141a5c70): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=06743ca9858cc9442898aa8c4fc1c79e): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=7d0823e7676195740810c308b6db7238): Total: 0.011 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=a75d3df529461f94783a302b014e255a): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=ed223d4dc2a4fda4faed208a5ddda1f0): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=38f775c1e2528e04a844bc31e4d8d070): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=bd7c0324c854f4f4f9c0d40bb51ed606): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=b51f84aad667fbd43aeb451613ee3adb): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=27bcaac44c1c0b04394c03a2bceb49f7): Total: 0.014 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=96676c521f5e50148aadcf39df398e55): Total: 0.014 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=56cd683ac7e9cef44b95f93d96c08b38): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=ceeb7ac4977e26a4fa4bdfd6e1bc7dd5): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipelineResources/Material/DefaultHDTerrainMaterial.mat using Guid(22ff8771d87ef27429e670136399094b) (NativeFormatImporter) -> (artifact id: 'eefb21c9dad542d2a27a52c81b69781b') in 0.0029848 seconds
+Start importing Assets/Art/Vegetation/Prefabs/leaf.mat using Guid(b293ee99eb95a8942a18113b16392c29) (NativeFormatImporter) -> (artifact id: '1d166742829c1b363ea59622212b5364') in 0.0019901 seconds
+Start importing Assets/Art/Vegetation/Prefabs/rock_object.mat using Guid(959542851589be947a150c3dd3c24dba) (NativeFormatImporter) -> (artifact id: '1e40c563b5d854f03e9209ebee2b37c6') in 0.0019042 seconds
+Start importing Assets/Art/Vegetation/Prefabs/bark.mat using Guid(26616768d01b8354ebdf81ec0ddf48f2) (NativeFormatImporter) -> (artifact id: 'f685551c55411876b6b0523d873e5058') in 0.0016214 seconds
+Start importing Assets/Art/Vegetation/Prefabs/grass_blade.mat using Guid(7d67df23b7a0ba04ea0c97aaa8cfcdf6) (NativeFormatImporter) -> (artifact id: '5ef122ab86614fc7dd9f642372fb36f1') in 0.0029975 seconds
+Start importing Assets/Art/Vegetation/Prefabs/needle.mat using Guid(7f3ee078f65acee479faf57d21371205) (NativeFormatImporter) -> (artifact id: '3b4f7265fd2451c86c48e880d9ca9a86') in 0.0023016 seconds
+Start importing Assets/Scenes/IslandTerrain.asset using Guid(a3907a45bb9c5704b9b1202aefddcdb3) (NativeFormatImporter) -> (artifact id: '967f9bbcb6bcc9b8365e29096a7c8d38') in 0.0026531 seconds
+Refreshing native plugins compatible for Editor in 0.37 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=c744fa22beabed74196ad61961faff3c): Total: 0.178 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+The tree pine_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree pine_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree pine_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree oak_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree oak_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree oak_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree bush_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+The tree bush_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.TerrainData:set_treePrototypes (UnityEngine.TreePrototype[])
+Emberbond.EditorTools.VegetationBuilder:Scatter (UnityEngine.Terrain,UnityEngine.TerrainData,single[,],single[,,]) (at Assets/Editor/VegetationBuilder.cs:128)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:352)
+
+[Assets/Editor/IslandBuilder.cs line 352]
+
+Start importing Assets/Art/City/plaster_albedo.png using Guid(988ad61e121d2a249984c075889e37d0) (TextureImporter) -> (artifact id: '7b014062c885ad549847dbf983f11329') in 0.0634645 seconds
+Refreshing native plugins compatible for Editor in 0.71 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=8899fd423aad5a048b8b55bb0dac3e8c): Total: 0.110 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/plaster_normal.png using Guid(ddae402a6fb48ce4c9cd937376b2a993) (TextureImporter) -> (artifact id: '82d1e3b64ac733392e6d0e151efb1742') in 0.0630092 seconds
+Refreshing native plugins compatible for Editor in 0.33 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=d943d98dbb32b364eb3e7f4e65ea241f): Total: 0.081 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/roof_tile_albedo.png using Guid(132ceb4c6e319ca40a706b2f5f9b917f) (TextureImporter) -> (artifact id: 'bcf10b6910177164f8e288176e5f8884') in 0.070954 seconds
+Refreshing native plugins compatible for Editor in 0.88 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=5b5721a487741c34d99aea0bc115b51a): Total: 0.089 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/roof_tile_normal.png using Guid(513eb214b53351c4597c46af5f755024) (TextureImporter) -> (artifact id: '3c7444c23938c949d4a8fb1defa262cf') in 0.0585165 seconds
+Refreshing native plugins compatible for Editor in 0.61 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=2aec7927777461c429eeb80fe8d4c9d0): Total: 0.085 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/stone_brick_albedo.png using Guid(ee646b71acc140244a05f621fd5a7710) (TextureImporter) -> (artifact id: 'c7fa8a9b67c13eb0b94c30cc01f33b7f') in 0.0625704 seconds
+Refreshing native plugins compatible for Editor in 0.42 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=c1be9b90c6a86674d896d30e96587a88): Total: 0.086 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/stone_brick_normal.png using Guid(e94ec94ae881c134084241b37443cce5) (TextureImporter) -> (artifact id: '1773ab216553d79fc2ad0cce95b90e32') in 0.0689187 seconds
+Refreshing native plugins compatible for Editor in 0.58 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=cc76eca246c5c3c4d87f1d22c0085f96): Total: 0.093 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/timber_albedo.png using Guid(60564785f21637f45bbeebb940cf966a) (TextureImporter) -> (artifact id: '2ca3da46abc6a6390fbc59dd7288b76b') in 0.0746245 seconds
+Refreshing native plugins compatible for Editor in 0.41 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=59cfff6c8d088b140a3ebfaabf48d8f4): Total: 0.096 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/timber_normal.png using Guid(1b7fd44972d42ca41972f79b5cd91652) (TextureImporter) -> (artifact id: '4a4027b0a8f7e9d9cb6ee4ccf1f4007a') in 0.0770068 seconds
+Refreshing native plugins compatible for Editor in 0.51 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=a2ad1fc487ef38243a4319ac9c9cfdfe): Total: 0.102 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=46692a85210a18f46aa06eb8f2828612): Total: 0.014 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_plaster.mat using Guid(e39b313c0612a9841bcc35458da89748) (NativeFormatImporter) -> (artifact id: '906451a85da3a0e9b8690d730837d196') in 0.0025732 seconds
+Refreshing native plugins compatible for Editor in 0.34 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=444199f639863454ea43dd53afbd9b02): Total: 0.087 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_roof.mat using Guid(b95ae5821ae767c4b9d59cb7f55f404e) (NativeFormatImporter) -> (artifact id: '9e02d25a79ee52715a92a37000a063a7') in 0.0025871 seconds
+Refreshing native plugins compatible for Editor in 0.37 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=be7a83c86649b5642837b29a394ad2c4): Total: 0.118 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_stone.mat using Guid(1f9c3f362490c894bb020852c43992e5) (NativeFormatImporter) -> (artifact id: '8cec85d2fe5921e49f95483998a29ecf') in 0.0031136 seconds
+Refreshing native plugins compatible for Editor in 0.33 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=ac98072b90380894f956e733d64c7e25): Total: 0.122 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_timber.mat using Guid(9d82f625184657f4ba16b81c2dc1879e) (NativeFormatImporter) -> (artifact id: 'b42783bb1828e5e27538414e92370376') in 0.0034715 seconds
+Refreshing native plugins compatible for Editor in 0.57 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=143df45ab7487c043908789f5a9153f3): Total: 0.099 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_dark.mat using Guid(44491efe61a14f44fb22b84d39ca5d5e) (NativeFormatImporter) -> (artifact id: 'c4004299e54617d1c3e7037eea68737d') in 0.0023614 seconds
+Refreshing native plugins compatible for Editor in 0.43 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=2cea1d89a5147a84a9e1a3f5017627b0): Total: 0.104 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=57a7167397e90394a82e1c417613460c): Total: 0.015 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=c0959d02b0e208c4f9c9a1e5d7a4f734): Total: 0.014 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=55733143d96705240a82fa4e635ade0a): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=848d986cf226cf14aa03268bd9449c94): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=3ec41ed0a4906c14aac5011acfafd37f): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=2a0fb22f84b59494b86aa4559ac84f70): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=5c36578b72713814fad2862d2c446582): Total: 0.019 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=a222f93f8d98b0648830308609f73577): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=1c65902ac63483f4bb8400dfdc91dbc4): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=42bda3e3fce35d949b17259626e0c5ec): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=eeaaab434517e31428449b83af78198a): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=e63415ec8fe009e44977784436c4dd3b): Total: 0.017 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+[Emberbond] Hearthmoor placed: 170 houses, 104 wall segments, site (-540.00, 109.50, 660.00), sea yaw 300
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Emberbond.EditorTools.CityBuilder:Place (UnityEngine.Terrain) (at Assets/Editor/CityBuilder.cs:271)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:353)
+
+(Filename: Assets/Editor/CityBuilder.cs Line: 271)
+
+Start importing Assets/Scenes/IslandVolume.asset using Guid(f34b899af829d944d8f990fd48554443) (NativeFormatImporter) -> (artifact id: 'fd4bc15618e8680a17d8ec9f6580b66a') in 0.0024613 seconds
+Refreshing native plugins compatible for Editor in 0.56 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=bb67ef3a18d82244d8eac182ed2e9df4): Total: 0.125 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Art/City/Prefabs/city_plaster.mat using Guid(e39b313c0612a9841bcc35458da89748) (NativeFormatImporter) -> (artifact id: 'e9479fe18b28a50bf8a507c6bc4f362a') in 0.0028875 seconds
+Start importing Assets/Art/City/Prefabs/city_dark.mat using Guid(44491efe61a14f44fb22b84d39ca5d5e) (NativeFormatImporter) -> (artifact id: '4d487d954a6c52d27a46920ed35a9675') in 0.0024396 seconds
+Start importing Assets/Art/City/Prefabs/city_roof.mat using Guid(b95ae5821ae767c4b9d59cb7f55f404e) (NativeFormatImporter) -> (artifact id: 'd708b90ac21b6b28232834493be245a4') in 0.0016616 seconds
+Start importing Assets/Art/City/Prefabs/city_timber.mat using Guid(9d82f625184657f4ba16b81c2dc1879e) (NativeFormatImporter) -> (artifact id: '2f5adc2c7e98a46ad9da48ae6901dec9') in 0.0018438 seconds
+Start importing Assets/Art/City/Prefabs/city_stone.mat using Guid(1f9c3f362490c894bb020852c43992e5) (NativeFormatImporter) -> (artifact id: 'b65fdf53bee589ce7e0cdc6a6bcfb891') in 0.0019638 seconds
+Start importing Assets/Scenes/IslandTerrain.asset using Guid(a3907a45bb9c5704b9b1202aefddcdb3) (NativeFormatImporter) -> (artifact id: '4b87a597d8506dccc597da76f06d2115') in 0.0038618 seconds
+Start importing Assets/Scenes/IslandVolume.asset using Guid(f34b899af829d944d8f990fd48554443) (NativeFormatImporter) -> (artifact id: '3949fcb8e0395a68afa0c4e8638485e6') in 0.0018946 seconds
+The tree pine_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree pine_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree pine_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree oak_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree oak_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree oak_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree bush_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+The tree bush_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:380)
+
+[Assets/Editor/IslandBuilder.cs line 380]
+
+Refreshing native plugins compatible for Editor in 0.36 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=50ee6930d3c9e72498c9c3d616f7dada): Total: 0.161 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/Scenes/Island.unity using Guid(a617e52f3255c574cb06f0c1ad3cbd94) (DefaultImporter) -> (artifact id: '58127527812ab91d650be324ce68a8fd') in 0.0016902 seconds
+Refreshing native plugins compatible for Editor in 0.40 ms, found 0 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=16623f489d15a7341bb0ed07fa67de0f): Total: 0.121 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+[Emberbond] island scene built
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Emberbond.EditorTools.IslandBuilder:Build () (at Assets/Editor/IslandBuilder.cs:429)
+
+(Filename: Assets/Editor/IslandBuilder.cs Line: 429)
+
+Batchmode quit successfully invoked - shutting down!
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-piush-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-piush channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+abort_threads: Failed aborting id: 0000000000001218, mono_thread_manage will ignore it
+
+abort_threads: Failed aborting id: 0000000000005AF4, mono_thread_manage will ignore it
+
+abort_threads: Failed aborting id: 0000000000001218, mono_thread_manage will ignore it
+
+abort_threads: Failed aborting id: 0000000000005AF4, mono_thread_manage will ignore it
+
+debugger-agent: Unable to listen on 3400
+Exiting batchmode successfully now!
+Exiting without the bug reporter. Application will terminate with return code 0

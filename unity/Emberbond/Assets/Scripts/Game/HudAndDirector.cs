@@ -6,7 +6,11 @@ namespace Emberbond
     public enum Tone { Diplomatic, Aggressive, Deceptive }
 
     [System.Serializable]
-    public sealed class DialogueOption { public Tone Tone; public string Text; public System.Action<Director> Effect; }
+    public sealed class DialogueOption
+    {
+        public Tone Tone; public string Text; public System.Action<Director> Effect;
+        public System.Func<Director, bool> Gate; public string GateText;      // a gated option is shown but cannot be taken until the gate opens
+    }
 
     /// <summary>Reputation values that dialogue and deeds change and that later chapters read.</summary>
     public sealed class Reputation
@@ -19,7 +23,7 @@ namespace Emberbond
     {
         public Director Director;
         private Texture2D _white, _badge;
-        private GUIStyle _label, _small, _title, _quest;
+        private GUIStyle _label, _small, _title, _quest, _big, _wrapBig, _stats;
         private const float W = 1920f, H = 1080f;
 
         private void Start()
@@ -61,6 +65,9 @@ namespace Emberbond
             _small = new GUIStyle(GUI.skin.label) { fontSize = 17, normal = { textColor = new Color(0.86f, 0.84f, 0.78f) } };
             _title = new GUIStyle(GUI.skin.label) { fontSize = 34, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.95f, 0.92f, 0.85f) } };
             _quest = new GUIStyle(GUI.skin.label) { fontSize = 24, normal = { textColor = Color.white } };
+            _stats = new GUIStyle(GUI.skin.label) { fontSize = 22, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.86f, 0.84f, 0.78f) } };
+            _big = new GUIStyle(GUI.skin.label) { fontSize = 60, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.98f, 0.86f, 0.55f) } };
+            _wrapBig = new GUIStyle(GUI.skin.label) { fontSize = 26, alignment = TextAnchor.UpperCenter, wordWrap = true, normal = { textColor = new Color(0.95f, 0.93f, 0.88f) } };
         }
 
         private void Rect(float x, float y, float w, float h, Color c)
@@ -109,6 +116,7 @@ namespace Emberbond
             DrawVitals();
             DrawQuest();
             DrawBoss();
+            DrawLock(scale);
             if (!Director.InDialogue) DrawPrompts();
             if (Director.InDialogue) DrawDialogue();
             if (!string.IsNullOrEmpty(Director.Toast))
@@ -116,6 +124,7 @@ namespace Emberbond
                 Rect(W * 0.5f - 420f, 150f, 840f, 52f, new Color(0f, 0f, 0f, 0.55f));
                 Lbl(new Rect(W * 0.5f - 410f, 160f, 820f, 40f), Director.Toast, _title);
             }
+            DrawEnding();
             if (GameSettings.ShowFps) Lbl(new Rect(W - 150f, 70f, 130f, 28f), Mathf.RoundToInt(_fps) + " fps", _small);
             if (Director.DeathProgress > 0f)
             {
@@ -180,6 +189,38 @@ namespace Emberbond
             Lbl(new Rect(48f, 126f, 460f, 26f), Director.QuestHint, _small);
         }
 
+        /// <summary>Brackets the rival wyrm while you are in the air, so the duel can be read at a glance.</summary>
+        private void DrawLock(float scale)
+        {
+            if (Director.Dragon == null || !Director.Dragon.Mounted) return;
+            EnemyDragon en = Director.Enemy;
+            if (en == null || !en.gameObject.activeInHierarchy || en.Health == null || en.Health.Dead) return;
+            Camera cam = Camera.main;
+            if (cam == null) return;
+            Vector3 sp = cam.WorldToScreenPoint(en.transform.position);
+            if (sp.z <= 0f) return;
+            float gx = Mathf.Clamp(sp.x / scale, 50f, W - 50f), gy = Mathf.Clamp((Screen.height - sp.y) / scale, 50f, H - 50f);
+            float dist = Vector3.Distance(cam.transform.position, en.transform.position);
+            float s = Mathf.Lerp(46f, 20f, Mathf.Clamp01(dist / 500f));
+            Color c = new Color(1f, 0.78f, 0.3f, 0.95f);
+            float t = 3f, l = s * 0.55f;
+            Rect(gx - s, gy - s, l, t, c); Rect(gx - s, gy - s, t, l, c);
+            Rect(gx + s - l, gy - s, l, t, c); Rect(gx + s - t, gy - s, t, l, c);
+            Rect(gx - s, gy + s - t, l, t, c); Rect(gx - s, gy + s - l, t, l, c);
+            Rect(gx + s - l, gy + s - t, l, t, c); Rect(gx + s - t, gy + s - l, t, l, c);
+            Lbl(new Rect(gx - 40f, gy + s + 4f, 100f, 24f), Mathf.RoundToInt(dist) + " m", _small);
+        }
+
+        private void DrawEnding()
+        {
+            if (!Director.EndingShown) return;
+            Rect(0f, H * 0.5f, W, H * 0.5f, new Color(0f, 0f, 0f, 0.74f));
+            Lbl(new Rect(0f, H * 0.5f + 30f, W, 90f), Director.EndingTitle, _big);
+            Lbl(new Rect(W * 0.5f - 600f, H * 0.5f + 130f, 1200f, 150f), Director.EndingText, _wrapBig);
+            Lbl(new Rect(0f, H * 0.5f + 300f, W, 34f), Director.EndingStats, _stats);
+            Lbl(new Rect(0f, H - 70f, W, 34f), "Enter: keep exploring       Esc: menu", _stats);
+        }
+
         private void DrawBoss()
         {
             if (Director.Enemy == null || !Director.Enemy.gameObject.activeInHierarchy || Director.Enemy.Health == null) return;
@@ -196,15 +237,15 @@ namespace Emberbond
             {
                 if (!Director.Dragon.Mounted)
                 {
-                    if (Director.Dragon.RiderNear) lines.Add("[E]  Mount");
-                    lines.Add("[G]  Summon Mount");
-                    lines.Add("[LMB]  Strike     [RMB]  Parry");
+                    if (Director.Dragon.RiderNear) lines.Add("[" + Bindings.Short(GameAction.Interact) + "]  Mount");
+                    lines.Add("[" + Bindings.Short(GameAction.Summon) + "]  Summon Mount");
+                    lines.Add("[" + Bindings.Short(GameAction.Attack) + "]  Strike     [" + Bindings.Short(GameAction.Block) + "]  Parry");
                 }
                 else
                 {
-                    lines.Add("[LMB]  Breathe fire");
-                    lines.Add("[Shift]  Boost");
-                    lines.Add("[E]  Land (low and slow)");
+                    lines.Add("[" + Bindings.Short(GameAction.Attack) + "]  Breathe fire");
+                    lines.Add("[" + Bindings.Short(GameAction.Sprint) + "]  Boost");
+                    lines.Add("[" + Bindings.Short(GameAction.Interact) + "]  Land (low and slow)");
                 }
             }
             lines.Add("[Esc]  Menu");
@@ -224,18 +265,20 @@ namespace Emberbond
             GUIStyle wrap = new GUIStyle(_small) { wordWrap = true, fontSize = 20 };
             Lbl(new Rect(bx + 20f, by + 42f, bw - 40f, 100f), Director.Line, wrap);
 
-            Rect(bx, by + 152f, bw, 80f, new Color(0.04f, 0.035f, 0.03f, 0.78f));
+            Rect(bx, by + 152f, bw, 100f, new Color(0.04f, 0.035f, 0.03f, 0.78f));
             string[] tags = { "[Diplomatic]", "[Aggressive]", "[Deceptive]" };
             Color[] cols = { new Color(0.85f, 0.85f, 0.95f), new Color(0.95f, 0.35f, 0.3f), new Color(0.65f, 0.9f, 0.55f) };
             for (int i = 0; i < Director.Options.Count; i++)
             {
                 DialogueOption o = Director.Options[i];
+                bool locked = o.Gate != null && !o.Gate(Director);
                 GUIStyle tag = new GUIStyle(_small) { fontSize = 20, wordWrap = true };
-                tag.normal.textColor = cols[(int)o.Tone];
+                tag.normal.textColor = locked ? new Color(0.5f, 0.5f, 0.5f) : cols[(int)o.Tone];
                 float ox = bx + i * (bw / 3f);
-                Lbl(new Rect(ox + 10f, by + 160f, bw / 3f - 16f, 60f), (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text, tag);
+                string label = (i + 1) + "  " + tags[(int)o.Tone] + " " + o.Text + (locked ? "  (" + o.GateText + ")" : "");
+                Lbl(new Rect(ox + 10f, by + 158f, bw / 3f - 16f, 90f), label, tag);
             }
-            Lbl(new Rect(bx + bw - 120f, by + 196f, 120f, 26f), Mathf.CeilToInt(Director.DialogueTimer) + " s", _small);
+            Lbl(new Rect(bx + bw - 120f, by + 226f, 120f, 26f), Mathf.CeilToInt(Director.DialogueTimer) + " s", _small);
         }
     }
 }

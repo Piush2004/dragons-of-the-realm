@@ -50,7 +50,7 @@ namespace Emberbond
 
             float playerSpan = Normalize(dragonGo, 20f);
             GameObject enemyGo0 = GameObject.Find("EnemyDragon");
-            if (enemyGo0 != null) Normalize(enemyGo0, 34f);
+            if (enemyGo0 != null) { Normalize(enemyGo0, 34f); DragonModels.Capture(enemyGo0); }
 
             Terrain t = Terrain.activeTerrain;
             WorldLayout lay = WorldLayout.Load();
@@ -91,12 +91,16 @@ namespace Emberbond
             for (int i = 0; i < argv.Length - 1; i++) if (argv[i] == "-savefile") saveFile = argv[i + 1];
             if (saveFile != null) SaveSystem.PathOverride = saveFile;
 
+            HintSystem hints = dir.AddComponent<HintSystem>();
+            hints.Director = d;
+
             Menu menu = dir.AddComponent<Menu>();
             menu.Director = d;
             menu.Rig = rig;
-            bool headless = Has("-autoplay") || Has("-selftest") || Has("-nomenu") || Has("-soak");
+            bool headless = Has("-autoplay") || Has("-selftest") || Has("-nomenu") || Has("-soak") || Has("-chaptershots");
             if (Has("-soak")) dir.AddComponent<SoakTest>();
             if (Has("-menushots")) dir.AddComponent<MenuShots>();
+            if (Has("-chaptershots")) dir.AddComponent<ChapterShots>();
             if (Has("-autoplay")) dir.AddComponent<AutoPlay>();
             if (Has("-selftest")) dir.AddComponent<SelfTest>();
             if (headless) d.BeginNewGame(); else menu.ShowMain();

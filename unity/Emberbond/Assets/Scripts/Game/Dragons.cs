@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Emberbond
@@ -26,6 +27,7 @@ namespace Emberbond
         public float BodyRadius = 2.4f;
         public int Crashes;
         public float LastImpact;
+        public float? GroundOverride;        // a perch or floor that is not the terrain (the Pit)
 
         /// <summary>Puts the dragon back on the ground, unmounted and healed (respawn and loading).</summary>
         public void ResetTo(Vector3 pos)
@@ -100,6 +102,7 @@ namespace Emberbond
 
         private float GroundHeight(Vector3 p)
         {
+            if (GroundOverride.HasValue) return GroundOverride.Value;
             Terrain t = Terrain.activeTerrain;
             float h = t != null ? t.SampleHeight(p) + t.transform.position.y : 0f;
             return Mathf.Max(h, IslandSea());
@@ -248,7 +251,18 @@ namespace Emberbond
             {
                 _fireCooldown = 0.9f;
                 Vector3 mouth = transform.position + fwd * 5.5f + Vector3.up * 0.3f;
-                Fireball.Spawn(mouth, fwd * 120f + fwd * Speed, gameObject, 40f);
+                float shotSpeed = 120f + Speed;
+                Vector3 shot = fwd;
+                EnemyDragon en = Director.Instance != null ? Director.Instance.Enemy : null;
+                if (en != null && en.gameObject.activeInHierarchy && en.Health != null && !en.Health.Dead)
+                {
+                    // Aim assist: inside a cone, lead the target so the duel is about positioning and not pixel hunting.
+                    Vector3 to = en.transform.position - mouth;
+                    float dist = to.magnitude;
+                    if (dist > 10f && dist < 700f && Vector3.Angle(fwd, to) < 16f)
+                        shot = ((en.transform.position + en.Velocity * (dist / shotSpeed)) - mouth).normalized;
+                }
+                Fireball.Spawn(mouth, shot * shotSpeed, gameObject, 40f);
             }
             if (InputState.Interact && transform.position.y - GroundHeight(transform.position) < 20f) Dismount();
         }
@@ -265,6 +279,36 @@ namespace Emberbond
         private Vector3 _vel;
         private DragonAnimator _anim;
         private bool _inited;
+        private float _orbitR = 170f, _speed = 40f, _fireMin = 3.5f, _fireMax = 6f, _damage = 22f;
+        private Color _fireTint;
+        private Vector3 _baseScale;
+        private bool _scaleSet;
+        private readonly System.Collections.Generic.List<KeyValuePair<Material, Color>> _origColors = new System.Collections.Generic.List<KeyValuePair<Material, Color>>();
+
+        public Vector3 Velocity { get { return _vel; } }
+
+        /// <summary>Makes this a different rival: its name, toughness, size, speed, fire rate and colour.</summary>
+        public void Configure(float hp, string name, float scale, float orbit, float speed, float fireMin, float fireMax, float damage, Color tint, Color fireTint)
+        {
+            if (!_scaleSet) { _baseScale = transform.localScale; _scaleSet = true; }
+            transform.localScale = _baseScale * scale;
+            Health.MaxHealth = Health.Health = hp;
+            Health.DisplayName = name;
+            _orbitR = orbit; _speed = speed; _fireMin = fireMin; _fireMax = fireMax; _damage = damage; _fireTint = fireTint;
+            ApplyTint(tint);
+        }
+
+        private void ApplyTint(Color tint)
+        {
+            if (_origColors.Count == 0)
+            {
+                foreach (Renderer r in GetComponentsInChildren<Renderer>())
+                    foreach (Material m in r.materials)
+                        if (m.HasProperty("_BaseColor")) _origColors.Add(new KeyValuePair<Material, Color>(m, m.GetColor("_BaseColor")));
+            }
+            foreach (KeyValuePair<Material, Color> kv in _origColors)
+                if (kv.Key != null) kv.Key.SetColor("_BaseColor", new Color(kv.Value.r * tint.r, kv.Value.g * tint.g, kv.Value.b * tint.b, kv.Value.a));
+        }
 
         private void Vanish() { gameObject.SetActive(false); }
 
@@ -276,6 +320,9 @@ namespace Emberbond
             Health.MaxHealth = Health.Health = 600f;
             Health.DisplayName = "The Old Wyrm";
             Health.IsBoss = true;
+            _orbitR = 170f; _speed = 40f; _fireMin = 3.5f; _fireMax = 6f; _damage = 22f; _fireTint = default(Color);
+            if (_scaleSet) { transform.localScale = _baseScale; ApplyTint(Color.white); }
+            CancelInvoke("Vanish");
             if (!_inited) { _inited = true; Health.OnDied += d => { Invoke("Vanish", 1.2f); }; }
             _anim = GetComponent<DragonAnimator>();
             if (GetComponent<SphereCollider>() == null)
@@ -291,9 +338,9 @@ namespace Emberbond
             float dt = Time.deltaTime;
             _orbit += dt * 0.18f;
             Vector3 centre = Target.position;
-            Vector3 want = centre + new Vector3(Mathf.Cos(_orbit) * 170f, 45f + Mathf.Sin(_orbit * 1.7f) * 20f, Mathf.Sin(_orbit) * 170f);
+            Vector3 want = centre + new Vector3(Mathf.Cos(_orbit) * _orbitR, 45f + Mathf.Sin(_orbit * 1.7f) * 20f, Mathf.Sin(_orbit) * _orbitR);
             Vector3 to = want - transform.position;
-            Vector3 desired = to.normalized * Mathf.Min(40f, to.magnitude);
+            Vector3 desired = to.normalized * Mathf.Min(_speed, to.magnitude);
             _vel = Vector3.Lerp(_vel, desired, 1f - Mathf.Exp(-1.2f * dt));
             transform.position += _vel * dt;
             Vector3 look = (Target.position - transform.position);
@@ -304,10 +351,11 @@ namespace Emberbond
             _fireTimer -= dt;
             if (_fireTimer <= 0f && Vector3.Distance(Target.position, transform.position) < 260f)
             {
-                _fireTimer = Random.Range(3.5f, 6f);
+                _fireTimer = Random.Range(_fireMin, _fireMax);
                 Vector3 mouth = transform.position + transform.forward * 5f;
                 Vector3 aim = (Target.position - mouth).normalized;
-                Fireball.Spawn(mouth, aim * 95f, gameObject, 22f);
+                Fireball fb = Fireball.Spawn(mouth, aim * 95f, gameObject, _damage);
+                if (_fireTint.a > 0f) fb.Tint = _fireTint;
             }
         }
     }

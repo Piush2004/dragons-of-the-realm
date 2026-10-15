@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,9 +7,10 @@ namespace Emberbond
     /// <summary>
     /// Runs the story state: new game and continue, the throne-room council with timed tone choices, quests, death and
     /// respawn at checkpoints, autosave, and a small API the self-test uses to drive and inspect the game.
-    /// Stages: 5 market fight, 1 mount, 2 fly to the volcano, 3 rival wyrm, 4 chapter complete (free roam).
+    /// Stages: 5 market fight, 1 mount, 2 fly to the volcano, 3 rival wyrm, 4 chapter complete, then the later chapters
+    /// 10 pit, 11 charge, 12 duel, 13 riot, 14 pale tide, 15 last egg, 16 epilogue (see DirectorChapters.cs).
     /// </summary>
-    public sealed class Director : MonoBehaviour
+    public sealed partial class Director : MonoBehaviour
     {
         public ThirdPersonPlayer Player;
         public DragonFlight Dragon;
@@ -55,6 +57,7 @@ namespace Emberbond
             Started = true;
             Rep = new Reputation();
             Deaths = 0; Respawns = 0; PlaySeconds = 0f;
+            PitChoice = DuelChoice = RiotChoice = TideChoice = 0; TamsinSaved = false; Ending = 0; EndingShown = false;
             AudioDirector.StartAmbience();
             StartCouncil();
         }
@@ -75,6 +78,8 @@ namespace Emberbond
             ClearSoldiers();
             Rep = new Reputation { Honour = d.Honour, Fear = d.Fear, Cunning = d.Cunning };
             Deaths = d.Deaths; PlaySeconds = d.PlaySeconds;
+            PitChoice = d.PitChoice; DuelChoice = d.DuelChoice; RiotChoice = d.RiotChoice; TideChoice = d.TideChoice;
+            TamsinSaved = d.TamsinSaved == 1; Ending = d.Ending;
             Player.ReviveAt(d.PlayerPos);
             Player.Health.Health = d.Health;
             Dragon.ResetTo(d.DragonPos);
@@ -96,6 +101,8 @@ namespace Emberbond
                 DragonHealth = Dragon.Health.Health,
                 Deaths = Deaths,
                 PlaySeconds = PlaySeconds,
+                PitChoice = PitChoice, DuelChoice = DuelChoice, RiotChoice = RiotChoice, TideChoice = TideChoice,
+                TamsinSaved = TamsinSaved ? 1 : 0, Ending = Ending,
             };
         }
 
@@ -186,14 +193,31 @@ namespace Emberbond
             DialogueTimer = DialogueDuration;
         }
 
+        /// <summary>The option picked when the timer runs out: the cold stare (second), else the first one that is open.</summary>
+        private int DefaultChoice()
+        {
+            if (Options.Count > 1 && IsOpen(Options[1])) return 1;
+            for (int i = 0; i < Options.Count; i++) if (IsOpen(Options[i])) return i;
+            return Options.Count - 1;
+        }
+
+        private bool IsOpen(DialogueOption o) { return o.Gate == null || o.Gate(this); }
+
         public void ChooseOption(int i)
         {
             if (!InDialogue || i < 0 || i >= Options.Count) return;
+            if (!IsOpen(Options[i]))
+            {
+                if (Toast != "This path is closed to you." || _toastTimer < 0.2f) Say("This path is closed to you.", 2f);
+                return;
+            }
             if (Options[i].Effect != null) Options[i].Effect(this);
             InDialogue = false;
             ExitHall();
             AudioDirector.Ui();
-            BeginQuest(5);
+            Action<int> after = _afterDialogue;
+            _afterDialogue = null;
+            if (after != null) after(i); else BeginQuest(5);
         }
 
         // ------------------------------------------------------------ quests
@@ -216,6 +240,14 @@ namespace Emberbond
         private void BeginQuest(int stage, bool save = true)
         {
             _stage = stage; _stageTime = 0f;
+            if (!IsChapterStage(stage) && (PitActive || _chapterObjects.Count > 0 || _grade != null || Dragon.GroundOverride.HasValue))
+            {
+                LeavePit();
+                for (int i = 0; i < _chapterObjects.Count; i++) if (_chapterObjects[i] != null) Destroy(_chapterObjects[i]);
+                _chapterObjects.Clear();
+                _gradeTarget = 0f;
+                FadeSnow(false);
+            }
             switch (stage)
             {
                 case 5:
@@ -245,11 +277,14 @@ namespace Emberbond
                     Objective = null;
                     break;
                 case 4:
-                    QuestTitle = "Chapter complete"; QuestHint = "The old wyrm falls into the sea. Explore freely.";
+                    QuestTitle = "Chapter complete"; QuestHint = "The old wyrm falls into the sea. The Pit awaits.";
                     SetCheckpoint(false);
                     Objective = null;
                     Say("Chapter 2 complete: First Flight", 8f);
                     AudioDirector.Play(Sfx.Fanfare, Vector3.zero, 0.8f);
+                    break;
+                default:
+                    if (IsChapterStage(stage)) BeginChapter(stage);
                     break;
             }
             if (save && Started) SaveNow();
@@ -281,12 +316,14 @@ namespace Emberbond
                 Enemy.Init(Dragon.transform);
             }
             if (_stage == 5) SpawnSoldiers();
+            if (IsChapterStage(_stage) && _stage != StageEnd) BeginQuest(_stage, false);       // retry the encounter from its start
             if (Rig != null) { Rig.Flight = false; Rig.Frozen = false; }
             Say(message, 3f);
         }
 
         private void HandleDeath(float dt)
         {
+            if (Dragon.Health.Dead && !Dragon.Mounted) Dragon.Health.Health = Dragon.Health.MaxHealth;     // a grounded wyrm is simply knocked out
             bool dead = Player.Health.Dead || (Dragon.Mounted && Dragon.Health.Dead);
             if (!dead) { _deathTimer = 0f; return; }
             if (_deathTimer <= 0f)
@@ -304,6 +341,7 @@ namespace Emberbond
         private void Update()
         {
             InputState.Poll();
+            InputState.Cinematic = Started && InDialogue;
             if (_toastTimer > 0f) _toastTimer -= Time.unscaledDeltaTime; else Toast = "";
             if (!Started) return;
             float dt = Time.deltaTime;
@@ -315,7 +353,7 @@ namespace Emberbond
                 HallCamera();
                 DialogueTimer -= dt;
                 if (InputState.Choice >= 0) ChooseOption(InputState.Choice);
-                else if (DialogueTimer <= 0f) ChooseOption(1);          // silence reads as a cold stare
+                else if (DialogueTimer <= 0f) ChooseOption(DefaultChoice());          // silence reads as a cold stare
                 return;
             }
 
@@ -358,6 +396,12 @@ namespace Emberbond
                     break;
                 case 3:
                     if (Enemy != null && Enemy.Health != null && Enemy.Health.Dead) BeginQuest(4);
+                    break;
+                case 4:
+                    if (_stageTime > 7f) BeginQuest(StagePit);
+                    break;
+                default:
+                    if (IsChapterStage(_stage)) UpdateChapter(dt);
                     break;
             }
         }

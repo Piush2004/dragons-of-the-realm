@@ -14,6 +14,7 @@ namespace Emberbond
         public static int RenderScale;               // 0 auto, else percent 50..100
         public static bool ShowFps;
         public static float UiScale = 1f;            // 0.8 .. 1.4
+        public static bool ShowHints = true;         // onboarding tips
 
         private const string Prefix = "emberbond.";
 
@@ -29,6 +30,8 @@ namespace Emberbond
             if (RenderScale != 0) RenderScale = Mathf.Clamp(RenderScale, 50, 100);
             ShowFps = PlayerPrefs.GetInt(Prefix + "fps", 0) == 1;
             UiScale = Clamp(PlayerPrefs.GetFloat(Prefix + "ui", 1f), 0.8f, 1.4f);
+            ShowHints = PlayerPrefs.GetInt(Prefix + "hints", 1) == 1;
+            Bindings.Load();
             ApplyAudio();
         }
 
@@ -43,6 +46,8 @@ namespace Emberbond
             PlayerPrefs.SetInt(Prefix + "scale", RenderScale);
             PlayerPrefs.SetInt(Prefix + "fps", ShowFps ? 1 : 0);
             PlayerPrefs.SetFloat(Prefix + "ui", UiScale);
+            PlayerPrefs.SetInt(Prefix + "hints", ShowHints ? 1 : 0);
+            Bindings.Save();
             PlayerPrefs.Save();
         }
 

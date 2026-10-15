@@ -14,6 +14,7 @@ namespace Emberbond
         public float Health, DragonHealth;
         public int Deaths;
         public float PlaySeconds;
+        public int PitChoice, DuelChoice, RiotChoice, TideChoice, TamsinSaved, Ending;
         public string SavedAt;
     }
 
@@ -61,9 +62,12 @@ namespace Emberbond
                 if (text.Length > 100000) return false;
                 SaveData s = JsonUtility.FromJson<SaveData>(text);
                 if (s == null || s.Version != 1) return false;
-                if (s.Stage != 5 && s.Stage != 1 && s.Stage != 2 && s.Stage != 3 && s.Stage != 4) return false;
+                if (s.Stage != 5 && s.Stage != 1 && s.Stage != 2 && s.Stage != 3 && s.Stage != 4 && !(s.Stage >= 10 && s.Stage <= 16)) return false;
                 if (!Finite(s.PlayerPos) || !Finite(s.DragonPos)) return false;
                 if (Mathf.Abs(s.PlayerPos.x) > 3000f || Mathf.Abs(s.PlayerPos.z) > 3000f || s.PlayerPos.y < 0f || s.PlayerPos.y > 3000f) return false;
+                s.PitChoice = Mathf.Clamp(s.PitChoice, 0, 3); s.DuelChoice = Mathf.Clamp(s.DuelChoice, 0, 3);
+                s.RiotChoice = Mathf.Clamp(s.RiotChoice, 0, 3); s.TideChoice = Mathf.Clamp(s.TideChoice, 0, 3);
+                s.TamsinSaved = Mathf.Clamp(s.TamsinSaved, 0, 1); s.Ending = Mathf.Clamp(s.Ending, 0, 3);
                 s.Honour = Mathf.Clamp(s.Honour, -99, 99);
                 s.Fear = Mathf.Clamp(s.Fear, -99, 99);
                 s.Cunning = Mathf.Clamp(s.Cunning, -99, 99);

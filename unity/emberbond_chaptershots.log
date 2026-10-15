@@ -1,0 +1,65 @@
+Mono path[0] = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/Managed'
+Mono config path = 'D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.3.26f1 (de8167e7440c)
+[Subsystems] Discovering subsystems at path D:/Projects/Games/claude/unity/Emberbond/Builds/Windows/Emberbond_Data/UnitySubsystems
+[D3D12 Device Filter] Vendor Name: ATI
+[D3D12 Device Filter] Device Name: AMD Radeon 780M Graphics
+[D3D12 Device Filter] Driver Version: 32.0.21030.11004
+[D3D12 Device Filter] Feature Level: 12.2
+[D3D12 Device Filter] Graphics Memory: 11933 MB
+[D3D12 Device Filter] Processor Count: 16
+[D3D12 Device Filter] Device Type: Integrated
+[D3D12 Device Filter] D3D12 API denied by user filter(s): {"Vendor": "ATI", "Device Type:": Integrated}, but allowed by user filter(s): {"Feature Level Comparator": Greater Than Or Equal To"Feature Level": "12.2", "Device Type:": Integrated}
+GfxDevice: creating device client; kGfxThreadingModeSplitJobs
+d3d12: failed to query info queue interface (0x80004002).
+Direct3D:
+    Version:         Direct3D 12 [level 12.2]
+    Renderer:        AMD Radeon 780M Graphics (ID=0x1900)
+    Vendor:          ATI
+    VRAM:            11933 MB
+    App VRAM Budget: 11582 MB
+    Driver:          32.0.21030.11004
+    Unified Memory Architecture
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.224 seconds
+- Finished resetting the current domain, in  0.004 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+D3D11 device created for Microsoft Media Foundation video decoding.
+<RI> Initializing input.
+Using Windows.Gaming.Input
+The tree pine_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree pine_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree oak_3 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_1 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+The tree bush_2 must use the Nature/Soft Occlusion shader. Otherwise billboarding/lighting will not work correctly.
+UnloadTime: 1.691200 ms
+[Emberbond] graphics: AMD Radeon 780M Graphics -> reduced quality, target 60 fps
+[SHOT] 10a_pit_top
+[SHOT] 10b_pit_bottom
+[SHOT] 11a_charge_start
+[SHOT] 11b_tower
+[SHOT] 11c_tower_falls
+[Emberbond] impact 29 m/s damage 50
+[SHOT] 12_duel
+[SHOT] 13_riot
+[SHOT] 14_tide
+[SHOT] 15_egg
+[SHOT] 16_ending_wildfire
+[SHOT] 16_ending_hearthfire
+[SHOT] 16_ending_unbound
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
